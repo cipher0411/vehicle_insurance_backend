@@ -1,0 +1,963 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}Reports & Analytics{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-chart-bar"></i> Reports & Analytics</h2>
+            <p class="text-muted">Generate and view detailed reports for your insurance business</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-success" onclick="exportCurrentReport()">
+                <i class="fas fa-download"></i> Export Report
+            </button>
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+            <button class="btn btn-outline-secondary" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Report Type Selection -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Report Type</label>
+                            <select name="type" class="form-control" onchange="this.form.submit()">
+                                <option value="summary" {% if report_type == 'summary' %}selected{% endif %}>Summary Dashboard</option>
+                                <option value="policies" {% if report_type == 'policies' %}selected{% endif %}>Policies Report</option>
+                                <option value="claims" {% if report_type == 'claims' %}selected{% endif %}>Claims Report</option>
+                                <option value="revenue" {% if report_type == 'revenue' %}selected{% endif %}>Revenue Report</option>
+                                <option value="users" {% if report_type == 'users' %}selected{% endif %}>Users Report</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Date Range</label>
+                            <select name="date_range" id="dateRangeSelect" class="form-control" onchange="updateDateRange(this.value)">
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="last7days">Last 7 Days</option>
+                                <option value="last30days">Last 30 Days</option>
+                                <option value="this_month">This Month</option>
+                                <option value="last_month">Last Month</option>
+                                <option value="this_year">This Year</option>
+                                <option value="custom" {% if date_from and date_to %}selected{% endif %}>Custom Range</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2" id="dateFromContainer" style="display: {% if date_from and date_to %}block{% else %}none{% endif %};">
+                            <label class="form-label">From Date</label>
+                            <input type="date" name="date_from" class="form-control" value="{{ date_from|default:'' }}">
+                        </div>
+                        <div class="col-md-2" id="dateToContainer" style="display: {% if date_from and date_to %}block{% else %}none{% endif %};">
+                            <label class="form-label">To Date</label>
+                            <input type="date" name="date_to" class="form-control" value="{{ date_to|default:'' }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100" style="background-color: #4169E1;">
+                                <i class="fas fa-filter"></i> Generate Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if report_type == 'summary' %}
+    <!-- Summary Dashboard -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Users</h6>
+                            <h3>{{ total_users }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <small class="text-success">
+                        <i class="fas fa-arrow-up"></i> +{{ new_users_this_month }} this month
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Active Policies</h6>
+                            <h3>{{ active_policies }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">Total Premium: ₦{{ total_premium_value|floatformat:2 }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Pending Claims</h6>
+                            <h3>{{ pending_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                    </div>
+                    <small class="text-warning">Total Value: ₦{{ pending_claims_value|floatformat:2 }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Monthly Revenue</h6>
+                            <h3>₦{{ monthly_revenue|floatformat:2 }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                    <small class="text-{% if revenue_growth >= 0 %}success{% else %}danger{% endif %}">
+                        <i class="fas fa-arrow-{% if revenue_growth >= 0 %}up{% else %}down{% endif %}"></i> 
+                        {% if revenue_growth >= 0 %}+{% endif %}{{ revenue_growth }}% from last month
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Approved Claims</h6>
+                            <h3 class="text-success">{{ approved_claims|default:0 }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                    <small class="text-success">Value: ₦{{ approved_claims_value|floatformat:2|default:'0.00' }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Settled Claims</h6>
+                            <h3 class="text-primary">{{ settled_claims|default:0 }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill-wave text-primary"></i>
+                        </div>
+                    </div>
+                    <small class="text-primary">Value: ₦{{ settled_claims_value|floatformat:2|default:'0.00' }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Rejected Claims</h6>
+                            <h3 class="text-danger">{{ rejected_claims|default:0 }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-times-circle text-danger"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">Total claims processed</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Vehicles</h6>
+                            <h3>{{ total_vehicles|default:0 }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-car"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">Registered vehicles</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> Revenue Trend (₦)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie"></i> Policy Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="policyChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Claims by Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="claimsChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Monthly Policy Sales</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="policySalesChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% elif report_type == 'policies' %}
+    <!-- Policies Report -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-file-contract"></i> Policies Report 
+                        {% if date_from and date_to %}
+                        <small class="text-white-50">({{ date_from }} to {{ date_to }})</small>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if data %}
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h6 class="text-muted">Total Policies</h6>
+                                <h3 class="text-primary">{{ total }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h6 class="text-muted">Total Premium</h6>
+                                <h3 class="text-success">₦{{ total_premium|floatformat:2 }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h6 class="text-muted">Active Policies</h6>
+                                <h3 class="text-info">{{ active_count }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h6 class="text-muted">Avg. Premium</h6>
+                                <h3 class="text-warning">₦{{ avg_premium|floatformat:2 }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead style="background-color: #4169E1; color: white;">
+                                <tr>
+                                    <th>Policy #</th>
+                                    <th>Customer</th>
+                                    <th>Vehicle</th>
+                                    <th>Type</th>
+                                    <th>Premium (₦)</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for policy in data %}
+                                <tr>
+                                    <td><strong>{{ policy.policy_number }}</strong></td>
+                                    <td>{{ policy.user.get_full_name|default:policy.user.email }}</td>
+                                    <td>{{ policy.vehicle.make }} {{ policy.vehicle.model }} ({{ policy.vehicle.year }})</td>
+                                    <td>{{ policy.get_policy_type_display }}</td>
+                                    <td>₦{{ policy.premium_amount|floatformat:2 }}</td>
+                                    <td>{{ policy.start_date|date:"M d, Y" }}</td>
+                                    <td>{{ policy.end_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if policy.status == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif policy.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif policy.status == 'expired' %}
+                                            <span class="badge bg-danger">Expired</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ policy.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-contract fa-4x text-muted mb-3"></i>
+                        <h5>No Policies Found</h5>
+                        <p class="text-muted">Select a date range to view policy data</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% elif report_type == 'claims' %}
+    <!-- Claims Report -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-clipboard-list"></i> Claims Report
+                        {% if date_from and date_to %}
+                        <small class="text-white-50">({{ date_from }} to {{ date_to }})</small>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if data %}
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h6 class="text-muted">Total Claims</h6>
+                                <h3 class="text-primary">{{ total }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h6 class="text-muted">Total Claimed</h6>
+                                <h3 class="text-warning">₦{{ total_amount|floatformat:2 }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h6 class="text-muted">Approved Claims</h6>
+                                <h3 class="text-success">{{ approved_count }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h6 class="text-muted">Avg. Claim Value</h6>
+                                <h3 class="text-info">₦{{ avg_claim|floatformat:2 }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead style="background-color: #4169E1; color: white;">
+                                <tr>
+                                    <th>Claim #</th>
+                                    <th>Customer</th>
+                                    <th>Policy #</th>
+                                    <th>Type</th>
+                                    <th>Claimed (₦)</th>
+                                    <th>Filed Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for claim in data %}
+                                <tr>
+                                    <td><strong>{{ claim.claim_number }}</strong></td>
+                                    <td>{{ claim.user.get_full_name|default:claim.user.email }}</td>
+                                    <td>{{ claim.policy.policy_number }}</td>
+                                    <td>{{ claim.get_claim_type_display }}</td>
+                                    <td>₦{{ claim.claimed_amount|floatformat:2 }}</td>
+                                    <td>{{ claim.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if claim.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% elif claim.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif claim.status == 'under_review' %}
+                                            <span class="badge bg-info">Under Review</span>
+                                        {% elif claim.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% elif claim.status == 'settled' %}
+                                            <span class="badge bg-primary">Settled</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ claim.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                        <h5>No Claims Found</h5>
+                        <p class="text-muted">Select a date range to view claims data</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% elif report_type == 'revenue' %}
+    <!-- Revenue Report -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> Revenue Report
+                        {% if date_from and date_to %}
+                        <small class="text-white-50">({{ date_from }} to {{ date_to }})</small>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if data %}
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center">
+                                <h6 class="text-muted">Total Revenue</h6>
+                                <h2 class="text-success">₦{{ total_revenue|floatformat:2 }}</h2>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center">
+                                <h6 class="text-muted">Total Transactions</h6>
+                                <h2 class="text-primary">{{ transaction_count }}</h2>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center">
+                                <h6 class="text-muted">Average Transaction</h6>
+                                <h2 class="text-info">₦{{ avg_transaction|floatformat:2 }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6 class="mt-4 mb-3">Revenue by Payment Method</h6>
+                    <div class="row mb-4">
+                        {% for method in by_method %}
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h6 class="text-muted">{{ method.payment_method|title }}</h6>
+                                <h4>₦{{ method.total|floatformat:2 }}</h4>
+                                <small>{{ method.count }} transaction{{ method.count|pluralize }}</small>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <p class="text-muted text-center">No payment method data available</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead style="background-color: #4169E1; color: white;">
+                                <tr>
+                                    <th>Transaction ID</th>
+                                    <th>Customer</th>
+                                    <th>Amount (₦)</th>
+                                    <th>Method</th>
+                                    <th>Date</th>
+                                    <th>Reference</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in data %}
+                                <tr>
+                                    <td><strong>{{ payment.transaction_id }}</strong></td>
+                                    <td>{{ payment.user.get_full_name|default:payment.user.email }}</td>
+                                    <td>₦{{ payment.amount|floatformat:2 }}</td>
+                                    <td>{{ payment.get_payment_method_display }}</td>
+                                    <td>{{ payment.paid_at|date:"M d, Y H:i" }}</td>
+                                    <td>{{ payment.payment_reference|default:'-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+                        <h5>No Revenue Data Found</h5>
+                        <p class="text-muted">Select a date range to view revenue data</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% elif report_type == 'users' %}
+    <!-- Users Report -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x mb-3" style="color: #4169E1;"></i>
+                    <h3>{{ total_users_all }}</h3>
+                    <p class="text-muted">Total Registered Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-check fa-3x mb-3" style="color: #28a745;"></i>
+                    <h3>{{ verified_users }}</h3>
+                    <p class="text-muted">Verified Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-plus fa-3x mb-3" style="color: #ffc107;"></i>
+                    <h3>{{ new_users_this_month }}</h3>
+                    <p class="text-muted">New Users This Month</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> User Growth Trend</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="userGrowthChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie"></i> Users by Role</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="userRoleChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list"></i> Recent User Registrations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead style="background-color: #4169E1; color: white;">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Role</th>
+                                    <th>Verified</th>
+                                    <th>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in recent_users %}
+                                <tr>
+                                    <td>{{ user.get_full_name|default:'N/A' }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.phone_number|default:'N/A' }}</td>
+                                    <td>{{ user.get_role_display }}</td>
+                                    <td>
+                                        {% if user.is_verified %}
+                                            <span class="badge bg-success">Verified</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No recent registrations</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Date range handling
+function updateDateRange(value) {
+    const fromContainer = document.getElementById('dateFromContainer');
+    const toContainer = document.getElementById('dateToContainer');
+    
+    if (value === 'custom') {
+        fromContainer.style.display = 'block';
+        toContainer.style.display = 'block';
+    } else {
+        fromContainer.style.display = 'none';
+        toContainer.style.display = 'none';
+        
+        const today = new Date();
+        let fromDate = new Date();
+        let toDate = new Date();
+        
+        switch(value) {
+            case 'today':
+                break;
+            case 'yesterday':
+                fromDate.setDate(today.getDate() - 1);
+                toDate.setDate(today.getDate() - 1);
+                break;
+            case 'last7days':
+                fromDate.setDate(today.getDate() - 7);
+                break;
+            case 'last30days':
+                fromDate.setDate(today.getDate() - 30);
+                break;
+            case 'this_month':
+                fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                break;
+            case 'last_month':
+                fromDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                toDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                break;
+            case 'this_year':
+                fromDate = new Date(today.getFullYear(), 0, 1);
+                break;
+        }
+        
+        document.querySelector('input[name="date_from"]').value = formatDate(fromDate);
+        document.querySelector('input[name="date_to"]').value = formatDate(toDate);
+    }
+}
+
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// Initialize charts with dynamic data
+document.addEventListener('DOMContentLoaded', function() {
+    {% if report_type == 'summary' %}
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: {{ month_labels|safe }},
+            datasets: [{
+                label: 'Revenue (₦)',
+                data: {{ revenue_data|safe }},
+                borderColor: '#4169E1',
+                backgroundColor: 'rgba(65, 105, 225, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return '₦' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            return '₦' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Policy Distribution Chart
+    const policyCtx = document.getElementById('policyChart').getContext('2d');
+    new Chart(policyCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ policy_type_labels|safe }},
+            datasets: [{
+                data: {{ policy_type_data|safe }},
+                backgroundColor: ['#4169E1', '#6b8eeb', '#3155b0', '#8aa2e8', '#a0b5f0'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+    
+    // Claims Chart - All Statuses
+    const claimsCtx = document.getElementById('claimsChart').getContext('2d');
+    new Chart(claimsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ claim_status_labels|safe }},
+            datasets: [{
+                label: 'Number of Claims',
+                data: {{ claim_status_data|safe }},
+                backgroundColor: [
+                    '#ffc107',  // Pending - Yellow
+                    '#17a2b8',  // Under Review - Cyan
+                    '#28a745',  // Approved - Green
+                    '#dc3545',  // Rejected - Red
+                    '#4169E1',  // Settled - Blue
+                    '#6c757d'   // Withdrawn - Gray
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+    
+    // Policy Sales Chart
+    const salesCtx = document.getElementById('policySalesChart').getContext('2d');
+    new Chart(salesCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ policy_sales_labels|safe }},
+            datasets: [{
+                label: 'Policies Sold',
+                data: {{ policy_sales_data|safe }},
+                backgroundColor: '#4169E1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+    {% endif %}
+    
+    {% if report_type == 'users' %}
+    // User Growth Chart
+    const growthCtx = document.getElementById('userGrowthChart').getContext('2d');
+    new Chart(growthCtx, {
+        type: 'line',
+        data: {
+            labels: {{ user_growth_labels|safe }},
+            datasets: [{
+                label: 'New Users',
+                data: {{ user_growth_data|safe }},
+                borderColor: '#4169E1',
+                backgroundColor: 'rgba(65, 105, 225, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+    
+    // User Role Chart
+    const roleCtx = document.getElementById('userRoleChart').getContext('2d');
+    new Chart(roleCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ user_role_labels|safe }},
+            datasets: [{
+                data: {{ user_role_data|safe }},
+                backgroundColor: ['#4169E1', '#6b8eeb', '#3155b0', '#8aa2e8', '#a0b5f0', '#c0d0ff']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+    {% endif %}
+});
+
+function exportCurrentReport() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const reportType = urlParams.get('type') || 'summary';
+    const dateFrom = document.querySelector('input[name="date_from"]').value;
+    const dateTo = document.querySelector('input[name="date_to"]').value;
+    
+    window.location.href = `/custom_admin/export/?model=${reportType}&format=csv&date_from=${dateFrom}&date_to=${dateTo}`;
+}
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    color: #4169E1;
+    opacity: 0.7;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.8rem;
+}
+
+.form-control:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+
+canvas {
+    max-height: 300px;
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
+}
+
+@media print {
+    .btn, form, .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .card-header {
+        background: #4169E1 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+</style>
+{% endblock %}

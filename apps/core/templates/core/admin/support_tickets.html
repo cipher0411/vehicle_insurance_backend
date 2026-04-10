@@ -1,0 +1,680 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Manage Support Tickets{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-headset"></i> Manage Support Tickets</h2>
+            <p class="text-muted">View and manage all customer support tickets</p>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Tickets</h6>
+                            <h3>{{ total_tickets|default:tickets.paginator.count }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-ticket-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Open Tickets</h6>
+                            <h3>{{ open_count|default:'0' }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">In Progress</h6>
+                            <h3>{{ in_progress_count|default:'0' }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-spinner"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Resolved</h6>
+                            <h3>{{ resolved_count|default:'0' }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by ticket # or user...">
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="statusFilter">
+                <option value="">All Status</option>
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="priorityFilter">
+                <option value="">All Priority</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="assignedFilter">
+                <option value="">All Staff</option>
+                <option value="unassigned">Unassigned</option>
+                <option value="me">Assigned to Me</option>
+                {% for staff in staff_users %}
+                    <option value="{{ staff.id }}">{{ staff.get_full_name|default:staff.email }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary me-2" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> Apply
+            </button>
+            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <button type="button" class="btn btn-warning me-2" onclick="showBulkStatusModal()" disabled id="bulkStatusBtn">
+                <i class="fas fa-tasks"></i> Bulk Update Status
+            </button>
+            <button type="button" class="btn btn-info" onclick="showBulkAssignModal()" disabled id="bulkAssignBtn">
+                <i class="fas fa-user-plus"></i> Bulk Assign
+            </button>
+            <span class="ms-3 text-muted" id="selectedCount">0 tickets selected</span>
+        </div>
+    </div>
+
+    <!-- Tickets Table -->
+    <div class="table-responsive">
+        <table class="table table-hover" id="ticketsTable">
+            <thead style="background-color: #4169E1; color: white;">
+                <tr>
+                    <th style="width: 40px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
+                    <th>Ticket #</th>
+                    <th>User</th>
+                    <th>Subject</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Assigned To</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td>
+                        <input type="checkbox" name="selected_tickets" value="{{ ticket.id }}" class="ticket-checkbox" onchange="updateSelectedCount()">
+                    </td>
+                    <td>
+                        <span class="fw-bold">{{ ticket.ticket_number }}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-circle me-2" style="color: #4169E1;"></i>
+                            <div>
+                                {{ ticket.user.get_full_name|default:ticket.user.email }}
+                                <br><small class="text-muted">{{ ticket.user.email }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ ticket.subject }}</div>
+                        <small class="text-muted">{{ ticket.message|truncatechars:50 }}</small>
+                        {% if ticket.replies.count > 0 %}
+                            <br>
+                            <span class="badge bg-info">
+                                <i class="fas fa-reply"></i> {{ ticket.replies.count }} repl{{ ticket.replies.count|pluralize:"y,ies" }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ticket.priority == 'urgent' %}
+                            <span class="badge bg-danger">Urgent</span>
+                        {% elif ticket.priority == 'high' %}
+                            <span class="badge bg-warning">High</span>
+                        {% elif ticket.priority == 'medium' %}
+                            <span class="badge bg-info">Medium</span>
+                        {% elif ticket.priority == 'low' %}
+                            <span class="badge bg-success">Low</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ ticket.get_priority_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ticket.status == 'open' %}
+                            <span class="badge bg-warning">Open</span>
+                        {% elif ticket.status == 'in_progress' %}
+                            <span class="badge bg-info">In Progress</span>
+                        {% elif ticket.status == 'resolved' %}
+                            <span class="badge bg-success">Resolved</span>
+                        {% elif ticket.status == 'closed' %}
+                            <span class="badge bg-secondary">Closed</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ ticket.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ticket.assigned_to %}
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-tie me-1" style="color: #4169E1;"></i>
+                                {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.email }}
+                            </div>
+                        {% else %}
+                            <span class="text-muted">
+                                <i class="fas fa-user-slash"></i> Unassigned
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div>{{ ticket.created_at|date:"M d, Y" }}</div>
+                        <small class="text-muted">{{ ticket.created_at|time:"H:i" }}</small>
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'core:admin_ticket_detail' ticket.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            {% if not ticket.assigned_to %}
+                                <button type="button" class="btn btn-sm btn-success" onclick="showQuickAssignModal('{{ ticket.id }}', '{{ ticket.ticket_number|escapejs }}')">
+                                    <i class="fas fa-user-check"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center py-4">
+                        <i class="fas fa-headset fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No support tickets found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if tickets.has_other_pages %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if tickets.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ tickets.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+                </li>
+            {% endif %}
+            
+            {% for num in tickets.paginator.page_range %}
+                {% if tickets.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > tickets.number|add:'-3' and num < tickets.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if tickets.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ tickets.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Quick Assign Modal -->
+<div class="modal fade" id="quickAssignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #4169E1; color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-check"></i> <span id="assignModalTitle">Assign Ticket</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="assignTicketId">
+                <input type="hidden" id="isBulkAssign" value="false">
+                <div id="assignTicketInfo" class="mb-3"></div>
+                <div class="mb-3">
+                    <label class="form-label">Assign To <span class="text-danger">*</span></label>
+                    <select class="form-control" id="assignStaffSelect" required>
+                        <option value="">Select Staff Member</option>
+                        {% for staff in staff_users %}
+                            <option value="{{ staff.id }}">{{ staff.get_full_name|default:staff.email }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="invalid-feedback" id="staffSelectError"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Priority (Optional)</label>
+                    <select class="form-control" id="assignPrioritySelect">
+                        <option value="">Keep Current</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Internal Note (Optional)</label>
+                    <textarea class="form-control" id="assignNote" rows="2" placeholder="Add an internal note..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitAssign()" id="submitAssignBtn">
+                    <i class="fas fa-check"></i> Assign
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Status Update Modal -->
+<div class="modal fade" id="bulkStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #4169E1; color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-tasks"></i> Bulk Update Status
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Update status for <strong id="bulkTicketCount">0</strong> ticket(s)</p>
+                <div class="mb-3">
+                    <label class="form-label">New Status <span class="text-danger">*</span></label>
+                    <select class="form-control" id="bulkStatusSelect" required>
+                        <option value="">Select Status</option>
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Note (Optional)</label>
+                    <textarea class="form-control" id="bulkStatusNote" rows="2" placeholder="Add a note for all tickets..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitBulkStatus()">
+                    <i class="fas fa-save"></i> Update Status
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% csrf_token %}
+
+<script>
+let toastInstance = null;
+let currentFilters = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('notificationToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    }
+    
+    // Set filter values from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('status')) document.getElementById('statusFilter').value = urlParams.get('status');
+    if (urlParams.get('priority')) document.getElementById('priorityFilter').value = urlParams.get('priority');
+    if (urlParams.get('assigned')) document.getElementById('assignedFilter').value = urlParams.get('assigned');
+    
+    // Enter key for search
+    document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+    
+    // Clear staff select error on change
+    const staffSelect = document.getElementById('assignStaffSelect');
+    if (staffSelect) {
+        staffSelect.addEventListener('change', function() {
+            this.classList.remove('is-invalid');
+            document.getElementById('staffSelectError').textContent = '';
+        });
+    }
+});
+
+function showToast(title, message, type = 'info') {
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    toastIcon.className = 'fas me-2';
+    if (type === 'success') {
+        toastIcon.classList.add('fa-check-circle');
+        toastIcon.style.color = '#28a745';
+    } else if (type === 'error') {
+        toastIcon.classList.add('fa-exclamation-circle');
+        toastIcon.style.color = '#dc3545';
+    } else if (type === 'warning') {
+        toastIcon.classList.add('fa-exclamation-triangle');
+        toastIcon.style.color = '#ffc107';
+    } else {
+        toastIcon.classList.add('fa-info-circle');
+        toastIcon.style.color = '#4169E1';
+    }
+    
+    toastInstance.show();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function applyFilters() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    const priority = document.getElementById('priorityFilter').value;
+    const assigned = document.getElementById('assignedFilter').value;
+    
+    let url = '?';
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    if (status) url += `status=${status}&`;
+    if (priority) url += `priority=${priority}&`;
+    if (assigned) url += `assigned=${assigned}&`;
+    
+    window.location.href = url.slice(0, -1) || window.location.pathname;
+}
+
+function clearFilters() {
+    window.location.href = window.location.pathname;
+}
+
+function toggleSelectAll(source) {
+    document.querySelectorAll('.ticket-checkbox').forEach(checkbox => {
+        checkbox.checked = source.checked;
+    });
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const selected = document.querySelectorAll('.ticket-checkbox:checked').length;
+    document.getElementById('selectedCount').textContent = `${selected} ticket${selected !== 1 ? 's' : ''} selected`;
+    
+    document.getElementById('bulkStatusBtn').disabled = selected === 0;
+    document.getElementById('bulkAssignBtn').disabled = selected === 0;
+}
+
+function showQuickAssignModal(ticketId, ticketNumber) {
+    document.getElementById('assignTicketId').value = ticketId;
+    document.getElementById('isBulkAssign').value = 'false';
+    document.getElementById('assignModalTitle').textContent = 'Assign Ticket';
+    document.getElementById('assignTicketInfo').innerHTML = `<p>Assign ticket <strong>${ticketNumber}</strong> to a staff member.</p>`;
+    document.getElementById('assignStaffSelect').value = '';
+    document.getElementById('assignPrioritySelect').value = '';
+    document.getElementById('assignNote').value = '';
+    document.getElementById('staffSelectError').textContent = '';
+    document.getElementById('assignStaffSelect').classList.remove('is-invalid');
+    
+    const modal = new bootstrap.Modal(document.getElementById('quickAssignModal'));
+    modal.show();
+}
+
+function showBulkAssignModal() {
+    const selected = [];
+    document.querySelectorAll('.ticket-checkbox:checked').forEach(checkbox => {
+        selected.push(checkbox.value);
+    });
+    
+    if (selected.length === 0) {
+        showToast('No Selection', 'Please select at least one ticket', 'warning');
+        return;
+    }
+    
+    document.getElementById('assignTicketId').value = selected.join(',');
+    document.getElementById('isBulkAssign').value = 'true';
+    document.getElementById('assignModalTitle').textContent = `Bulk Assign (${selected.length} tickets)`;
+    document.getElementById('assignTicketInfo').innerHTML = `<p>Assign ${selected.length} ticket(s) to a staff member.</p>`;
+    document.getElementById('assignStaffSelect').value = '';
+    document.getElementById('assignPrioritySelect').value = '';
+    document.getElementById('assignNote').value = '';
+    document.getElementById('staffSelectError').textContent = '';
+    document.getElementById('assignStaffSelect').classList.remove('is-invalid');
+    
+    const modal = new bootstrap.Modal(document.getElementById('quickAssignModal'));
+    modal.show();
+}
+
+function showBulkStatusModal() {
+    const selected = [];
+    document.querySelectorAll('.ticket-checkbox:checked').forEach(checkbox => {
+        selected.push(checkbox.value);
+    });
+    
+    if (selected.length === 0) {
+        showToast('No Selection', 'Please select at least one ticket', 'warning');
+        return;
+    }
+    
+    document.getElementById('bulkTicketCount').textContent = selected.length;
+    document.getElementById('bulkStatusSelect').value = '';
+    document.getElementById('bulkStatusNote').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('bulkStatusModal'));
+    modal.show();
+}
+
+function submitAssign() {
+    const ticketId = document.getElementById('assignTicketId').value;
+    const staffId = document.getElementById('assignStaffSelect').value;
+    const priority = document.getElementById('assignPrioritySelect').value;
+    const note = document.getElementById('assignNote').value;
+    const isBulk = document.getElementById('isBulkAssign').value === 'true';
+    
+    if (!staffId) {
+        document.getElementById('staffSelectError').textContent = 'Please select a staff member';
+        document.getElementById('assignStaffSelect').classList.add('is-invalid');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitAssignBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Assigning...';
+    submitBtn.disabled = true;
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch('/custom_admin/support-tickets/assign/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            ticket_ids: ticketId,
+            assigned_to: staffId,
+            priority: priority,
+            note: note,
+            is_bulk: isBulk
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        bootstrap.Modal.getInstance(document.getElementById('quickAssignModal')).hide();
+        if (data.success) {
+            showToast('Success', data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('Error', data.message, 'error');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        bootstrap.Modal.getInstance(document.getElementById('quickAssignModal')).hide();
+        showToast('Error', 'An error occurred', 'error');
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
+
+function submitBulkStatus() {
+    const selected = [];
+    document.querySelectorAll('.ticket-checkbox:checked').forEach(checkbox => {
+        selected.push(checkbox.value);
+    });
+    
+    const newStatus = document.getElementById('bulkStatusSelect').value;
+    const note = document.getElementById('bulkStatusNote').value;
+    
+    if (!newStatus) {
+        showToast('Invalid Status', 'Please select a status', 'warning');
+        return;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch('/custom_admin/support-tickets/bulk-update/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            tickets: selected,
+            status: newStatus,
+            note: note
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        bootstrap.Modal.getInstance(document.getElementById('bulkStatusModal')).hide();
+        if (data.success) {
+            showToast('Success', data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('Error', data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        bootstrap.Modal.getInstance(document.getElementById('bulkStatusModal')).hide();
+        showToast('Error', 'An error occurred', 'error');
+    });
+}
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.table th { font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; }
+.table td { vertical-align: middle; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; font-size: 0.8rem; }
+.badge.bg-danger { animation: pulse 2s infinite; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+.pagination .page-link { color: #4169E1; }
+.pagination .page-item.active .page-link { background-color: #4169E1; border-color: #4169E1; color: white; }
+#searchInput:focus, .form-control:focus { border-color: #4169E1; box-shadow: 0 0 0 0.2rem rgba(65,105,225,0.25); }
+.table-hover tbody tr:hover { background-color: rgba(65, 105, 225, 0.05); }
+#bulkStatusBtn:disabled, #bulkAssignBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.toast { background: white; border-left: 4px solid #4169E1; }
+.is-invalid { border-color: #dc3545 !important; }
+.invalid-feedback { display: block; color: #dc3545; font-size: 0.875rem; margin-top: 0.25rem; }
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+</style>
+{% endblock %}

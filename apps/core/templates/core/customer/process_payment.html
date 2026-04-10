@@ -1,0 +1,164 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Process Payment{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-credit-card"></i> Complete Payment</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h5>Payment Amount</h5>
+                        <h2 class="text-primary">₦{{ payment.amount|floatformat:2 }}</h2>
+                        <p class="text-muted">Policy #{{ payment.policy.policy_number }}</p>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-shield-alt"></i>
+                        You will be redirected to Flutterwave's secure payment page.
+                    </div>
+                    
+                    <button class="btn btn-primary btn-lg w-100" onclick="makePayment()" id="payBtn">
+                        <i class="fas fa-lock"></i> Pay with Flutterwave
+                    </button>
+                    
+                    <div class="text-center mt-3">
+                        <a href="{% url 'core:bank_transfer_instructions' payment.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-university"></i> Pay via Bank Transfer
+                        </a>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <a href="{% url 'core:my_policies' %}" class="btn btn-link">
+                            <i class="fas fa-arrow-left"></i> Back to My Policies
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <i class="fas fa-lock text-success"></i>
+                            <small class="d-block">Secure</small>
+                        </div>
+                        <div class="col-4">
+                            <i class="fas fa-shield-alt text-primary"></i>
+                            <small class="d-block">Encrypted</small>
+                        </div>
+                        <div class="col-4">
+                            <i class="fas fa-check-circle text-info"></i>
+                            <small class="d-block">Verified</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://checkout.flutterwave.com/v3.js"></script>
+<script>
+function makePayment() {
+    const payBtn = document.getElementById('payBtn');
+    payBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Redirecting...';
+    payBtn.disabled = true;
+    
+    FlutterwaveCheckout({
+        public_key: "{{ public_key }}",
+        tx_ref: "{{ tx_ref }}",
+        amount: {{ payment.amount }},
+        currency: "NGN",
+        payment_options: "card,ussd,account,banktransfer",
+        redirect_url: "{% url 'core:payment_callback' %}",
+        meta: {
+            payment_id: "{{ payment.id }}",
+            user_id: "{{ user.id }}"
+        },
+        customer: {
+            email: "{{ user.email }}",
+            name: "{{ user.get_full_name }}",
+            phonenumber: "{{ user.phone_number|default:'' }}"
+        },
+        customizations: {
+            title: "Vehicle Insurance",
+            description: "Payment for Policy #{{ payment.policy.policy_number }}",
+            logo: ""
+        },
+        callback: function(response) {
+            console.log('Payment response:', response);
+            if (response.status === 'successful') {
+                window.location.href = "{% url 'core:payment_callback' %}?status=successful&tx_ref=" + response.tx_ref + "&transaction_id=" + response.transaction_id;
+            } else {
+                window.location.href = "{% url 'core:my_policies' %}";
+            }
+        },
+        onclose: function() {
+            payBtn.innerHTML = '<i class="fas fa-lock"></i> Pay with Flutterwave';
+            payBtn.disabled = false;
+        }
+    });
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h4 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
+}
+
+.alert-info {
+    background-color: #eef2ff;
+    border-color: #4169E1;
+    color: #1e293b;
+}
+
+.btn-link {
+    color: #4169E1;
+    text-decoration: none;
+}
+
+.btn-link:hover {
+    color: #3155b0;
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

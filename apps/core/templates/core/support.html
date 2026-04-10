@@ -1,0 +1,567 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Customer Support | VehicleInsure Nigeria{% endblock %}
+{% block meta_description %}Get help with your vehicle insurance. 24/7 customer support, claims assistance, and policy inquiries. Contact VehicleInsure Nigeria today.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .support-hero {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .support-search {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .support-search .search-box {
+        display: flex;
+        background: var(--gray-light);
+        border-radius: 60px;
+        padding: 5px;
+        border: 2px solid var(--gray-border);
+        transition: all 0.3s;
+    }
+    
+    .support-search .search-box:focus-within {
+        border-color: var(--royal-blue);
+        box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.1);
+    }
+    
+    .support-search input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 15px 25px;
+        font-size: 1rem;
+        outline: none;
+    }
+    
+    .support-search button {
+        background: var(--royal-blue);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 60px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .support-search button:hover {
+        background: var(--royal-blue-dark);
+    }
+    
+    .quick-help-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+        margin-bottom: 50px;
+    }
+    
+    .help-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        text-align: center;
+        transition: all 0.3s;
+        text-decoration: none;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .help-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    }
+    
+    .help-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+    
+    .help-icon i {
+        font-size: 2rem;
+        color: white;
+    }
+    
+    .help-card h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+        font-size: 1.3rem;
+    }
+    
+    .help-card p {
+        color: #64748b;
+        margin-bottom: 0;
+        font-size: 0.9rem;
+    }
+    
+    .contact-methods {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 50px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.4s forwards;
+    }
+    
+    .contact-methods h2 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+    }
+    
+    .contact-method-card {
+        background: var(--gray-light);
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .contact-method-card:hover {
+        background: white;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    
+    .contact-method-icon {
+        width: 60px;
+        height: 60px;
+        background: white;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+    
+    .contact-method-icon i {
+        font-size: 1.8rem;
+        color: var(--royal-blue);
+    }
+    
+    .contact-method-card h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .contact-method-card p {
+        color: #64748b;
+        margin-bottom: 15px;
+    }
+    
+    .contact-method-card .contact-value {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--royal-blue);
+    }
+    
+    .contact-method-card .contact-value small {
+        font-size: 0.9rem;
+        font-weight: 400;
+        color: #64748b;
+    }
+    
+    .faq-section-support {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 50px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.6s forwards;
+    }
+    
+    .faq-section-support h2 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .faq-list-support {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .faq-item-support {
+        background: var(--gray-light);
+        border-radius: 16px;
+        margin-bottom: 15px;
+        overflow: hidden;
+    }
+    
+    .faq-question-support {
+        padding: 20px 25px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 600;
+        color: var(--navy-dark);
+        transition: all 0.3s;
+    }
+    
+    .faq-question-support:hover {
+        background: #eef2ff;
+    }
+    
+    .faq-question-support i {
+        color: var(--royal-blue);
+        transition: transform 0.3s;
+    }
+    
+    .faq-item-support.active .faq-question-support i {
+        transform: rotate(180deg);
+    }
+    
+    .faq-answer-support {
+        padding: 0 25px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, padding 0.3s ease;
+        color: #64748b;
+    }
+    
+    .faq-item-support.active .faq-answer-support {
+        padding: 0 25px 20px 25px;
+        max-height: 300px;
+    }
+    
+    .emergency-banner {
+        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        border-radius: 20px;
+        padding: 30px;
+        color: white;
+        text-align: center;
+        margin-top: 30px;
+    }
+    
+    .emergency-banner h3 {
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    .emergency-banner .emergency-phone {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #FFD700;
+        margin: 15px 0;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .support-hero, .contact-methods, .faq-section-support {
+            padding: 25px;
+        }
+        
+        .support-search .search-box {
+            flex-direction: column;
+            background: transparent;
+            gap: 10px;
+        }
+        
+        .support-search input {
+            background: white;
+            border-radius: 60px;
+            border: 2px solid var(--gray-border);
+        }
+        
+        .emergency-banner .emergency-phone {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Customer Support</h1>
+        <p>We're here to help with any questions or issues</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Support</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Search Hero -->
+    <div class="support-hero">
+        <h2 class="fw-bold mb-3" style="color: var(--navy-dark);">How can we help you?</h2>
+        <p class="text-muted mb-4">Search our help center for answers to common questions</p>
+        <div class="support-search">
+            <div class="search-box">
+                <input type="text" placeholder="Search for help..." id="supportSearch">
+                <button onclick="searchSupport()"><i class="fas fa-search me-2"></i> Search</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Help Categories -->
+    <div class="quick-help-grid">
+        <a href="{% url 'core:faqs' %}" class="help-card" style="animation-delay: 0.1s;">
+            <div class="help-icon">
+                <i class="fas fa-question-circle"></i>
+            </div>
+            <h3>FAQs</h3>
+            <p>Find answers to frequently asked questions</p>
+        </a>
+        
+        <a href="{% url 'core:file_claim' %}" class="help-card" style="animation-delay: 0.2s;">
+            <div class="help-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <h3>File a Claim</h3>
+            <p>Submit a new insurance claim online</p>
+        </a>
+        
+        <a href="{% url 'core:track_claims' %}" class="help-card" style="animation-delay: 0.3s;">
+            <div class="help-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3>Track Claims</h3>
+            <p>Check the status of your existing claims</p>
+        </a>
+        
+        <a href="{% url 'core:contact' %}" class="help-card" style="animation-delay: 0.4s;">
+            <div class="help-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <h3>Contact Us</h3>
+            <p>Get in touch with our support team</p>
+        </a>
+    </div>
+    
+    <!-- Contact Methods -->
+    <div class="contact-methods">
+        <h2>Ways to Reach Us</h2>
+        <div class="contact-grid">
+            <div class="contact-method-card">
+                <div class="contact-method-icon">
+                    <i class="fas fa-phone-alt"></i>
+                </div>
+                <h4>Call Us</h4>
+                <p>Customer Support Line</p>
+                <div class="contact-value">+234 123 456 7890</div>
+                <p class="mt-2"><small>Mon-Fri: 8AM - 8PM WAT</small></p>
+            </div>
+            
+            <div class="contact-method-card">
+                <div class="contact-method-icon">
+                    <i class="fab fa-whatsapp"></i>
+                </div>
+                <h4>WhatsApp</h4>
+                <p>Quick Chat Support</p>
+                <div class="contact-value">+234 801 234 5678</div>
+                <p class="mt-2"><small>Reply within 5 minutes</small></p>
+            </div>
+            
+            <div class="contact-method-card">
+                <div class="contact-method-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <h4>Email Us</h4>
+                <p>For detailed inquiries</p>
+                <div class="contact-value">support@vehicleinsure.ng</div>
+                <p class="mt-2"><small>Reply within 2 hours</small></p>
+            </div>
+            
+            <div class="contact-method-card">
+                <div class="contact-method-icon">
+                    <i class="fas fa-comment-dots"></i>
+                </div>
+                <h4>Live Chat</h4>
+                <p>Instant messaging support</p>
+                <button class="btn-primary-custom mt-2" onclick="openLiveChat()">
+                    Start Chat <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Emergency Claims Banner -->
+        <div class="emergency-banner">
+            <h3><i class="fas fa-exclamation-triangle me-2"></i> Emergency Claims Hotline</h3>
+            <p>For urgent claims assistance, our emergency line is available 24/7</p>
+            <div class="emergency-phone">0800-CLAIM-HELP</div>
+            <p class="mb-0">or +234 800 225 5467</p>
+        </div>
+    </div>
+    
+    <!-- Popular Support Topics -->
+    <div class="faq-section-support">
+        <h2>Popular Support Topics</h2>
+        <div class="faq-list-support">
+            <div class="faq-item-support">
+                <div class="faq-question-support">
+                    <span>How do I reset my password?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer-support">
+                    <p>To reset your password, click the "Forgot Password" link on the login page. Enter your registered email address, and we'll send you a password reset link. For security reasons, the link expires after 1 hour.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item-support">
+                <div class="faq-question-support">
+                    <span>I haven't received my insurance certificate</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer-support">
+                    <p>Your digital insurance certificate is available immediately after payment in your dashboard under "My Policies" > "Digital Documents". You can download it anytime. If you ordered a physical copy, delivery takes 3-5 working days within Lagos and 5-7 days for other states.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item-support">
+                <div class="faq-question-support">
+                    <span>How do I update my vehicle information?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer-support">
+                    <p>Log in to your dashboard, go to "My Policies", select the policy you want to update, and click "Update Details". Please note that changes to vehicle information may affect your premium and require additional documentation.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item-support">
+                <div class="faq-question-support">
+                    <span>What payment methods do you accept?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer-support">
+                    <p>We accept all major debit/credit cards (Visa, Mastercard, Verve), bank transfers, USSD payments, and direct bank deposits. All payments are processed securely through Paystack and Flutterwave.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item-support">
+                <div class="faq-question-support">
+                    <span>How do I cancel my policy?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer-support">
+                    <p>You can request policy cancellation through your dashboard or by contacting our support team. Refunds for the unexpired period are calculated on a pro-rata basis, less an administrative fee of ₦2,500, provided no claims have been made.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="{% url 'core:faqs' %}" class="btn-outline-primary-custom">
+                View All FAQs <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function searchSupport() {
+        const searchTerm = document.getElementById('supportSearch').value;
+        if (searchTerm) {
+            window.location.href = "{% url 'core:faqs' %}?search=" + encodeURIComponent(searchTerm);
+        }
+    }
+    
+    function openLiveChat() {
+        alert('Live chat is available Monday-Friday 8AM-8PM WAT. Please leave a message and we\'ll respond shortly.');
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // FAQ Accordion
+        document.querySelectorAll('.faq-question-support').forEach(question => {
+            question.addEventListener('click', () => {
+                const faqItem = question.closest('.faq-item-support');
+                const isActive = faqItem.classList.contains('active');
+                
+                document.querySelectorAll('.faq-item-support').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                if (!isActive) {
+                    faqItem.classList.add('active');
+                }
+            });
+        });
+        
+        // Search on Enter
+        document.getElementById('supportSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchSupport();
+            }
+        });
+    });
+</script>
+{% endblock %}

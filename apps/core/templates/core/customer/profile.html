@@ -1,0 +1,919 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-user-circle"></i> My Profile</h2>
+            <p class="text-muted">Manage your personal information and account settings</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:change_password' %}" class="btn btn-warning">
+                <i class="fas fa-key"></i> Change Password
+            </a>
+        </div>
+    </div>
+
+    <!-- Display Django Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Profile Form Column -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-edit"></i> Edit Profile Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="profileForm">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Profile Picture -->
+                        <div class="text-center mb-4">
+                            <div class="position-relative d-inline-block">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="rounded-circle" id="profileImage" style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #4169E1;">
+                                {% else %}
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" id="profileImagePlaceholder" style="width: 120px; height: 120px; background-color: #e9ecef; border: 3px solid #4169E1;">
+                                        <i class="fas fa-user fa-3x" style="color: #4169E1;"></i>
+                                    </div>
+                                {% endif %}
+                                <label for="{{ form.profile_picture.id_for_label }}" class="position-absolute bottom-0 end-0 bg-primary rounded-circle p-2" style="cursor: pointer; width: 35px; height: 35px;">
+                                    <i class="fas fa-camera text-white"></i>
+                                </label>
+                                {{ form.profile_picture }}
+                                {% if form.profile_picture.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.profile_picture.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name <span class="text-danger">*</span></label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.first_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.last_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">Email Address</label>
+                                {{ form.email }}
+                                <small class="text-muted">Email cannot be changed</small>
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label">Phone Number</label>
+                                {{ form.phone_number }}
+                                {% if form.phone_number.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.phone_number.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.address.id_for_label }}" class="form-label">Address</label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                                <div class="invalid-feedback d-block">{{ form.address.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.city.id_for_label }}" class="form-label">City</label>
+                                {{ form.city }}
+                                {% if form.city.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.city.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.state.id_for_label }}" class="form-label">State</label>
+                                {{ form.state }}
+                                {% if form.state.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.state.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.country.id_for_label }}" class="form-label">Country <span class="text-danger">*</span></label>
+                                {{ form.country }}
+                                {% if form.country.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.country.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.postal_code.id_for_label }}" class="form-label">Postal Code</label>
+                                {{ form.postal_code }}
+                                {% if form.postal_code.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.postal_code.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">Date of Birth</label>
+                                {{ form.date_of_birth }}
+                                {% if form.date_of_birth.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.date_of_birth.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.gender.id_for_label }}" class="form-label">Gender</label>
+                                {{ form.gender }}
+                                {% if form.gender.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.gender.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn" style="background-color: #4169E1;">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <a href="{% url 'core:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar Column -->
+        <div class="col-md-4">
+            <!-- Account Status Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-shield-alt"></i> Account Status</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <strong>Account Type:</strong> 
+                            <span class="badge bg-primary">{{ user.get_role_display }}</span>
+                        </li>
+                        <li class="mb-3">
+                            <strong>Verification Status:</strong>
+                            {% if user.is_verified %}
+                                <span class="badge bg-success"><i class="fas fa-check-circle"></i> Verified</span>
+                            {% else %}
+                                <span class="badge bg-warning"><i class="fas fa-clock"></i> Pending</span>
+                                <br>
+                                <small class="text-muted">Complete KYC to verify your account</small>
+                            {% endif %}
+                        </li>
+                        <li class="mb-3">
+                            <strong>KYC Status:</strong>
+                            {% if user.is_kyc_completed %}
+                                <span class="badge bg-success">Completed</span>
+                            {% elif user.kyc_documents_submitted %}
+                                <span class="badge bg-info">Under Review</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Not Submitted</span>
+                                <br>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#kycModal">
+                                    <i class="fas fa-upload"></i> Upload KYC Documents
+                                </button>
+                            {% endif %}
+                        </li>
+                        <li class="mb-3">
+                            <strong>Member Since:</strong>
+                            <br>
+                            {{ user.date_joined|date:"F d, Y" }}
+                        </li>
+                        <li>
+                            <strong>Last Login:</strong>
+                            <br>
+                            {{ user.last_login|date:"F d, Y H:i" }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Documents Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-file-alt"></i> My Documents</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for document in documents %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        {% if document.document_file.url|lower|slice:'-4:' == '.pdf' %}
+                                            <i class="fas fa-file-pdf text-danger me-2"></i>
+                                        {% elif '.jpg' in document.document_file.url|lower or '.jpeg' in document.document_file.url|lower or '.png' in document.document_file.url|lower %}
+                                            <i class="fas fa-file-image text-primary me-2"></i>
+                                        {% else %}
+                                            <i class="fas fa-file text-secondary me-2"></i>
+                                        {% endif %}
+                                        <strong>{{ document.name|default:document.get_document_type_display }}</strong>
+                                    </div>
+                                    {% if document.document_number %}
+                                        <small class="text-muted d-block">Document #: {{ document.document_number }}</small>
+                                    {% endif %}
+                                    <small class="text-muted d-block">Uploaded: {{ document.created_at|date:"M d, Y" }}</small>
+                                    <div class="mt-1">
+                                        {% if document.is_verified %}
+                                            <span class="badge bg-success"><i class="fas fa-check-circle"></i> Verified</span>
+                                        {% else %}
+                                            <span class="badge bg-warning"><i class="fas fa-clock"></i> Pending Verification</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="btn-group">
+                                    <a href="{{ document.document_file.url }}" class="btn btn-sm btn-outline-primary" target="_blank" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ document.document_file.url }}" class="btn btn-sm btn-outline-secondary" download title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                            <p class="mb-0">No documents uploaded yet</p>
+                            <small>Upload KYC documents to verify your account</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Stats Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-simple"></i> Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h4 class="text-primary">{{ user.policies.count }}</h4>
+                            <small class="text-muted">Policies</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h4 class="text-warning">{{ user.claims.count }}</h4>
+                            <small class="text-muted">Claims</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">{{ user.vehicles.count }}</h4>
+                            <small class="text-muted">Vehicles</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-info">{{ user.support_tickets.count }}</h4>
+                            <small class="text-muted">Tickets</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KYC Upload Modal -->
+<div class="modal fade" id="kycModal" tabindex="-1" aria-labelledby="kycModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #4169E1; color: white;">
+                <h5 class="modal-title" id="kycModalLabel">
+                    <i class="fas fa-id-card"></i> Upload KYC Documents
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="kycForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Document Type Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Document Type <span class="text-danger">*</span></label>
+                        <select class="form-control" name="document_type" id="kycDocumentType" required>
+                            <option value="">-- Select Document Type --</option>
+                            <option value="national_id">National ID Card</option>
+                            <option value="drivers_license">Driver's License</option>
+                            <option value="passport">International Passport</option>
+                            <option value="voters_card">Voter's Card</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Document Number -->
+                    <div class="mb-3">
+                        <label class="form-label">Document Number</label>
+                        <input type="text" class="form-control" name="document_number" id="kycDocumentNumber" placeholder="Enter document number (if applicable)">
+                    </div>
+                    
+                    <!-- Document Upload Options -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Front of Document <span class="text-danger">*</span></label>
+                            <div class="border rounded p-3 text-center">
+                                <input type="file" class="form-control" name="document_front" id="kycDocumentFront" accept=".pdf,.jpg,.jpeg,.png" required>
+                                <small class="text-muted">Upload front side of your ID</small>
+                                <div id="frontPreview" class="mt-2"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Back of Document <span class="text-muted">(Optional)</span></label>
+                            <div class="border rounded p-3 text-center">
+                                <input type="file" class="form-control" name="document_back" id="kycDocumentBack" accept=".pdf,.jpg,.jpeg,.png">
+                                <small class="text-muted">Upload back side of your ID (if applicable)</small>
+                                <div id="backPreview" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Selfie Options -->
+                    <div class="mb-3">
+                        <label class="form-label">Selfie with ID <span class="text-danger">*</span></label>
+                        <div class="border rounded p-3">
+                            <ul class="nav nav-tabs" id="selfieTab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab">
+                                        <i class="fas fa-upload"></i> Upload Selfie
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button" role="tab">
+                                        <i class="fas fa-camera"></i> Take Selfie
+                                    </button>
+                                </li>
+                            </ul>
+                            <div class="tab-content p-3" id="selfieTabContent">
+                                <!-- Upload Tab -->
+                                <div class="tab-pane fade show active" id="upload" role="tabpanel">
+                                    <input type="file" class="form-control" name="selfie" id="kycSelfieUpload" accept="image/*">
+                                    <small class="text-muted">Upload a clear selfie holding your ID</small>
+                                    <div id="selfieUploadPreview" class="mt-2 text-center"></div>
+                                </div>
+                                <!-- Camera Tab -->
+                                <div class="tab-pane fade" id="camera" role="tabpanel">
+                                    <div class="text-center">
+                                        <video id="cameraVideo" width="100%" max-height="300" autoplay playsinline style="border-radius: 8px; display: none;"></video>
+                                        <canvas id="cameraCanvas" style="display: none;"></canvas>
+                                        <div id="cameraPlaceholder" class="bg-light rounded p-4 text-center">
+                                            <i class="fas fa-camera fa-3x text-muted mb-3"></i>
+                                            <p>Click "Start Camera" to take a selfie</p>
+                                        </div>
+                                        <div class="mt-3">
+                                            <button type="button" class="btn btn-primary" id="startCameraBtn">
+                                                <i class="fas fa-video"></i> Start Camera
+                                            </button>
+                                            <button type="button" class="btn btn-success" id="captureBtn" style="display: none;">
+                                                <i class="fas fa-camera"></i> Capture
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" id="retakeBtn" style="display: none;">
+                                                <i class="fas fa-redo"></i> Retake
+                                            </button>
+                                        </div>
+                                        <div id="cameraPreview" class="mt-3"></div>
+                                    </div>
+                                    <input type="hidden" name="selfie_camera" id="kycSelfieCamera">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <small>Your documents will be reviewed within 24-48 hours. Make sure all information is clearly visible.</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="submitKycBtn" onclick="submitKYC()">
+                    <i class="fas fa-upload"></i> Submit for Verification
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let toastInstance = null;
+let cameraStream = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize toast
+    const toastEl = document.getElementById('notificationToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    }
+    
+    // Hide profile picture input and handle preview
+    const profilePicInput = document.getElementById('{{ form.profile_picture.id_for_label }}');
+    if (profilePicInput) {
+        profilePicInput.style.display = 'none';
+        profilePicInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                if (!this.files[0].type.startsWith('image/')) {
+                    showToast('Error', 'Please select a valid image file', 'error');
+                    this.value = '';
+                    return;
+                }
+                
+                if (this.files[0].size > 5 * 1024 * 1024) {
+                    showToast('Error', 'Image must be less than 5MB', 'error');
+                    this.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const existingImg = document.getElementById('profileImage');
+                    if (existingImg) {
+                        existingImg.src = e.target.result;
+                    } else {
+                        const placeholder = document.getElementById('profileImagePlaceholder');
+                        const newImg = document.createElement('img');
+                        newImg.src = e.target.result;
+                        newImg.id = 'profileImage';
+                        newImg.className = 'rounded-circle';
+                        newImg.style.width = '120px';
+                        newImg.style.height = '120px';
+                        newImg.style.objectFit = 'cover';
+                        newImg.style.border = '3px solid #4169E1';
+                        placeholder.parentNode.replaceChild(newImg, placeholder);
+                    }
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    }
+    
+    // Form submission
+    const form = document.getElementById('profileForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const firstName = document.getElementById('{{ form.first_name.id_for_label }}');
+            const lastName = document.getElementById('{{ form.last_name.id_for_label }}');
+            
+            if (firstName && !firstName.value.trim()) {
+                e.preventDefault();
+                showToast('Error', 'First name is required', 'error');
+                firstName.focus();
+                return false;
+            }
+            
+            if (lastName && !lastName.value.trim()) {
+                e.preventDefault();
+                showToast('Error', 'Last name is required', 'error');
+                lastName.focus();
+                return false;
+            }
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+            submitBtn.disabled = true;
+        });
+    }
+    
+    // File preview for document front
+    const frontInput = document.getElementById('kycDocumentFront');
+    if (frontInput) {
+        frontInput.addEventListener('change', function() {
+            previewFile(this, 'frontPreview');
+        });
+    }
+    
+    // File preview for document back
+    const backInput = document.getElementById('kycDocumentBack');
+    if (backInput) {
+        backInput.addEventListener('change', function() {
+            previewFile(this, 'backPreview');
+        });
+    }
+    
+    // File preview for selfie upload
+    const selfieUpload = document.getElementById('kycSelfieUpload');
+    if (selfieUpload) {
+        selfieUpload.addEventListener('change', function() {
+            previewFile(this, 'selfieUploadPreview');
+        });
+    }
+    
+    // Camera functionality
+    const startCameraBtn = document.getElementById('startCameraBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const retakeBtn = document.getElementById('retakeBtn');
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+    const cameraPreview = document.getElementById('cameraPreview');
+    
+    if (startCameraBtn) {
+        startCameraBtn.addEventListener('click', async function() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'user' }, 
+                    audio: false 
+                });
+                video.srcObject = cameraStream;
+                video.style.display = 'block';
+                cameraPlaceholder.style.display = 'none';
+                startCameraBtn.style.display = 'none';
+                captureBtn.style.display = 'inline-block';
+            } catch (err) {
+                console.error('Camera error:', err);
+                showToast('Error', 'Unable to access camera. Please check permissions.', 'error');
+            }
+        });
+    }
+    
+    if (captureBtn) {
+        captureBtn.addEventListener('click', function() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            const imageData = canvas.toDataURL('image/jpeg');
+            document.getElementById('kycSelfieCamera').value = imageData;
+            
+            // Show preview
+            cameraPreview.innerHTML = `<img src="${imageData}" class="img-fluid rounded" style="max-height: 200px;">`;
+            
+            // Stop camera
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+            }
+            video.style.display = 'none';
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'inline-block';
+        });
+    }
+    
+    if (retakeBtn) {
+        retakeBtn.addEventListener('click', function() {
+            cameraPreview.innerHTML = '';
+            document.getElementById('kycSelfieCamera').value = '';
+            startCameraBtn.style.display = 'inline-block';
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'none';
+            cameraPlaceholder.style.display = 'block';
+        });
+    }
+    
+    // Reset modal when closed
+    const kycModal = document.getElementById('kycModal');
+    if (kycModal) {
+        kycModal.addEventListener('hidden.bs.modal', function() {
+            // Stop camera if running
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            
+            // Reset form
+            document.getElementById('kycForm').reset();
+            document.getElementById('frontPreview').innerHTML = '';
+            document.getElementById('backPreview').innerHTML = '';
+            document.getElementById('selfieUploadPreview').innerHTML = '';
+            document.getElementById('cameraPreview').innerHTML = '';
+            document.getElementById('kycSelfieCamera').value = '';
+            
+            // Reset camera UI
+            if (video) video.style.display = 'none';
+            if (cameraPlaceholder) cameraPlaceholder.style.display = 'block';
+            if (startCameraBtn) startCameraBtn.style.display = 'inline-block';
+            if (captureBtn) captureBtn.style.display = 'none';
+            if (retakeBtn) retakeBtn.style.display = 'none';
+            
+            const submitBtn = document.getElementById('submitKycBtn');
+            submitBtn.innerHTML = '<i class="fas fa-upload"></i> Submit for Verification';
+            submitBtn.disabled = false;
+        });
+    }
+});
+
+function previewFile(input, previewId) {
+    const preview = document.getElementById(previewId);
+    preview.innerHTML = '';
+    
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.innerHTML = `<img src="${e.target.result}" class="img-fluid rounded" style="max-height: 150px;">`;
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type === 'application/pdf') {
+            preview.innerHTML = `<i class="fas fa-file-pdf fa-3x text-danger"></i><p class="mb-0">${file.name}</p>`;
+        }
+    }
+}
+
+function showToast(title, message, type = 'info') {
+    const toastEl = document.getElementById('notificationToast');
+    if (!toastEl) return;
+    
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    toastIcon.className = 'fas me-2';
+    if (type === 'success') {
+        toastIcon.classList.add('fa-check-circle');
+        toastIcon.style.color = '#28a745';
+    } else if (type === 'error') {
+        toastIcon.classList.add('fa-exclamation-circle');
+        toastIcon.style.color = '#dc3545';
+    } else if (type === 'warning') {
+        toastIcon.classList.add('fa-exclamation-triangle');
+        toastIcon.style.color = '#ffc107';
+    } else {
+        toastIcon.classList.add('fa-info-circle');
+        toastIcon.style.color = '#4169E1';
+    }
+    
+    toastInstance.show();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function submitKYC() {
+    const form = document.getElementById('kycForm');
+    const formData = new FormData(form);
+    const csrftoken = getCookie('csrftoken');
+    
+    // Validation
+    const docType = document.getElementById('kycDocumentType').value;
+    const docFront = document.getElementById('kycDocumentFront').files[0];
+    const docBack = document.getElementById('kycDocumentBack').files[0];
+    const selfieUpload = document.getElementById('kycSelfieUpload').files[0];
+    const selfieCamera = document.getElementById('kycSelfieCamera').value;
+    
+    if (!docType) {
+        showToast('Error', 'Please select a document type', 'error');
+        return;
+    }
+    if (!docFront) {
+        showToast('Error', 'Please upload the front of your document', 'error');
+        return;
+    }
+    if (!selfieUpload && !selfieCamera) {
+        showToast('Error', 'Please upload or take a selfie with your ID', 'error');
+        return;
+    }
+    
+    // Validate file types
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(docFront.type)) {
+        showToast('Error', 'Document front must be PDF, JPG, or PNG', 'error');
+        return;
+    }
+    if (docBack && !allowedTypes.includes(docBack.type)) {
+        showToast('Error', 'Document back must be PDF, JPG, or PNG', 'error');
+        return;
+    }
+    if (selfieUpload && !selfieUpload.type.startsWith('image/')) {
+        showToast('Error', 'Selfie must be an image file', 'error');
+        return;
+    }
+    
+    // Check file sizes (max 5MB)
+    if (docFront.size > 5 * 1024 * 1024) {
+        showToast('Error', 'Document front must be less than 5MB', 'error');
+        return;
+    }
+    if (docBack && docBack.size > 5 * 1024 * 1024) {
+        showToast('Error', 'Document back must be less than 5MB', 'error');
+        return;
+    }
+    if (selfieUpload && selfieUpload.size > 5 * 1024 * 1024) {
+        showToast('Error', 'Selfie must be less than 5MB', 'error');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitKycBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Uploading...';
+    submitBtn.disabled = true;
+    
+    fetch('/profile/upload-kyc/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('kycModal'));
+            if (modal) modal.hide();
+            
+            showToast('Success', data.message || 'KYC documents uploaded successfully!', 'success');
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showToast('Error', data.message || 'Failed to upload documents', 'error');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error', 'Network error. Please try again.', 'error');
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.form-control:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+}
+
+.toast {
+    background: white;
+    border-left: 4px solid #4169E1;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+
+.btn-outline-primary {
+    color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4169E1;
+    color: white;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #e0a800;
+    color: #000;
+}
+
+.list-group-item:hover {
+    background-color: rgba(65, 105, 225, 0.05);
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.8rem;
+}
+
+.position-relative label:hover {
+    background-color: #3155b0 !important;
+}
+
+.invalid-feedback {
+    display: block;
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+.modal-header .btn-close-white {
+    filter: brightness(0) invert(1);
+}
+
+.nav-tabs .nav-link {
+    color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+    color: #4169E1;
+    font-weight: 600;
+}
+
+.btn-group .btn {
+    margin-left: 2px;
+}
+
+#cameraVideo {
+    border-radius: 8px;
+    background: #000;
+}
+
+@media (max-width: 768px) {
+    .col-md-3, .col-md-4, .col-md-6 {
+        margin-bottom: 10px;
+    }
+    
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .btn-group .btn {
+        margin-left: 0;
+        border-radius: 6px !important;
+    }
+}
+</style>
+{% endblock %}

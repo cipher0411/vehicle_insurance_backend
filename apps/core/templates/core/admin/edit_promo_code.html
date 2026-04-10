@@ -1,0 +1,295 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Edit Promo Code - {{ promo.code }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-tag"></i> Edit Promo Code</h2>
+            <p class="text-muted">Update promo code details</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_promo_codes' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Promo Codes
+            </a>
+        </div>
+    </div>
+
+    <!-- Display Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Edit Form Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-edit"></i> Edit Promo Code: {{ promo.code }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="promoForm">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Code <span class="text-danger">*</span></label>
+                                {{ form.code }}
+                                {% if form.code.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.code.errors.0 }}</div>
+                                {% endif %}
+                                <small class="text-muted">Unique code (will be uppercase)</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Description</label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Discount Type <span class="text-danger">*</span></label>
+                                {{ form.discount_type }}
+                                {% if form.discount_type.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.discount_type.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Discount Value <span class="text-danger">*</span></label>
+                                {{ form.discount_value }}
+                                {% if form.discount_value.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.discount_value.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Min Purchase Amount (₦)</label>
+                                {{ form.min_purchase_amount }}
+                                {% if form.min_purchase_amount.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.min_purchase_amount.errors.0 }}</div>
+                                {% endif %}
+                                <small class="text-muted">Minimum amount required to use this code</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Max Discount Amount (₦)</label>
+                                {{ form.max_discount_amount }}
+                                {% if form.max_discount_amount.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.max_discount_amount.errors.0 }}</div>
+                                {% endif %}
+                                <small class="text-muted">For percentage discounts only</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Applicable To</label>
+                                {{ form.applicable_to }}
+                                {% if form.applicable_to.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.applicable_to.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Max Uses <span class="text-danger">*</span></label>
+                                {{ form.max_uses }}
+                                {% if form.max_uses.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.max_uses.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Valid From <span class="text-danger">*</span></label>
+                                {{ form.valid_from }}
+                                {% if form.valid_from.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.valid_from.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Valid To <span class="text-danger">*</span></label>
+                                {{ form.valid_to }}
+                                {% if form.valid_to.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.valid_to.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label">Active (promo can be used)</label>
+                            {% if form.is_active.errors %}
+                                <div class="invalid-feedback d-block">{{ form.is_active.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <a href="{% url 'core:admin_promo_codes' %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Promo Stats Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Promo Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="text-muted">Usage Progress</label>
+                        <div class="progress mb-2" style="height: 25px;">
+                            <div class="progress-bar bg-success" style="width: {% widthratio promo.used_count promo.max_uses 100 %}%">
+                                {{ promo.used_count }} / {{ promo.max_uses }}
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ promo.used_count }} used out of {{ promo.max_uses }} maximum</small>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <label class="text-muted">Current Status</label>
+                        <div>
+                            {% if promo.is_active and promo.is_valid %}
+                                <span class="badge bg-success">Active & Valid</span>
+                            {% elif not promo.is_active %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% elif promo.used_count >= promo.max_uses %}
+                                <span class="badge bg-danger">Exhausted</span>
+                            {% else %}
+                                <span class="badge bg-warning">Expired</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="text-muted">Created By</label>
+                        <p>
+                            {% if promo.created_by %}
+                                {{ promo.created_by.get_full_name|default:promo.created_by.email }}
+                            {% else %}
+                                <span class="text-muted">System</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="text-muted">Created At</label>
+                        <p>{{ promo.created_at|date:"F d, Y H:i" }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="text-muted">Last Updated</label>
+                        <p>{{ promo.updated_at|date:"F d, Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Usage History Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Usage History</h5>
+                </div>
+                <div class="card-body">
+                    {% if promo.used_count > 0 %}
+                        <p class="text-muted">This promo code has been used {{ promo.used_count }} time{{ promo.used_count|pluralize }}.</p>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            Detailed usage history can be viewed in the payments/orders section.
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-info-circle"></i> This promo code hasn't been used yet.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('promoForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (form) {
+        form.addEventListener('submit', function() {
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+            submitBtn.disabled = true;
+        });
+    }
+    
+    // Show/hide max discount field based on discount type
+    const discountType = document.getElementById('id_discount_type');
+    const maxDiscountField = document.getElementById('id_max_discount_amount')?.closest('.col-md-6');
+    
+    function toggleMaxDiscount() {
+        if (maxDiscountField) {
+            if (discountType && discountType.value === 'percentage') {
+                maxDiscountField.style.display = 'block';
+            } else {
+                maxDiscountField.style.display = 'none';
+            }
+        }
+    }
+    
+    if (discountType) {
+        discountType.addEventListener('change', toggleMaxDiscount);
+        toggleMaxDiscount();
+    }
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.progress { background-color: #e9ecef; border-radius: 10px; }
+.progress-bar { background-color: #28a745; border-radius: 10px; }
+.invalid-feedback { display: block; color: #28a745; font-size: 0.875rem; margin-top: 0.25rem; }
+.alert { border-radius: 8px; border: none; }
+</style>
+{% endblock %}

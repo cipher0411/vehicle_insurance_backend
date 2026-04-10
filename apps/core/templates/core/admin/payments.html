@@ -1,0 +1,650 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Manage Payments{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-credit-card"></i> Manage Payments</h2>
+            <p class="text-muted">View and manage all payment transactions</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_export_data' %}?model=payments&format=csv" class="btn btn-success">
+                <i class="fas fa-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Payments</h6>
+                            <h3>{{ total_payments }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Revenue</h6>
+                            <h3>₦{{ total_revenue|floatformat:2 }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Completed</h6>
+                            <h3>{{ completed_count }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Pending</h6>
+                            <h3>{{ pending_count }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <input type="text" class="form-control" id="searchInput" name="search" value="{{ search_query }}" placeholder="Search transaction, reference, or user...">
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="statusFilter" name="status">
+                <option value="">All Status</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="pending_verification" {% if status_filter == 'pending_verification' %}selected{% endif %}>Pending Verification</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Failed</option>
+                <option value="refunded" {% if status_filter == 'refunded' %}selected{% endif %}>Refunded</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="methodFilter" name="method">
+                <option value="">All Methods</option>
+                <option value="card" {% if method_filter == 'card' %}selected{% endif %}>Card</option>
+                <option value="bank_transfer" {% if method_filter == 'bank_transfer' %}selected{% endif %}>Bank Transfer</option>
+                <option value="ussd" {% if method_filter == 'ussd' %}selected{% endif %}>USSD</option>
+                <option value="cash" {% if method_filter == 'cash' %}selected{% endif %}>Cash</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="date" class="form-control" id="dateFilter" name="date" value="{{ date_filter }}">
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary me-2" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Payments Table -->
+    <div class="table-responsive">
+        <table class="table table-hover" id="paymentsTable">
+            <thead style="background-color: #4169E1; color: white;">
+                <tr>
+                    <th>Transaction ID</th>
+                    <th>User</th>
+                    <th>Policy</th>
+                    <th>Amount (₦)</th>
+                    <th>Method</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>
+                        <span class="fw-bold">{{ payment.transaction_id }}</span>
+                        <br><small class="text-muted">{{ payment.payment_reference }}</small>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-circle me-2" style="color: #4169E1;"></i>
+                            <div>
+                                {{ payment.user.get_full_name|default:payment.user.email }}
+                                <br><small class="text-muted">{{ payment.user.email }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if payment.policy %}
+                            <span class="badge bg-info">Policy</span>
+                            <br>
+                            <small>{{ payment.policy.policy_number }}</small>
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="fw-bold text-success">₦{{ payment.amount|floatformat:2 }}</span>
+                    </td>
+                    <td>
+                        {% if payment.payment_method == 'card' %}
+                            <i class="far fa-credit-card me-1"></i> Card
+                        {% elif payment.payment_method == 'bank_transfer' %}
+                            <i class="fas fa-university me-1"></i> Bank Transfer
+                        {% elif payment.payment_method == 'ussd' %}
+                            <i class="fas fa-mobile-alt me-1"></i> USSD
+                        {% elif payment.payment_method == 'cash' %}
+                            <i class="fas fa-money-bill me-1"></i> Cash
+                        {% else %}
+                            {{ payment.get_payment_method_display }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ payment.created_at|date:"M d, Y" }}
+                        <br><small class="text-muted">{{ payment.created_at|time:"H:i" }}</small>
+                    </td>
+                    <td>
+                        {% if payment.status == 'completed' %}
+                            <span class="badge bg-success">Completed</span>
+                            {% if payment.paid_at %}
+                                <br><small>{{ payment.paid_at|date:"M d" }}</small>
+                            {% endif %}
+                        {% elif payment.status == 'pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% elif payment.status == 'pending_verification' %}
+                            <span class="badge bg-info">Pending Verification</span>
+                        {% elif payment.status == 'failed' %}
+                            <span class="badge bg-danger">Failed</span>
+                        {% elif payment.status == 'refunded' %}
+                            <span class="badge bg-secondary">Refunded</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#paymentModal{{ payment.id }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            
+                            {% if payment.status == 'pending_verification' and payment.payment_method == 'bank_transfer' %}
+                                <button type="button" class="btn btn-sm btn-success" onclick="verifyTransfer('{{ payment.id }}')" title="Verify Bank Transfer">
+                                    <i class="fas fa-check-double"></i>
+                                </button>
+                            {% elif payment.status == 'pending' %}
+                                <button type="button" class="btn btn-sm btn-success" onclick="markAsCompleted('{{ payment.id }}')" title="Mark as Completed">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="markAsFailed('{{ payment.id }}')" title="Mark as Failed">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            {% endif %}
+                            
+                            {% if payment.status == 'completed' %}
+                                <button type="button" class="btn btn-sm btn-warning" onclick="processRefund('{{ payment.id }}')" title="Refund">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Payment Detail Modal -->
+                        <div class="modal fade" id="paymentModal{{ payment.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header" style="background-color: #4169E1; color: white;">
+                                        <h5 class="modal-title">
+                                            <i class="fas fa-credit-card"></i> Payment Details
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6 class="text-muted">Transaction Information</h6>
+                                                <table class="table table-borderless">
+                                                    <tr><th>Transaction ID:</th><td>{{ payment.transaction_id }}</td></tr>
+                                                    <tr><th>Payment Reference:</th><td>{{ payment.payment_reference }}</td></tr>
+                                                    <tr><th>Amount:</th><td class="fw-bold text-success">₦{{ payment.amount|floatformat:2 }}</td></tr>
+                                                    <tr><th>Payment Method:</th><td>{{ payment.get_payment_method_display }}</td></tr>
+                                                </table>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6 class="text-muted">Status Information</h6>
+                                                <table class="table table-borderless">
+                                                    <tr><th>Status:</th>
+                                                        <td>
+                                                            {% if payment.status == 'completed' %}<span class="badge bg-success">Completed</span>
+                                                            {% elif payment.status == 'pending' %}<span class="badge bg-warning">Pending</span>
+                                                            {% elif payment.status == 'pending_verification' %}<span class="badge bg-info">Pending Verification</span>
+                                                            {% elif payment.status == 'failed' %}<span class="badge bg-danger">Failed</span>
+                                                            {% elif payment.status == 'refunded' %}<span class="badge bg-secondary">Refunded</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr><th>Created:</th><td>{{ payment.created_at|date:"M d, Y H:i" }}</td></tr>
+                                                    {% if payment.paid_at %}
+                                                    <tr><th>Paid At:</th><td>{{ payment.paid_at|date:"M d, Y H:i" }}</td></tr>
+                                                    {% endif %}
+                                                    {% if payment.verified_by %}
+                                                    <tr><th>Verified By:</th><td>{{ payment.verified_by.get_full_name }}</td></tr>
+                                                    {% endif %}
+                                                </table>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Bank Transfer Details -->
+                                        {% if payment.payment_method == 'bank_transfer' and payment.payment_details %}
+                                        <div class="row mt-3">
+                                            <div class="col-12">
+                                                <h6 class="text-muted">Bank Transfer Information</h6>
+                                                <table class="table table-sm table-bordered">
+                                                    {% if payment.payment_details.bank_name %}
+                                                    <tr><th>Bank From:</th><td>{{ payment.payment_details.bank_name }}</td></tr>
+                                                    {% endif %}
+                                                    {% if payment.payment_details.transfer_reference %}
+                                                    <tr><th>Transfer Reference:</th><td>{{ payment.payment_details.transfer_reference }}</td></tr>
+                                                    {% endif %}
+                                                    {% if payment.payment_details.transfer_date %}
+                                                    <tr><th>Transfer Date:</th><td>{{ payment.payment_details.transfer_date }}</td></tr>
+                                                    {% endif %}
+                                                    {% if payment.payment_details.notes %}
+                                                    <tr><th>Notes:</th><td>{{ payment.payment_details.notes }}</td></tr>
+                                                    {% endif %}
+                                                </table>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <div class="row mt-3">
+                                            <div class="col-md-6">
+                                                <h6 class="text-muted">Customer Information</h6>
+                                                <table class="table table-borderless">
+                                                    <tr><th>Name:</th><td>{{ payment.user.get_full_name|default:'N/A' }}</td></tr>
+                                                    <tr><th>Email:</th><td>{{ payment.user.email }}</td></tr>
+                                                    <tr><th>Phone:</th><td>{{ payment.user.phone_number|default:'N/A' }}</td></tr>
+                                                </table>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6 class="text-muted">Related Items</h6>
+                                                <table class="table table-borderless">
+                                                    {% if payment.policy %}
+                                                    <tr><th>Policy:</th>
+                                                        <td>
+                                                            <a href="{% url 'core:admin_policy_detail' payment.policy.id %}">
+                                                                {{ payment.policy.policy_number }}
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    {% endif %}
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        
+                                        {% if payment.status == 'pending_verification' and payment.payment_method == 'bank_transfer' %}
+                                            <button type="button" class="btn btn-success" onclick="verifyTransfer('{{ payment.id }}')" data-bs-dismiss="modal">
+                                                <i class="fas fa-check-double"></i> Verify Transfer
+                                            </button>
+                                        {% elif payment.status == 'pending' %}
+                                            <button type="button" class="btn btn-success" onclick="markAsCompleted('{{ payment.id }}')" data-bs-dismiss="modal">
+                                                <i class="fas fa-check"></i> Mark Completed
+                                            </button>
+                                        {% endif %}
+                                        
+                                        <button type="button" class="btn btn-primary" onclick="printReceipt('{{ payment.id }}')">
+                                            <i class="fas fa-print"></i> Print
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4">
+                        <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No payments found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if payments.has_other_pages %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if payments.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ payments.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% for num in payments.paginator.page_range %}
+                {% if payments.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > payments.number|add:'-3' and num < payments.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if payments.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ payments.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalTitle">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmModalBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reason Modal -->
+<div class="modal fade" id="reasonModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Enter Reason</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea class="form-control" id="reasonInput" rows="3" placeholder="Enter reason..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="reasonModalBtn">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% csrf_token %}
+
+<script>
+let toastInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('notificationToast');
+    toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    
+    // Enter key for search
+    document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+});
+
+function showToast(title, message, type = 'info') {
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    toastIcon.className = 'fas me-2';
+    toastIcon.style.color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#4169E1';
+    toastIcon.classList.add(type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle');
+    
+    toastInstance.show();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function applyFilters() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    const method = document.getElementById('methodFilter').value;
+    const date = document.getElementById('dateFilter').value;
+    
+    let url = '?';
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    if (status) url += `status=${status}&`;
+    if (method) url += `method=${method}&`;
+    if (date) url += `date=${date}&`;
+    
+    window.location.href = url.slice(0, -1);
+}
+
+function clearFilters() {
+    window.location.href = window.location.pathname;
+}
+
+function showConfirmModal(title, message, onConfirm) {
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalBody').textContent = message;
+    
+    const confirmBtn = document.getElementById('confirmModalBtn');
+    confirmBtn.onclick = function() {
+        onConfirm();
+        bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+    };
+    
+    new bootstrap.Modal(document.getElementById('confirmModal')).show();
+}
+
+function showReasonModal(title, onConfirm) {
+    document.querySelector('#reasonModal .modal-title').textContent = title;
+    document.getElementById('reasonInput').value = '';
+    
+    const confirmBtn = document.getElementById('reasonModalBtn');
+    confirmBtn.onclick = function() {
+        onConfirm(document.getElementById('reasonInput').value);
+        bootstrap.Modal.getInstance(document.getElementById('reasonModal')).hide();
+    };
+    
+    new bootstrap.Modal(document.getElementById('reasonModal')).show();
+}
+
+function verifyTransfer(paymentId) {
+    showReasonModal('Verify Bank Transfer (Optional Note)', function(notes) {
+        const csrftoken = getCookie('csrftoken');
+        
+        fetch(`/custom_admin/payments/${paymentId}/verify-transfer/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({ notes: notes })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', 'Bank transfer verified successfully', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('Error', data.message || 'Failed to verify transfer', 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error', 'An error occurred', 'error');
+        });
+    });
+}
+
+function markAsCompleted(paymentId) {
+    showConfirmModal('Mark as Completed', 'Confirm this payment as completed?', function() {
+        const csrftoken = getCookie('csrftoken');
+        
+        fetch(`/custom_admin/payments/${paymentId}/mark-completed/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', 'Payment marked as completed', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('Error', data.message || 'Failed to update', 'error');
+            }
+        });
+    });
+}
+
+function markAsFailed(paymentId) {
+    showReasonModal('Mark as Failed - Reason', function(reason) {
+        const csrftoken = getCookie('csrftoken');
+        
+        fetch(`/custom_admin/payments/${paymentId}/mark-failed/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({ reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', 'Payment marked as failed', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('Error', data.message || 'Failed to update', 'error');
+            }
+        });
+    });
+}
+
+function processRefund(paymentId) {
+    showConfirmModal('Process Refund', 'This action cannot be undone. Continue?', function() {
+        const csrftoken = getCookie('csrftoken');
+        
+        fetch(`/custom_admin/payments/${paymentId}/refund/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', 'Refund processed successfully', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('Error', data.message || 'Failed to process refund', 'error');
+            }
+        });
+    });
+}
+
+function printReceipt(paymentId) {
+    const modalContent = document.querySelector(`#paymentModal${paymentId} .modal-content`).cloneNode(true);
+    modalContent.querySelector('.modal-footer')?.remove();
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html><head><title>Receipt</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <style>body{padding:20px}.modal-header{background:#4169E1!important;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{.no-print{display:none}}</style>
+        </head><body>${modalContent.outerHTML}
+        <div class="text-center mt-4 no-print"><button class="btn btn-primary" onclick="window.print()">Print</button></div>
+        </body></html>
+    `);
+    printWindow.document.close();
+}
+</script>
+
+<style>
+.stat-card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); transition: transform 0.3s; height: 100%; }
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.table th { font-weight: 600; text-transform: uppercase; font-size: 0.85rem; }
+.table td { vertical-align: middle; }
+.btn-group .btn { margin: 0 2px; border-radius: 6px !important; }
+.pagination .page-link { color: #4169E1; }
+.pagination .page-item.active .page-link { background-color: #4169E1; border-color: #4169E1; color: white; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.toast { background: white; border-left: 4px solid #4169E1; }
+.form-control:focus { border-color: #4169E1; box-shadow: 0 0 0 0.2rem rgba(65,105,225,0.25); }
+</style>
+{% endblock %}

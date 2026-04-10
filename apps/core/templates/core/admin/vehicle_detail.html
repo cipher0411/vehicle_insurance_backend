@@ -1,0 +1,339 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Vehicle Details - {{ vehicle.registration_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-car"></i> Vehicle Details</h2>
+            <p class="text-muted">{{ vehicle.registration_number }} - {{ vehicle.make }} {{ vehicle.model }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_vehicles' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Vehicles
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Vehicle Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Vehicle Information</h5>
+                        <span class="badge {% if vehicle.is_insured %}bg-success{% else %}bg-warning{% endif %}">
+                            {% if vehicle.is_insured %}Insured{% else %}Uninsured{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Registration Number</label>
+                                {{ form.registration_number }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vehicle Type</label>
+                                {{ form.vehicle_type }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Make</label>
+                                {{ form.make }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Model</label>
+                                {{ form.model }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Year</label>
+                                {{ form.year }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Color</label>
+                                {{ form.color }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Fuel Type</label>
+                                {{ form.fuel_type }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Engine Number</label>
+                                {{ form.engine_number }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Chassis Number</label>
+                                {{ form.chassis_number }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Engine Capacity (CC)</label>
+                                {{ form.engine_capacity }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Current Mileage</label>
+                                {{ form.current_mileage }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ownership Type</label>
+                                {{ form.ownership_type }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Registration Certificate</label>
+                                {{ form.registration_certificate }}
+                                {% if vehicle.registration_certificate %}
+                                    <small class="d-block mt-1">
+                                        <a href="{{ vehicle.registration_certificate.url }}" target="_blank">View current document</a>
+                                    </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Policies Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-contract"></i> Insurance Policies</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Policy #</th>
+                                    <th>Type</th>
+                                    <th>Premium</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for policy in policies %}
+                                <tr>
+                                    <td>{{ policy.policy_number }}</td>
+                                    <td>{{ policy.get_policy_type_display }}</td>
+                                    <td>₦{{ policy.premium_amount|floatformat:2 }}</td>
+                                    <td>{{ policy.start_date|date:"M d, Y" }}</td>
+                                    <td>{{ policy.end_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if policy.status == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif policy.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif policy.status == 'expired' %}
+                                            <span class="badge bg-danger">Expired</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ policy.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'core:admin_policy_detail' policy.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-3 text-muted">No policies found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Claims Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Claims History</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Claim #</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Filed Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for claim in claims %}
+                                <tr>
+                                    <td>{{ claim.claim_number }}</td>
+                                    <td>{{ claim.get_claim_type_display }}</td>
+                                    <td>₦{{ claim.claimed_amount|floatformat:2 }}</td>
+                                    <td>{{ claim.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if claim.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% elif claim.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif claim.status == 'under_review' %}
+                                            <span class="badge bg-info">Under Review</span>
+                                        {% elif claim.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% elif claim.status == 'settled' %}
+                                            <span class="badge bg-primary">Settled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'core:admin_claim_detail' claim.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-3 text-muted">No claims found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Owner Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Owner Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {% if vehicle.user.profile_picture %}
+                            <img src="{{ vehicle.user.profile_picture.url }}" class="rounded-circle" width="80" height="80">
+                        {% else %}
+                            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                <i class="fas fa-user fa-2x text-muted"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <p><strong>Name:</strong> {{ vehicle.user.get_full_name|default:'N/A' }}</p>
+                    <p><strong>Email:</strong> {{ vehicle.user.email }}</p>
+                    <p><strong>Phone:</strong> {{ vehicle.user.phone_number|default:'N/A' }}</p>
+                    <a href="{% url 'core:admin_user_detail' vehicle.user.id %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-user"></i> View Full Profile
+                    </a>
+                    <a href="{% url 'core:admin_vehicles_by_user' vehicle.user.id %}" class="btn btn-outline-info btn-sm w-100 mt-2">
+                        <i class="fas fa-car"></i> View All Vehicles by Owner
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tracking Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Tracking Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Created By:</strong> 
+                        {% if vehicle.created_by %}
+                            {{ vehicle.created_by.get_full_name|default:vehicle.created_by.email }}
+                        {% else %}
+                            <span class="text-muted">Self-registered</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Created At:</strong> {{ vehicle.created_at|date:"F d, Y H:i" }}</p>
+                    <hr>
+                    <p><strong>Last Updated By:</strong> 
+                        {% if vehicle.updated_by %}
+                            {{ vehicle.updated_by.get_full_name|default:vehicle.updated_by.email }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Last Updated At:</strong> 
+                        {% if vehicle.updated_at != vehicle.created_at %}
+                            {{ vehicle.updated_at|date:"F d, Y H:i" }}
+                        {% else %}
+                            <span class="text-muted">Never updated</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Vehicle Age:</strong> {{ vehicle.vehicle_age }} years</p>
+                </div>
+            </div>
+
+            <!-- Quick Stats Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-simple"></i> Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h4 class="text-primary">{{ policies.count }}</h4>
+                            <small class="text-muted">Policies</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h4 class="text-warning">{{ claims.count }}</h4>
+                            <small class="text-muted">Claims</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65,105,225,0.25);
+}
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.btn-outline-primary { color: #4169E1; border-color: #4169E1; }
+.btn-outline-primary:hover { background-color: #4169E1; color: white; }
+.btn-outline-info { color: #17a2b8; border-color: #17a2b8; }
+.btn-outline-info:hover { background-color: #17a2b8; color: white; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.table th { font-weight: 600; }
+</style>
+{% endblock %}

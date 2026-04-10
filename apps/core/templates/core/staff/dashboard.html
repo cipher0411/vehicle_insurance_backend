@@ -1,0 +1,763 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}Staff Dashboard | VehicleInsure{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-header {
+        background: #4169E1;
+        padding: 30px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .staff-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .staff-header h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+        position: relative;
+    }
+    
+    .staff-header p {
+        opacity: 0.9;
+        position: relative;
+    }
+    
+    .welcome-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    
+    .welcome-info h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 5px;
+    }
+    
+    .welcome-info p {
+        color: #64748b;
+        margin-bottom: 0;
+    }
+    
+    .quick-actions {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .quick-action-btn {
+        padding: 10px 20px;
+        border-radius: 40px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s;
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .quick-action-btn:hover {
+        background: var(--royal-blue);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 25px 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        text-align: center;
+        transition: all 0.3s;
+        border: 1px solid transparent;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.1);
+        border-color: var(--royal-blue);
+    }
+    
+    .stat-icon {
+        width: 55px;
+        height: 55px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+    }
+    
+    .stat-icon i {
+        font-size: 1.5rem;
+        color: white;
+    }
+    
+    .stat-card h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 5px;
+    }
+    
+    .stat-card p {
+        color: #64748b;
+        margin-bottom: 0;
+        font-size: 0.9rem;
+    }
+    
+    .management-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .management-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+    }
+    
+    .management-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.1);
+    }
+    
+    .management-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .management-icon {
+        width: 45px;
+        height: 45px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .management-icon i {
+        font-size: 1.3rem;
+        color: white;
+    }
+    
+    .management-header h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 0;
+    }
+    
+    .management-links {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .management-links li {
+        margin-bottom: 12px;
+    }
+    
+    .management-links a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #64748b;
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+    
+    .management-links a:hover {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .management-links i {
+        width: 20px;
+        color: var(--royal-blue);
+    }
+    
+    .badge-count {
+        background: var(--royal-blue);
+        color: white;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: auto;
+    }
+    
+    .recent-section {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+    
+    .section-header h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 0;
+    }
+    
+    .section-header a {
+        color: var(--royal-blue);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    
+    .table-responsive {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .table {
+        margin-bottom: 0;
+    }
+    
+    .table th {
+        background: var(--gray-light);
+        font-weight: 600;
+        color: var(--navy-dark);
+        border-bottom: 2px solid var(--gray-border);
+        padding: 15px;
+    }
+    
+    .table td {
+        padding: 15px;
+        color: #475569;
+        vertical-align: middle;
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-active { background: #d1fae5; color: #065f46; }
+    .status-under_review { background: #dbeafe; color: #1e40af; }
+    .status-open { background: #d1fae5; color: #065f46; }
+    .status-urgent { background: #fee2e2; color: #dc2626; }
+    
+    .priority-urgent { background: #fee2e2; color: #dc2626; }
+    .priority-high { background: #fef3c7; color: #92400e; }
+    
+    .btn-action {
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-review { background: #eef2ff; color: var(--royal-blue); }
+    .btn-view { background: #d1fae5; color: #065f46; }
+    .btn-respond { background: #fef3c7; color: #92400e; }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #64748b;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: var(--gray-border);
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Staff Header -->
+<section class="staff-header">
+    <div class="container">
+        <h2><i class="fas fa-tachometer-alt me-2"></i> Staff Dashboard</h2>
+        <p>Welcome back, {{ user.get_full_name|default:user.email }} ({{ user.get_role_display }})</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Welcome & Quick Actions -->
+    <div class="welcome-card">
+        <div class="welcome-info">
+            <h3><i class="fas fa-sun me-2" style="color: #FFD700;"></i> Good 
+                {% if current_hour < 12 %}Morning{% elif current_hour < 17 %}Afternoon{% else %}Evening{% endif %}, 
+                {{ user.first_name|default:user.email }}!
+            </h3>
+            <p>{{ current_date|date:"l, F j, Y" }} • You have {{ pending_tasks_count }} pending tasks today.</p>
+        </div>
+        <div class="quick-actions">
+            <a href="{% url 'core:document_create' %}" class="quick-action-btn">
+                <i class="fas fa-upload me-1"></i> Upload Document
+            </a>
+            <a href="{% url 'core:job_create' %}" class="quick-action-btn">
+                <i class="fas fa-plus me-1"></i> Post Job
+            </a>
+            <a href="{% url 'core:blog_create' %}" class="quick-action-btn">
+                <i class="fas fa-pen me-1"></i> Write Blog
+            </a>
+        </div>
+    </div>
+    
+    <!-- Role-Based Statistics -->
+    <div class="stats-grid">
+        {% if user_role == 'admin' or user_role == 'agent' or user_role == 'underwriter' %}
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-file-contract"></i></div>
+            <h3>{{ policies_managed }}</h3>
+            <p>Policies</p>
+        </div>
+        {% endif %}
+        
+        {% if user_role == 'admin' or user_role == 'claims_adjuster' or user_role == 'underwriter' %}
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+            <h3>{{ claims_managed }}</h3>
+            <p>Claims</p>
+        </div>
+        {% endif %}
+        
+        {% if user_role == 'admin' or user_role == 'support' %}
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-ticket-alt"></i></div>
+            <h3>{{ tickets_assigned }}</h3>
+            <p>Support Tickets</p>
+        </div>
+        {% endif %}
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <h3>{{ total_users }}</h3>
+            <p>Total Users</p>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-newspaper"></i></div>
+            <h3>{{ total_blog_posts }}</h3>
+            <p>Blog Posts</p>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-briefcase"></i></div>
+            <h3>{{ total_jobs }}</h3>
+            <p>Job Postings</p>
+        </div>
+    </div>
+    
+    <!-- Management Modules Grid -->
+    <div class="management-grid">
+        <!-- Content Management -->
+        <div class="management-card">
+            <div class="management-header">
+                <div class="management-icon"><i class="fas fa-newspaper"></i></div>
+                <h4>Content Management</h4>
+            </div>
+            <ul class="management-links">
+                <li>
+                    <a href="{% url 'core:blog_manage' %}">
+                        <i class="fas fa-blog"></i> Blog Posts
+                        <span class="badge-count">{{ total_blog_posts }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:blog_categories_manage' %}">
+                        <i class="fas fa-folder"></i> Blog Categories
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:blog_comments_manage' %}">
+                        <i class="fas fa-comments"></i> Comments
+                        <span class="badge-count">{{ pending_comments }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:press_manage' %}">
+                        <i class="fas fa-newspaper"></i> Press Releases
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:press_categories_manage' %}">
+                        <i class="fas fa-tags"></i> Press Categories
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:media_coverage_manage' %}">
+                        <i class="fas fa-tv"></i> Media Coverage
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:media_kit_manage' %}">
+                        <i class="fas fa-download"></i> Media Kit
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Document Management -->
+        <div class="management-card">
+            <div class="management-header">
+                <div class="management-icon"><i class="fas fa-file-alt"></i></div>
+                <h4>Document Management</h4>
+            </div>
+            <ul class="management-links">
+                <li>
+                    <a href="{% url 'core:documents_manage' %}">
+                        <i class="fas fa-file"></i> All Documents
+                        <span class="badge-count">{{ total_documents }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:document_create' %}">
+                        <i class="fas fa-upload"></i> Upload Document
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:document_bulk_upload' %}">
+                        <i class="fas fa-cloud-upload-alt"></i> Bulk Upload
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:document_categories_manage' %}">
+                        <i class="fas fa-folder-open"></i> Document Categories
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Career Management -->
+        <div class="management-card">
+            <div class="management-header">
+                <div class="management-icon"><i class="fas fa-briefcase"></i></div>
+                <h4>Career Management</h4>
+            </div>
+            <ul class="management-links">
+                <li>
+                    <a href="{% url 'core:jobs_manage' %}">
+                        <i class="fas fa-list"></i> Job Postings
+                        <span class="badge-count">{{ total_jobs }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:job_create' %}">
+                        <i class="fas fa-plus"></i> Post New Job
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:job_applications_manage' %}">
+                        <i class="fas fa-users"></i> Applications
+                        <span class="badge-count">{{ pending_applications }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:job_categories_manage' %}">
+                        <i class="fas fa-folder"></i> Job Categories
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:job_locations_manage' %}">
+                        <i class="fas fa-map-marker-alt"></i> Job Locations
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:job_types_manage' %}">
+                        <i class="fas fa-clock"></i> Job Types
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Customer Support -->
+        <div class="management-card">
+            <div class="management-header">
+                <div class="management-icon"><i class="fas fa-headset"></i></div>
+                <h4>Customer Support</h4>
+            </div>
+            <ul class="management-links">
+                <li>
+                    <a href="{% url 'core:inquiries_manage' %}">
+                        <i class="fas fa-envelope"></i> Contact Inquiries
+                        <span class="badge-count">{{ pending_inquiries }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:offices_manage' %}">
+                        <i class="fas fa-building"></i> Office Locations
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:newsletter_subscribers_manage' %}">
+                        <i class="fas fa-envelope-open"></i> Newsletter Subscribers
+                        <span class="badge-count">{{ total_subscribers }}</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Promotions -->
+        <div class="management-card">
+            <div class="management-header">
+                <div class="management-icon"><i class="fas fa-tags"></i></div>
+                <h4>Promotions</h4>
+            </div>
+            <ul class="management-links">
+                <li>
+                    <a href="{% url 'core:admin_promo_codes' %}">
+                        <i class="fas fa-ticket-alt"></i> Promo Codes
+                        <span class="badge-count">{{ active_promos }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-plus"></i> Create Promo
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Settings -->
+        <div class="management-card">
+            <div class="management-header">
+                <div class="management-icon"><i class="fas fa-cog"></i></div>
+                <h4>Settings</h4>
+            </div>
+            <ul class="management-links">
+                <li>
+                    <a href="{% url 'core:admin_insurance_settings' %}">
+                        <i class="fas fa-sliders-h"></i> Insurance Settings
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'admin:index' %}" target="_blank">
+                        <i class="fas fa-database"></i> Insurance
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Recent Activity Section -->
+    <div class="row">
+        <!-- Recent Claims -->
+        {% if recent_claims %}
+        <div class="col-lg-6 mb-4">
+            <div class="recent-section">
+                <div class="section-header">
+                    <h4><i class="fas fa-clipboard-list me-2"></i> Recent Claims</h4>
+                    <a href="#">View All <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Claim #</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for claim in recent_claims %}
+                            <tr>
+                                <td><strong>{{ claim.claim_number|truncatechars:12 }}</strong></td>
+                                <td>{{ claim.user.email|truncatechars:20 }}</td>
+                                <td>₦{{ claim.claimed_amount|floatformat:0 }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ claim.status }}">
+                                        {{ claim.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="#" class="btn-action btn-review">Review</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Recent Policies -->
+        {% if recent_policies %}
+        <div class="col-lg-6 mb-4">
+            <div class="recent-section">
+                <div class="section-header">
+                    <h4><i class="fas fa-file-contract me-2"></i> Recent Policies</h4>
+                    <a href="#">View All <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Policy #</th>
+                                <th>Customer</th>
+                                <th>Premium</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for policy in recent_policies %}
+                            <tr>
+                                <td><strong>{{ policy.policy_number|truncatechars:12 }}</strong></td>
+                                <td>{{ policy.user.email|truncatechars:20 }}</td>
+                                <td>₦{{ policy.premium_amount|floatformat:0 }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ policy.status }}">
+                                        {{ policy.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="#" class="btn-action btn-view">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Recent Inquiries -->
+        {% if recent_inquiries %}
+        <div class="col-lg-6 mb-4">
+            <div class="recent-section">
+                <div class="section-header">
+                    <h4><i class="fas fa-envelope me-2"></i> Recent Inquiries</h4>
+                    <a href="{% url 'core:inquiries_manage' %}">View All <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Inquiry #</th>
+                                <th>Customer</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inquiry in recent_inquiries %}
+                            <tr>
+                                <td><strong>{{ inquiry.inquiry_number }}</strong></td>
+                                <td>{{ inquiry.full_name|truncatechars:20 }}</td>
+                                <td>{{ inquiry.get_inquiry_type_display }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ inquiry.status }}">
+                                        {{ inquiry.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'core:inquiry_detail' inquiry.id %}" class="btn-action btn-respond">Respond</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Recent Applications -->
+        {% if recent_applications %}
+        <div class="col-lg-6 mb-4">
+            <div class="recent-section">
+                <div class="section-header">
+                    <h4><i class="fas fa-user-graduate me-2"></i> Recent Job Applications</h4>
+                    <a href="{% url 'core:job_applications_manage' %}">View All <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Candidate</th>
+                                <th>Position</th>
+                                <th>Applied</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in recent_applications %}
+                            <tr>
+                                <td><strong>{{ app.full_name }}</strong></td>
+                                <td>{{ app.job.title|truncatechars:25 }}</td>
+                                <td>{{ app.created_at|date:"M d" }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ app.status }}">
+                                        {{ app.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'core:job_application_detail' app.id %}" class="btn-action btn-review">Review</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

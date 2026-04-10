@@ -1,0 +1,293 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Claims Management Nigeria | Business Claims Solutions | VehicleInsure{% endblock %}
+{% block meta_description %}Efficient claims management solutions for Nigerian businesses. Streamlined processes, dedicated handlers, and analytics for fleet and commercial claims.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .management-intro {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-bottom: 50px;
+    }
+    
+    .feature-card-management {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .feature-card-management:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.1);
+    }
+    
+    .feature-icon-management {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    .feature-icon-management i {
+        font-size: 1.8rem;
+        color: white;
+    }
+    
+    .feature-card-management h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .feature-card-management p {
+        color: #64748b;
+        line-height: 1.6;
+    }
+    
+    .benefits-section-management {
+        background: var(--gray-light);
+        border-radius: 24px;
+        padding: 50px 40px;
+        margin-bottom: 50px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.6s forwards;
+    }
+    
+    .benefit-item-management {
+        display: flex;
+        gap: 20px;
+        padding: 20px;
+        background: white;
+        border-radius: 16px;
+        margin-bottom: 15px;
+    }
+    
+    .benefit-item-management i {
+        color: #10b981;
+        font-size: 1.5rem;
+        margin-top: 3px;
+    }
+    
+    .benefit-content-management h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 5px;
+    }
+    
+    .benefit-content-management p {
+        color: #64748b;
+        margin-bottom: 0;
+    }
+    
+    .cta-section-management {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        border-radius: 24px;
+        padding: 50px;
+        text-align: center;
+        color: white;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.8s forwards;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .management-intro, .benefits-section-management, .cta-section-management {
+            padding: 25px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Claims Management</h1>
+        <p>Efficient claims processing for businesses and fleets</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Claims Management</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Intro -->
+    <div class="management-intro">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h2 class="fw-bold mb-3" style="color: var(--navy-dark);">Streamlined Claims for Your Business</h2>
+                <p class="lead mb-0">Our dedicated claims management service ensures your business vehicles get back on the road quickly with minimal disruption to your operations.</p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <a href="{% url 'core:contact' %}" class="btn-primary-custom btn-lg">Speak to an Expert</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Features -->
+    <div class="features-grid">
+        <div class="feature-card-management" style="animation-delay: 0.1s;">
+            <div class="feature-icon-management">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <h3>Dedicated Claims Handler</h3>
+            <p>A single point of contact who understands your business and manages all your claims efficiently.</p>
+        </div>
+        
+        <div class="feature-card-management" style="animation-delay: 0.2s;">
+            <div class="feature-icon-management">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <h3>Claims Analytics Dashboard</h3>
+            <p>Access detailed reports on claims frequency, costs, and trends to help manage risk and reduce premiums.</p>
+        </div>
+        
+        <div class="feature-card-management" style="animation-delay: 0.3s;">
+            <div class="feature-icon-management">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <h3>Priority Processing</h3>
+            <p>Fast-track claims processing to minimize vehicle downtime and keep your business moving.</p>
+        </div>
+        
+        <div class="feature-card-management" style="animation-delay: 0.4s;">
+            <div class="feature-icon-management">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <h3>Consolidated Reporting</h3>
+            <p>Monthly and quarterly claims summaries for easy tracking and reconciliation.</p>
+        </div>
+        
+        <div class="feature-card-management" style="animation-delay: 0.5s;">
+            <div class="feature-icon-management">
+                <i class="fas fa-tools"></i>
+            </div>
+            <h3>Approved Repair Network</h3>
+            <p>Access to our nationwide network of certified repair shops with guaranteed quality and warranties.</p>
+        </div>
+        
+        <div class="feature-card-management" style="animation-delay: 0.6s;">
+            <div class="feature-icon-management">
+                <i class="fas fa-car-side"></i>
+            </div>
+            <h3>Replacement Vehicles</h3>
+            <p>Courtesy vehicles available to keep your business operations running during repairs.</p>
+        </div>
+    </div>
+    
+    <!-- Benefits -->
+    <div class="benefits-section-management">
+        <h3 class="fw-bold mb-4 text-center" style="color: var(--navy-dark);">Business Benefits</h3>
+        
+        <div class="benefit-item-management">
+            <i class="fas fa-check-circle"></i>
+            <div class="benefit-content-management">
+                <h4>Reduced Administrative Burden</h4>
+                <p>We handle the paperwork so you can focus on running your business.</p>
+            </div>
+        </div>
+        
+        <div class="benefit-item-management">
+            <i class="fas fa-check-circle"></i>
+            <div class="benefit-content-management">
+                <h4>Faster Settlements</h4>
+                <p>Priority processing means your claims are settled faster than standard timelines.</p>
+            </div>
+        </div>
+        
+        <div class="benefit-item-management">
+            <i class="fas fa-check-circle"></i>
+            <div class="benefit-content-management">
+                <h4>Risk Management Insights</h4>
+                <p>Use claims data to identify patterns and implement preventive measures.</p>
+            </div>
+        </div>
+        
+        <div class="benefit-item-management">
+            <i class="fas fa-check-circle"></i>
+            <div class="benefit-content-management">
+                <h4>Cost Control</h4>
+                <p>Competitive repair rates and parts sourcing to minimize claims costs.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CTA -->
+    <div class="cta-section-management">
+        <h2 class="fw-bold mb-3">Ready to Optimize Your Claims Process?</h2>
+        <p class="mb-4">Let us show you how our claims management solution can benefit your business.</p>
+        <a href="{% url 'core:contact' %}" class="btn btn-light btn-lg px-5">
+            Request a Demo <i class="fas fa-arrow-right ms-2"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}

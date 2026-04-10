@@ -1,0 +1,612 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Send Notification{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-bell"></i> Send Notification</h2>
+            <p class="text-muted">Send notifications to users via email, SMS, and in-app alerts</p>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <!-- Display Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-paper-plane"></i> Compose Notification</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="notificationForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                Title <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">{{ form.title.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.message.id_for_label }}" class="form-label">
+                                Message <span class="text-danger">*</span>
+                            </label>
+                            {{ form.message }}
+                            {% if form.message.errors %}
+                                <div class="invalid-feedback d-block">{{ form.message.errors.0 }}</div>
+                            {% endif %}
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">
+                                    <span id="messageCounter">0 characters</span>
+                                </small>
+                                <small class="text-muted">
+                                    Placeholders: 
+                                    <button type="button" class="btn btn-link btn-sm p-0" onclick="insertPlaceholder('{name}')">{name}</button> |
+                                    <button type="button" class="btn btn-link btn-sm p-0" onclick="insertPlaceholder('{email}')">{email}</button> |
+                                    <button type="button" class="btn btn-link btn-sm p-0" onclick="insertPlaceholder('{phone}')">{phone}</button>
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.user_type.id_for_label }}" class="form-label">
+                                    Recipient Type <span class="text-danger">*</span>
+                                </label>
+                                {{ form.user_type }}
+                                {% if form.user_type.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.user_type.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6" id="specificUserContainer" style="display: none;">
+                                <label for="{{ form.specific_user.id_for_label }}" class="form-label">
+                                    Select User
+                                </label>
+                                {{ form.specific_user }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.notification_type.id_for_label }}" class="form-label">
+                                    Notification Type
+                                </label>
+                                {{ form.notification_type }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.priority.id_for_label }}" class="form-label">
+                                    Priority
+                                </label>
+                                {{ form.priority }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Send Via</label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="send_email" id="sendEmail" checked>
+                                    <label class="form-check-label" for="sendEmail">
+                                        <i class="fas fa-envelope text-primary"></i> Email
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="send_sms" id="sendSms">
+                                    <label class="form-check-label" for="sendSms">
+                                        <i class="fas fa-mobile-alt text-success"></i> SMS
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="send_push" id="sendPush" checked>
+                                    <label class="form-check-label" for="sendPush">
+                                        <i class="fas fa-bell text-warning"></i> In-App Notification
+                                    </label>
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> 
+                                Email requires user to have email address. SMS requires phone number.
+                            </small>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn" style="background-color: #4169E1;">
+                                <i class="fas fa-paper-plane"></i> Send Notification
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="previewNotification()">
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
+                            <a href="{% url 'core:admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Recipient Summary Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-users"></i> Recipient Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div id="recipientSummary">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted mt-2">Loading recipient data...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Notifications Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Notifications</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for notification in recent_notifications %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <strong>{{ notification.title }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar"></i> {{ notification.created_at|date:"M d, Y H:i" }}
+                                    </small>
+                                </div>
+                                <span class="badge bg-primary">{{ notification.recipient_count }} users</span>
+                            </div>
+                            <p class="mb-0 mt-1 small text-muted">{{ notification.message|truncatechars:60 }}</p>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="fas fa-bell-slash fa-2x mb-2"></i>
+                            <p class="mb-0">No recent notifications</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Help Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> Help</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> In-app notifications appear immediately</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Emails are sent to user's registered email</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> SMS requires user to have phone number</li>
+                        <li class="mb-2"><i class="fas fa-info-circle text-primary me-2"></i> Use placeholders for personalization</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #4169E1; color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye"></i> Preview Notification
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="notification-preview">
+                    <h4 id="previewTitle"></h4>
+                    <hr>
+                    <div id="previewMessage"></div>
+                    <hr>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-users"></i> Recipients:</strong> 
+                            <span id="previewRecipients"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-paper-plane"></i> Send Via:</strong> 
+                            <span id="previewChannels"></span>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <strong><i class="fas fa-tag"></i> Type:</strong> 
+                        <span id="previewType"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="sendNow()">
+                    <i class="fas fa-paper-plane"></i> Send Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let toastInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('notificationToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    }
+    
+    // Handle user type change
+    const userTypeSelect = document.getElementById('{{ form.user_type.id_for_label }}');
+    const specificUserContainer = document.getElementById('specificUserContainer');
+    
+    if (userTypeSelect) {
+        userTypeSelect.addEventListener('change', function() {
+            if (this.value === 'specific') {
+                specificUserContainer.style.display = 'block';
+            } else {
+                specificUserContainer.style.display = 'none';
+            }
+            updateRecipientSummary();
+        });
+        
+        // Initial trigger
+        if (userTypeSelect.value === 'specific') {
+            specificUserContainer.style.display = 'block';
+        }
+        updateRecipientSummary();
+    }
+    
+    // Character counter for message
+    const messageField = document.getElementById('id_message');
+    if (messageField) {
+        const counterSpan = document.getElementById('messageCounter');
+        messageField.addEventListener('input', function() {
+            const length = this.value.length;
+            counterSpan.textContent = `${length} character${length !== 1 ? 's' : ''}`;
+        });
+        messageField.dispatchEvent(new Event('input'));
+    }
+    
+    // Form submission
+    const form = document.getElementById('notificationForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const title = document.getElementById('id_title')?.value;
+            const message = document.getElementById('id_message')?.value;
+            const sendSms = document.getElementById('sendSms')?.checked;
+            const sendEmail = document.getElementById('sendEmail')?.checked;
+            const sendPush = document.getElementById('sendPush')?.checked;
+            
+            if (!title || !message) {
+                e.preventDefault();
+                showToast('Error', 'Please fill in all required fields', 'error');
+                return false;
+            }
+            
+            if (!sendSms && !sendEmail && !sendPush) {
+                e.preventDefault();
+                showToast('Error', 'Please select at least one delivery method', 'error');
+                return false;
+            }
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
+            submitBtn.disabled = true;
+            
+            showToast('Sending', 'Your notification is being sent...', 'info');
+        });
+    }
+});
+
+function showToast(title, message, type = 'info') {
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    if (toastTitle) toastTitle.textContent = title;
+    if (toastMessage) toastMessage.textContent = message;
+    
+    if (toastIcon) {
+        toastIcon.className = 'fas me-2';
+        if (type === 'success') {
+            toastIcon.classList.add('fa-check-circle');
+            toastIcon.style.color = '#28a745';
+        } else if (type === 'error') {
+            toastIcon.classList.add('fa-exclamation-circle');
+            toastIcon.style.color = '#dc3545';
+        } else if (type === 'warning') {
+            toastIcon.classList.add('fa-exclamation-triangle');
+            toastIcon.style.color = '#ffc107';
+        } else {
+            toastIcon.classList.add('fa-info-circle');
+            toastIcon.style.color = '#4169E1';
+        }
+    }
+    
+    if (toastInstance) toastInstance.show();
+}
+
+function updateRecipientSummary() {
+    const userType = document.getElementById('{{ form.user_type.id_for_label }}')?.value;
+    const summaryDiv = document.getElementById('recipientSummary');
+    
+    if (!userType) {
+        summaryDiv.innerHTML = '<p class="text-muted text-center">Select a recipient type</p>';
+        return;
+    }
+    
+    summaryDiv.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    fetch(`/custom_admin/get-recipient-count/?user_type=${userType}`)
+        .then(response => response.json())
+        .then(data => {
+            let html = '';
+            if (userType === 'all') {
+                html = `
+                    <div class="text-center">
+                        <h2 class="text-primary">${data.count || 0}</h2>
+                        <p class="mb-3">Total Active Users</p>
+                        <hr>
+                        <div class="row text-start">
+                            <div class="col-6">
+                                <i class="fas fa-users text-primary"></i> Customers:
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>${data.customers || 0}</strong>
+                            </div>
+                            <div class="col-6">
+                                <i class="fas fa-user-tie text-info"></i> Staff:
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>${data.staff || 0}</strong>
+                            </div>
+                            <div class="col-6">
+                                <i class="fas fa-user-shield text-warning"></i> Admins:
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>${data.admins || 0}</strong>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (userType === 'customers') {
+                html = `
+                    <div class="text-center">
+                        <h2 class="text-success">${data.count || 0}</h2>
+                        <p>Active Customers</p>
+                        <hr>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> All registered customers will receive this notification
+                        </small>
+                    </div>
+                `;
+            } else if (userType === 'staff') {
+                html = `
+                    <div class="text-center">
+                        <h2 class="text-info">${data.count || 0}</h2>
+                        <p>Staff Members</p>
+                        <hr>
+                        <div class="row text-start">
+                            <div class="col-6">Agents:</div>
+                            <div class="col-6 text-end"><strong>${data.agents || 0}</strong></div>
+                            <div class="col-6">Underwriters:</div>
+                            <div class="col-6 text-end"><strong>${data.underwriters || 0}</strong></div>
+                            <div class="col-6">Claims Adjusters:</div>
+                            <div class="col-6 text-end"><strong>${data.adjusters || 0}</strong></div>
+                            <div class="col-6">Support:</div>
+                            <div class="col-6 text-end"><strong>${data.support || 0}</strong></div>
+                        </div>
+                    </div>
+                `;
+            } else if (userType === 'specific') {
+                const userId = document.getElementById('{{ form.specific_user.id_for_label }}')?.value;
+                if (userId) {
+                    const userSelect = document.getElementById('{{ form.specific_user.id_for_label }}');
+                    const userName = userSelect?.options[userSelect.selectedIndex]?.text || 'Selected User';
+                    html = `
+                        <div class="text-center">
+                            <i class="fas fa-user-check fa-3x text-success mb-3"></i>
+                            <h6>Single Recipient</h6>
+                            <p class="text-muted">${userName}</p>
+                            <hr>
+                            <small class="text-muted">Only this user will receive the notification</small>
+                        </div>
+                    `;
+                } else {
+                    html = `
+                        <div class="text-center text-warning">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <p>Please select a user</p>
+                        </div>
+                    `;
+                }
+            }
+            summaryDiv.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            summaryDiv.innerHTML = '<p class="text-danger text-center">Error loading data</p>';
+        });
+}
+
+function previewNotification() {
+    const title = document.getElementById('id_title')?.value || 'No Title';
+    const message = document.getElementById('id_message')?.value || 'No Message';
+    const userType = document.getElementById('{{ form.user_type.id_for_label }}')?.value || 'all';
+    const notificationType = document.getElementById('{{ form.notification_type.id_for_label }}')?.value || 'system_alert';
+    
+    // Get selected channels
+    const channels = [];
+    if (document.getElementById('sendEmail')?.checked) channels.push('Email');
+    if (document.getElementById('sendSms')?.checked) channels.push('SMS');
+    if (document.getElementById('sendPush')?.checked) channels.push('In-App');
+    
+    // Get recipient display name
+    let recipientDisplay = '';
+    if (userType === 'all') recipientDisplay = 'All Active Users';
+    else if (userType === 'customers') recipientDisplay = 'All Customers';
+    else if (userType === 'staff') recipientDisplay = 'All Staff Members';
+    else if (userType === 'specific') {
+        const userSelect = document.getElementById('{{ form.specific_user.id_for_label }}');
+        recipientDisplay = userSelect?.options[userSelect.selectedIndex]?.text || 'Specific User';
+    }
+    
+    document.getElementById('previewTitle').innerHTML = `<i class="fas fa-bell"></i> ${title}`;
+    document.getElementById('previewMessage').innerHTML = message.replace(/\n/g, '<br>');
+    document.getElementById('previewRecipients').textContent = recipientDisplay;
+    document.getElementById('previewChannels').textContent = channels.join(', ') || 'None selected';
+    document.getElementById('previewType').textContent = notificationType.replace('_', ' ').toUpperCase();
+    
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+}
+
+function sendNow() {
+    bootstrap.Modal.getInstance(document.getElementById('previewModal')).hide();
+    document.getElementById('notificationForm').submit();
+}
+
+function insertPlaceholder(placeholder) {
+    const messageField = document.getElementById('id_message');
+    if (messageField) {
+        const cursorPos = messageField.selectionStart;
+        const textBefore = messageField.value.substring(0, cursorPos);
+        const textAfter = messageField.value.substring(cursorPos);
+        messageField.value = textBefore + placeholder + textAfter;
+        messageField.focus();
+        messageField.setSelectionRange(cursorPos + placeholder.length, cursorPos + placeholder.length);
+        messageField.dispatchEvent(new Event('input'));
+    }
+}
+
+// Update recipient summary when specific user changes
+document.addEventListener('DOMContentLoaded', function() {
+    const specificUserSelect = document.getElementById('{{ form.specific_user.id_for_label }}');
+    if (specificUserSelect) {
+        specificUserSelect.addEventListener('change', function() {
+            const userType = document.getElementById('{{ form.user_type.id_for_label }}')?.value;
+            if (userType === 'specific') {
+                updateRecipientSummary();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.toast {
+    background: white;
+    border-left: 4px solid #4169E1;
+}
+
+.notification-preview {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#previewMessage {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.list-group-item:hover {
+    background-color: rgba(65, 105, 225, 0.05);
+}
+
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+
+.btn-link {
+    color: #4169E1;
+    text-decoration: none;
+}
+
+.btn-link:hover {
+    color: #3155b0;
+    text-decoration: underline;
+}
+
+#recipientSummary {
+    min-height: 150px;
+}
+</style>
+{% endblock %}

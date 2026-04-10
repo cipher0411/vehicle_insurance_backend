@@ -1,0 +1,725 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Insurance Promotions & Discounts Nigeria | VehicleInsure{% endblock %}
+{% block meta_description %}Save on vehicle insurance with exclusive promo codes and discounts. Limited-time offers for Nigerian drivers.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .promo-hero {
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        border-radius: 24px;
+        padding: 40px;
+        margin-bottom: 40px;
+        color: var(--navy-dark);
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .promo-hero::before {
+        content: '🎁';
+        position: absolute;
+        right: 20px;
+        bottom: 20px;
+        font-size: 150px;
+        opacity: 0.1;
+    }
+    
+    .promo-hero h2 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
+    
+    .promo-hero .promo-code-large {
+        background: white;
+        display: inline-block;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        margin: 20px 0;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .promo-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        height: 100%;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .promo-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    }
+    
+    .promo-card.featured {
+        border: 2px solid #FFD700;
+    }
+    
+    .promo-badge {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: #FFD700;
+        color: var(--navy-dark);
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+    
+    .promo-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    .promo-icon i {
+        font-size: 1.8rem;
+        color: white;
+    }
+    
+    .promo-card h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+        font-size: 1.3rem;
+    }
+    
+    .promo-description {
+        color: #64748b;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    
+    .promo-code {
+        background: var(--gray-light);
+        padding: 12px 20px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+    
+    .promo-code span {
+        font-family: 'Courier New', monospace;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--royal-blue);
+        letter-spacing: 2px;
+    }
+    
+    .promo-code button {
+        background: var(--royal-blue);
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-weight: 500;
+        font-size: 0.85rem;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .promo-code button:hover {
+        background: var(--royal-blue-dark);
+    }
+    
+    .promo-expiry {
+        color: #64748b;
+        font-size: 0.85rem;
+        margin-bottom: 20px;
+    }
+    
+    .promo-expiry i {
+        color: #d97706;
+        margin-right: 5px;
+    }
+    
+    .promo-expiry.urgent i {
+        color: #dc2626;
+    }
+    
+    .promo-terms {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid var(--gray-border);
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        height: 100%;
+        text-align: center;
+    }
+    
+    .info-card i {
+        font-size: 2.5rem;
+        color: var(--royal-blue);
+        margin-bottom: 20px;
+    }
+    
+    .info-card h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .info-card p {
+        color: #64748b;
+        margin-bottom: 20px;
+    }
+    
+    .new-customer-section {
+        background: linear-gradient(135deg, #eef2ff 0%, white 100%);
+        border-radius: 24px;
+        padding: 40px;
+        margin: 40px 0;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.4s forwards;
+    }
+    
+    .new-customer-section h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .referral-section {
+        background: var(--navy-dark);
+        border-radius: 24px;
+        padding: 40px;
+        margin: 40px 0;
+        color: white;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.6s forwards;
+    }
+    
+    .referral-section h3 {
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+    
+    .referral-section .amount {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #FFD700;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--gray-border);
+        margin-bottom: 20px;
+    }
+    
+    .empty-state h3 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .empty-state p {
+        color: #64748b;
+        margin-bottom: 25px;
+    }
+    
+    .discount-value {
+        font-weight: 700;
+        color: #10b981;
+    }
+    
+    .new-customer-badge {
+        display: inline-block;
+        background: #10b981;
+        color: white;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-left: 10px;
+    }
+    
+    .how-it-works {
+        background: var(--gray-light);
+        border-radius: 24px;
+        padding: 40px;
+        margin: 40px 0;
+    }
+    
+    .how-it-works h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .steps-container {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        gap: 30px;
+    }
+    
+    .step-item {
+        text-align: center;
+        max-width: 200px;
+    }
+    
+    .step-number {
+        width: 50px;
+        height: 50px;
+        background: var(--royal-blue);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 auto 20px;
+    }
+    
+    .step-item h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .step-item p {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .promo-hero {
+            padding: 25px;
+        }
+        
+        .promo-hero .promo-code-large {
+            font-size: 1.5rem;
+            padding: 10px 20px;
+        }
+        
+        .promo-card h3 {
+            font-size: 1.2rem;
+        }
+        
+        .how-it-works {
+            padding: 25px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Exclusive Promotions & Discounts</h1>
+        <p>Save big on your vehicle insurance with our limited-time offers</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Promotions</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    {% if promotions %}
+        <!-- Hero Promotion - Show the best available promo -->
+        {% with hero_promo=promotions.0 %}
+        <div class="promo-hero">
+            <h2>🎉 {{ hero_promo.description|default:"Special Limited Time Offer!" }}</h2>
+            <p class="fs-5">
+                {% if hero_promo.discount_type == 'percentage' %}
+                    Get {{ hero_promo.discount_value }}% OFF 
+                {% else %}
+                    Get ₦{{ hero_promo.discount_value|floatformat:0 }} OFF
+                {% endif %}
+                on your insurance premium
+            </p>
+            <div class="promo-code-large">{{ hero_promo.code }}</div>
+            <p class="mb-0">
+                <i class="fas fa-clock me-2"></i> 
+                Expires: <strong>{{ hero_promo.valid_to|date:"F d, Y" }}</strong>
+                {% if hero_promo.applicable_to == 'new' %}
+                    <span class="new-customer-badge">New Customers Only</span>
+                {% endif %}
+            </p>
+            <a href="{% url 'core:get_quote' %}" class="btn btn-dark btn-lg mt-3">
+                Claim This Offer <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+        {% endwith %}
+    {% else %}
+        <!-- No Promos Hero -->
+        <div class="promo-hero">
+            <h2>🎁 Stay Tuned for Amazing Offers!</h2>
+            <p class="fs-5">We're cooking up some incredible deals for you.</p>
+            <div class="promo-code-large">COMING SOON</div>
+            <p class="mb-0"><i class="fas fa-bell me-2"></i> Be the first to know when new promotions drop</p>
+            <a href="{% url 'core:register' %}" class="btn btn-dark btn-lg mt-3">
+                Get Notified <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+    {% endif %}
+    
+    <!-- Active Promotions Grid -->
+    {% if promotions %}
+        <h3 class="fw-bold mb-4" style="color: var(--navy-dark);">
+            Active Promotions 
+            <span class="badge bg-primary ms-2">{{ total_promos }}</span>
+        </h3>
+        
+        <div class="row g-4 mb-5">
+            {% for promo in promotions %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="promo-card {% if forloop.first %}featured{% endif %}" style="animation-delay: {{ forloop.counter|add:10 }}0ms;">
+                        {% if forloop.first %}
+                            <div class="promo-badge">Best Offer</div>
+                        {% elif promo.applicable_to == 'new' %}
+                            <div class="promo-badge">New Customer</div>
+                        {% elif promo.discount_type == 'percentage' and promo.discount_value >= 20 %}
+                            <div class="promo-badge">Hot Deal</div>
+                        {% endif %}
+                        
+                        <div class="promo-icon">
+                            {% if promo.discount_type == 'percentage' %}
+                                <i class="fas fa-percent"></i>
+                            {% else %}
+                                <i class="fas fa-tags"></i>
+                            {% endif %}
+                        </div>
+                        
+                        <h3>
+                            {{ promo.description|default:promo.code }}
+                            {% if promo.applicable_to == 'new' %}
+                                <span class="new-customer-badge">New Only</span>
+                            {% endif %}
+                        </h3>
+                        
+                        <p class="promo-description">
+                            {% if promo.discount_type == 'percentage' %}
+                                <span class="discount-value">{{ promo.discount_value }}% OFF</span> 
+                            {% else %}
+                                <span class="discount-value">₦{{ promo.discount_value|floatformat:0 }} OFF</span>
+                            {% endif %}
+                            on your insurance premium
+                            {% if promo.min_purchase_amount > 0 %}
+                                <br><small>Min. purchase: ₦{{ promo.min_purchase_amount|floatformat:0 }}</small>
+                            {% endif %}
+                            {% if promo.max_discount_amount %}
+                                <br><small>Max discount: ₦{{ promo.max_discount_amount|floatformat:0 }}</small>
+                            {% endif %}
+                        </p>
+                        
+                        <div class="promo-code">
+                            <span>{{ promo.code }}</span>
+                            <button onclick="copyPromoCode('{{ promo.code }}')">
+                                <i class="far fa-copy me-1"></i> Copy
+                            </button>
+                        </div>
+                        
+                        {% with days_until_expiry=promo.valid_to|date:'U'|add:promo.valid_to|date:'U' %}
+                        <p class="promo-expiry {% if promo.valid_to|date:'U' < promo.valid_to|date:'U'|add:259200 %}urgent{% endif %}">
+                            <i class="fas fa-hourglass-half"></i> 
+                            Expires: {{ promo.valid_to|date:"M d, Y" }}
+                            {% if promo.max_uses > 0 %}
+                                <br><i class="fas fa-users"></i> {{ promo.used_count }}/{{ promo.max_uses }} used
+                            {% endif %}
+                        </p>
+                        {% endwith %}
+                        
+                        <a href="{% url 'core:get_quote' %}" class="btn-primary-custom w-100 justify-content-center">
+                            Get Quote <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                        
+                        <p class="promo-terms">
+                            *{% if promo.applicable_to == 'new' %}Valid for new customers only. {% endif %}
+                            {% if promo.min_purchase_amount > 0 %}Minimum purchase of ₦{{ promo.min_purchase_amount|floatformat:0 }} applies. {% endif %}
+                            Cannot be combined with other offers.
+                        </p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Empty State with Information Cards -->
+        <div class="empty-state">
+            <i class="fas fa-gift"></i>
+            <h3>No Active Promotions at the Moment</h3>
+            <p>We're currently preparing new and exciting offers for you. Check back soon!</p>
+        </div>
+        
+        <!-- Information Cards about Promotions -->
+        <div class="row g-4 mt-4">
+            <div class="col-md-4">
+                <div class="info-card">
+                    <i class="fas fa-tags"></i>
+                    <h3>Seasonal Discounts</h3>
+                    <p>We regularly offer discounts during holidays and special seasons. Follow us to stay updated.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-card">
+                    <i class="fas fa-user-plus"></i>
+                    <h3>New Customer Offers</h3>
+                    <p>First-time customers always get a special welcome discount. Sign up to claim yours!</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-card">
+                    <i class="fas fa-sync-alt"></i>
+                    <h3>Renewal Rewards</h3>
+                    <p>Loyal customers enjoy exclusive renewal discounts and no-claims bonuses.</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- How Promo Codes Work -->
+    <div class="how-it-works">
+        <h3>How Promo Codes Work</h3>
+        <div class="steps-container">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <h4>Find Your Code</h4>
+                <p>Browse our active promotions and find the code that works best for you.</p>
+            </div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <h4>Copy the Code</h4>
+                <p>Click the "Copy" button to copy the promo code to your clipboard.</p>
+            </div>
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <h4>Get Your Quote</h4>
+                <p>Click "Get Quote" and paste the code during checkout to apply your discount.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- New Customer Section -->
+    {% if new_customer_promos %}
+        <div class="new-customer-section">
+            <h3>🎁 Exclusive New Customer Offers</h3>
+            <p class="lead">Welcome to VehicleInsure! Enjoy these special discounts on your first policy.</p>
+            
+            <div class="row justify-content-center">
+                {% for promo in new_customer_promos|slice:":3" %}
+                    <div class="col-md-auto">
+                        <div class="d-inline-block mx-3 mb-3 p-3 bg-white rounded-4">
+                            <div class="promo-code-large" style="font-size: 1.5rem; padding: 10px 30px;">
+                                {{ promo.code }}
+                            </div>
+                            <p class="mb-1 mt-2">
+                                <strong>
+                                    {% if promo.discount_type == 'percentage' %}
+                                        {{ promo.discount_value }}% OFF
+                                    {% else %}
+                                        ₦{{ promo.discount_value|floatformat:0 }} OFF
+                                    {% endif %}
+                                </strong>
+                            </p>
+                            <p class="small text-muted">{{ promo.description|default:"" }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="mt-3">
+                <a href="{% url 'core:get_quote' %}" class="btn-primary-custom btn-lg">
+                    Claim Your Welcome Offer <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+            <p class="small text-muted mt-3">*Valid for first-time customers only. Terms and conditions apply.</p>
+        </div>
+    {% else %}
+        <!-- Default New Customer Message -->
+        <div class="new-customer-section">
+            <h3>🎁 New to VehicleInsure?</h3>
+            <p class="lead">We love welcoming new customers! Sign up today and enjoy exclusive first-time discounts.</p>
+            <a href="{% url 'core:register' %}" class="btn-primary-custom btn-lg">
+                Create Account & Save <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+            <p class="small text-muted mt-3">*Discount automatically applied to your first policy.</p>
+        </div>
+    {% endif %}
+    
+    <!-- Referral Program -->
+    <div class="referral-section">
+        <h3>👥 Refer a Friend, Earn Rewards</h3>
+        <p class="lead mb-4">Share VehicleInsure with friends and family. When they purchase a policy, you both get rewarded!</p>
+        <div class="amount">₦5,000</div>
+        <p class="mb-4">for you and your friend</p>
+        <a href="{% url 'core:register' %}" class="btn btn-light btn-lg px-5">
+            Sign Up & Start Referring <i class="fas fa-arrow-right ms-2"></i>
+        </a>
+        <p class="small text-white-50 mt-3">*Rewards credited after referred friend purchases and maintains policy for 30 days.</p>
+    </div>
+    
+    <!-- Newsletter Signup -->
+    <div class="text-center mt-5">
+        <p class="text-muted">
+            <i class="far fa-envelope me-2"></i>
+            Want to be the first to know about new promotions? 
+            <a href="{% url 'core:register' %}" class="fw-semibold">Sign up for our newsletter</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyPromoCode(code) {
+        navigator.clipboard.writeText(code).then(() => {
+            // Show a subtle toast notification
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #10b981;
+                color: white;
+                padding: 12px 24px;
+                border-radius: 50px;
+                font-weight: 500;
+                z-index: 9999;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            `;
+            toast.innerHTML = `<i class="fas fa-check-circle me-2"></i> Promo code copied: ${code}`;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }).catch(() => {
+            // Fallback for older browsers
+            const input = document.createElement('input');
+            input.value = code;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            alert('Promo code copied: ' + code);
+        });
+    }
+    
+    // Intersection Observer for animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    
+    document.querySelectorAll('[data-animate]').forEach(el => {
+        observer.observe(el);
+    });
+    
+    // Calculate days until expiry for styling
+    document.querySelectorAll('.promo-expiry').forEach(el => {
+        const expiryText = el.textContent;
+        const dateMatch = expiryText.match(/(\w{3} \d{1,2}, \d{4})/);
+        if (dateMatch) {
+            const expiryDate = new Date(dateMatch[0]);
+            const today = new Date();
+            const daysDiff = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+            
+            if (daysDiff <= 3) {
+                el.classList.add('urgent');
+            }
+        }
+    });
+</script>
+{% endblock %}

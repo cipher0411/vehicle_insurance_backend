@@ -1,0 +1,374 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}Document Management | VehicleInsure Staff{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-header {
+        background: #4169E1;
+        padding: 30px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 30px;
+    }
+    
+    .staff-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+    
+    .stat-card h3 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--royal-blue);
+        margin-bottom: 5px;
+    }
+    
+    .stat-card p {
+        color: #64748b;
+        margin-bottom: 0;
+        font-size: 0.85rem;
+    }
+    
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .nav-tabs {
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .nav-tabs .nav-link {
+        color: #64748b;
+        border: none;
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: var(--royal-blue);
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: var(--royal-blue);
+        border-bottom: 2px solid var(--royal-blue);
+        background: transparent;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        overflow-x: auto;
+    }
+    
+    .documents-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .documents-table th {
+        text-align: left;
+        padding: 15px;
+        background: var(--gray-light);
+        font-weight: 600;
+        color: var(--navy-dark);
+        border-bottom: 2px solid var(--gray-border);
+    }
+    
+    .documents-table td {
+        padding: 15px;
+        border-bottom: 1px solid var(--gray-border);
+        color: #475569;
+    }
+    
+    .documents-table tr:hover {
+        background: var(--gray-light);
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-published { background: #d1fae5; color: #065f46; }
+    .status-draft { background: #fef3c7; color: #92400e; }
+    .status-archived { background: #e2e8f0; color: #475569; }
+    
+    .action-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        text-decoration: none;
+        margin-right: 5px;
+        display: inline-block;
+    }
+    
+    .btn-view { background: #d1fae5; color: #065f46; }
+    .btn-edit { background: #eef2ff; color: var(--royal-blue); }
+    .btn-delete { background: #fee2e2; color: #dc2626; border: none; cursor: pointer; }
+    .btn-verify { background: #fef3c7; color: #92400e; }
+    
+    .pagination {
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #64748b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="staff-header">
+    <div class="container">
+        <h1><i class="fas fa-file-alt me-2"></i> Document Management</h1>
+        <p>Manage public documents for users</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link active" href="{% url 'core:documents_manage' %}">
+                <i class="fas fa-list me-1"></i> All Documents
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:document_create' %}">
+                <i class="fas fa-upload me-1"></i> Upload Document
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:document_bulk_upload' %}">
+                <i class="fas fa-cloud-upload-alt me-1"></i> Bulk Upload
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:document_categories_manage' %}">
+                <i class="fas fa-folder me-1"></i> Categories
+            </a>
+        </li>
+    </ul>
+    
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card"><h3>{{ stats.total }}</h3><p>Total</p></div>
+        <div class="stat-card"><h3>{{ stats.published }}</h3><p>Published</p></div>
+        <div class="stat-card"><h3>{{ stats.certificates }}</h3><p>Certificates</p></div>
+        <div class="stat-card"><h3>{{ stats.policies }}</h3><p>Policies</p></div>
+        <div class="stat-card"><h3>{{ stats.receipts }}</h3><p>Receipts</p></div>
+        <div class="stat-card"><h3>{{ stats.total_downloads }}</h3><p>Downloads</p></div>
+    </div>
+    
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="d-flex gap-2 flex-wrap">
+            <select class="form-select w-auto" onchange="window.location.href=this.value">
+                <option value="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}">All Types</option>
+                {% for type_code, type_name in document_types %}
+                <option value="?type={{ type_code }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" {% if doc_type == type_code %}selected{% endif %}>{{ type_name }}</option>
+                {% endfor %}
+            </select>
+            
+            <select class="form-select w-auto" onchange="window.location.href=this.value">
+                <option value="?{% if doc_type %}type={{ doc_type }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}">All Status</option>
+                <option value="?status=published{% if doc_type %}&type={{ doc_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" {% if status_filter == 'published' %}selected{% endif %}>Published</option>
+                <option value="?status=draft{% if doc_type %}&type={{ doc_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
+                <option value="?status=archived{% if doc_type %}&type={{ doc_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" {% if status_filter == 'archived' %}selected{% endif %}>Archived</option>
+            </select>
+            
+            {% if users %}
+            <select class="form-select w-auto" onchange="window.location.href=this.value">
+                <option value="?{% if doc_type %}type={{ doc_type }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}">All Users</option>
+                {% for u in users %}
+                <option value="?user={{ u.id }}{% if doc_type %}&type={{ doc_type }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" {% if selected_user and selected_user.id == u.id %}selected{% endif %}>{{ u.email }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+        </div>
+        
+        <form method="get" class="d-flex gap-2">
+            {% if doc_type %}<input type="hidden" name="type" value="{{ doc_type }}">{% endif %}
+            {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+            {% if selected_user %}<input type="hidden" name="user" value="{{ selected_user.id }}">{% endif %}
+            <input type="text" name="q" class="form-control" placeholder="Search..." value="{{ search_query }}">
+            <button type="submit" class="btn-primary-custom">Search</button>
+            {% if search_query or doc_type or status_filter or selected_user %}
+            <a href="{% url 'core:documents_manage' %}" class="btn-outline-primary-custom">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+    
+    <!-- Documents Table -->
+    <div class="table-container">
+        {% if documents %}
+        <table class="documents-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>User</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Downloads</th>
+                    <th>Verified</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                <tr>
+                    <td>
+                        <strong>{{ doc.title|truncatechars:40 }}</strong>
+                        {% if doc.document_number %}
+                        <br><small class="text-muted">{{ doc.document_number }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ doc.user.email|default:"—" }}</td>
+                    <td>{{ doc.get_document_type_display }}</td>
+                    <td>
+                        <span class="status-badge status-{{ doc.status }}">{{ doc.get_status_display }}</span>
+                    </td>
+                    <td>{{ doc.download_count }}</td>
+                    <td>
+                        {% if doc.is_verified %}
+                        <i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                        <i class="fas fa-times-circle text-danger"></i>
+                        {% endif %}
+                    </td>
+                    <td>{{ doc.created_at|date:"M d, Y" }}</td>
+                    <td>
+                        <a href="{% url 'core:public_document_detail' doc.slug %}" class="action-btn btn-view" target="_blank">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'core:document_edit' doc.id %}" class="action-btn btn-edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button class="action-btn btn-verify" onclick="toggleVerify('{{ doc.id }}')">
+                            <i class="fas fa-shield-alt"></i>
+                        </button>
+                        <form method="post" action="{% url 'core:document_delete' doc.id %}" style="display: inline;" onsubmit="return confirm('Delete this document?');">
+                            {% csrf_token %}
+                            <button type="submit" class="action-btn btn-delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-file-alt"></i>
+            <h3>No Documents Found</h3>
+            <p>{% if search_query %}No results found.{% else %}Upload your first document.{% endif %}</p>
+            <a href="{% url 'core:document_create' %}" class="btn-primary-custom">Upload Document</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if documents.has_other_pages %}
+    <nav>
+        <ul class="pagination">
+            {% if documents.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ documents.previous_page_number }}{% if doc_type %}&type={{ doc_type }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if selected_user %}&user={{ selected_user.id }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in documents.paginator.page_range %}
+                {% if documents.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > documents.number|add:'-3' and num < documents.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if doc_type %}&type={{ doc_type }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if selected_user %}&user={{ selected_user.id }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if documents.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ documents.next_page_number }}{% if doc_type %}&type={{ doc_type }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if selected_user %}&user={{ selected_user.id }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    function toggleVerify(docId) {
+        fetch(`/staff/documents/${docId}/verify/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+</script>
+{% endblock %}

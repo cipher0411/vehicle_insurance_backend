@@ -1,0 +1,407 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Claim Details - {{ claim.claim_number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-clipboard-list"></i> Claim #{{ claim.claim_number }}</h2>
+                    <p class="text-muted">Filed on {{ claim.created_at|date:"F d, Y" }}</p>
+                </div>
+                <div>
+                    <span class="badge fs-6
+                        {% if claim.status == 'approved' %}bg-success
+                        {% elif claim.status == 'pending' %}bg-warning
+                        {% elif claim.status == 'under_review' %}bg-info
+                        {% elif claim.status == 'rejected' %}bg-danger
+                        {% elif claim.status == 'settled' %}bg-primary
+                        {% else %}bg-secondary{% endif %}">
+                        {{ claim.get_status_display }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Claim Summary Card -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-info-circle"></i> Claim Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Claim Type:</strong> {{ claim.get_claim_type_display }}</p>
+                                    <p><strong>Policy Number:</strong> {{ claim.policy.policy_number }}</p>
+                                    <p><strong>Policy Type:</strong> {{ claim.policy.get_policy_type_display }}</p>
+                                    <p><strong>Vehicle:</strong> {{ claim.policy.vehicle.make }} {{ claim.policy.vehicle.model }} ({{ claim.policy.vehicle.year }})</p>
+                                    <p><strong>Registration:</strong> {{ claim.policy.vehicle.registration_number }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Claimed Amount:</strong> <span class="text-warning fw-bold">₦{{ claim.claimed_amount|floatformat:2 }}</span></p>
+                                    {% if claim.approved_amount %}
+                                        <p><strong>Approved Amount:</strong> <span class="text-success fw-bold">₦{{ claim.approved_amount|floatformat:2 }}</span></p>
+                                    {% endif %}
+                                    <p><strong>Coverage Amount:</strong> ₦{{ claim.policy.coverage_amount|floatformat:2 }}</p>
+                                    <p><strong>Deductible:</strong> ₦{{ claim.policy.deductible|floatformat:2 }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Incident Details Card -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Incident Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p><strong>Incident Date & Time:</strong> {{ claim.incident_date|date:"F d, Y H:i" }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Location:</strong> {{ claim.incident_location }}</p>
+                                </div>
+                            </div>
+                            <div>
+                                <strong>Description:</strong>
+                                <div class="p-3 bg-light rounded mt-2">
+                                    {{ claim.incident_description|linebreaks }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Photos Section -->
+                    {% if photos %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-images"></i> Incident Photos ({{ photos|length }})</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for photo in photos %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <img src="{{ photo.url }}" class="card-img-top" alt="Claim Photo" style="height: 200px; object-fit: cover; cursor: pointer;" onclick="window.open('{{ photo.url }}', '_blank')">
+                                        <div class="card-body p-2">
+                                            <small class="text-muted">{{ photo.name }}</small>
+                                            <a href="{{ photo.url }}" class="btn btn-sm btn-outline-primary w-100 mt-2" target="_blank">
+                                                <i class="fas fa-search-plus"></i> View Full Size
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Documents Section -->
+                    {% if documents %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-file-alt"></i> Supporting Documents ({{ documents|length }})</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                {% for doc in documents %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                                        <strong>{{ doc.name }}</strong>
+                                    </div>
+                                    <div>
+                                        <a href="{{ doc.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                        <a href="{{ doc.url }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Admin Response / Status Card -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-reply"></i> Admin Response</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if claim.status == 'pending' %}
+                                <div class="text-center text-muted py-3">
+                                    <i class="fas fa-hourglass-half fa-2x mb-2"></i>
+                                    <p>Your claim is pending review. We will notify you once it's processed.</p>
+                                    <small class="text-muted">Estimated review time: 24-48 hours</small>
+                                </div>
+                            {% elif claim.status == 'under_review' %}
+                                <div class="text-center text-info py-3">
+                                    <i class="fas fa-search fa-2x mb-2"></i>
+                                    <p>Your claim is currently under review by our claims team.</p>
+                                    {% if claim.surveyor_notes %}
+                                        <hr>
+                                        <div class="text-start">
+                                            <strong>Preliminary Notes:</strong>
+                                            <p class="mt-2">{{ claim.surveyor_notes }}</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% elif claim.status == 'approved' %}
+                                <div class="text-success">
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-check-circle fa-3x"></i>
+                                        <h5 class="mt-2">Claim Approved!</h5>
+                                        <p class="mb-0">Approved Amount: <strong>₦{{ claim.approved_amount|floatformat:2 }}</strong></p>
+                                        <small>Approved on {{ claim.approval_date|date:"F d, Y" }}</small>
+                                    </div>
+                                    {% if claim.surveyor_notes %}
+                                        <hr>
+                                        <strong>Surveyor Notes:</strong>
+                                        <p class="mt-2">{{ claim.surveyor_notes }}</p>
+                                    {% endif %}
+                                    <hr>
+                                    <div class="alert alert-success mb-0">
+                                        <i class="fas fa-info-circle"></i> 
+                                        Your claim has been approved and will be settled shortly. You will receive payment within 3-5 business days.
+                                    </div>
+                                </div>
+                            {% elif claim.status == 'settled' %}
+                                <div class="text-primary">
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-check-double fa-3x"></i>
+                                        <h5 class="mt-2">Claim Settled</h5>
+                                        <p class="mb-0">Settled Amount: <strong>₦{{ claim.approved_amount|floatformat:2 }}</strong></p>
+                                        <small>Settled on {{ claim.settlement_date|date:"F d, Y" }}</small>
+                                    </div>
+                                    {% if claim.surveyor_notes %}
+                                        <hr>
+                                        <strong>Surveyor Notes:</strong>
+                                        <p class="mt-2">{{ claim.surveyor_notes }}</p>
+                                    {% endif %}
+                                    <hr>
+                                    <div class="alert alert-primary mb-0">
+                                        <i class="fas fa-check-circle"></i> 
+                                        This claim has been fully settled.
+                                    </div>
+                                </div>
+                            {% elif claim.status == 'rejected' %}
+                                <div class="text-danger">
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-times-circle fa-3x"></i>
+                                        <h5 class="mt-2">Claim Rejected</h5>
+                                    </div>
+                                    {% if claim.rejection_reason %}
+                                        <hr>
+                                        <strong>Rejection Reason:</strong>
+                                        <p class="mt-2">{{ claim.rejection_reason }}</p>
+                                    {% endif %}
+                                    {% if claim.surveyor_notes %}
+                                        <hr>
+                                        <strong>Additional Notes:</strong>
+                                        <p class="mt-2">{{ claim.surveyor_notes }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Timeline Card -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-history"></i> Claim Timeline</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled timeline">
+                                <li class="mb-3">
+                                    <div class="d-flex">
+                                        <div class="timeline-icon bg-primary">
+                                            <i class="fas fa-plus"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <strong>Claim Filed</strong>
+                                            <br>
+                                            <small class="text-muted">{{ claim.created_at|date:"F d, Y H:i" }}</small>
+                                        </div>
+                                    </div>
+                                </li>
+                                
+                                {% if claim.approval_date %}
+                                <li class="mb-3">
+                                    <div class="d-flex">
+                                        <div class="timeline-icon bg-success">
+                                            <i class="fas fa-check"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <strong>Claim Approved</strong>
+                                            <br>
+                                            <small class="text-muted">{{ claim.approval_date|date:"F d, Y H:i" }}</small>
+                                            {% if claim.approved_by %}
+                                                <br><small>by {{ claim.approved_by.get_full_name|default:"Admin" }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </li>
+                                {% endif %}
+                                
+                                {% if claim.settlement_date %}
+                                <li class="mb-3">
+                                    <div class="d-flex">
+                                        <div class="timeline-icon bg-primary">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <strong>Claim Settled</strong>
+                                            <br>
+                                            <small class="text-muted">{{ claim.settlement_date|date:"F d, Y H:i" }}</small>
+                                        </div>
+                                    </div>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Reports Section -->
+                    {% if claim.surveyor_report or claim.police_report %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-file-pdf"></i> Reports</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if claim.surveyor_report %}
+                            <div class="mb-3">
+                                <strong>Surveyor Report:</strong>
+                                <a href="{{ claim.surveyor_report.url }}" class="btn btn-sm btn-outline-primary ms-2" target="_blank">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            </div>
+                            {% endif %}
+                            {% if claim.police_report %}
+                            <div>
+                                <strong>Police Report:</strong>
+                                <a href="{{ claim.police_report.url }}" class="btn btn-sm btn-outline-primary ms-2" target="_blank">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Contact Support Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-headset"></i> Need Help?</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>If you have questions about your claim, contact our support team:</p>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-phone text-primary me-2"></i> +234 800 456 7890</li>
+                                <li class="mb-2"><i class="fas fa-envelope text-primary me-2"></i> claims@vehicleinsurance.ng</li>
+                            </ul>
+                            <a href="{% url 'core:support_tickets' %}" class="btn btn-outline-primary btn-sm w-100">
+                                <i class="fas fa-headset"></i> Create Support Ticket
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back Button -->
+            <div class="text-center mt-4">
+                <a href="{% url 'core:my_claims' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to My Claims
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.timeline-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.timeline-icon.bg-primary {
+    background-color: #4169E1;
+}
+
+.timeline-icon.bg-success {
+    background-color: #28a745;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+    padding: 1rem;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.btn-outline-primary {
+    color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4169E1;
+    color: white;
+}
+
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,294 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}My Claims{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-clipboard-list"></i> My Insurance Claims</h2>
+            <p class="text-muted">Track and manage your insurance claims</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:file_claim' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> File New Claim
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Total Claims</h6>
+                    <h3>{{ total_claims }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Pending</h6>
+                    <h3 class="text-warning">{{ pending_claims }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Approved</h6>
+                    <h3 class="text-success">{{ approved_claims }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Settled</h6>
+                    <h3 class="text-primary">{{ settled_claims }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Total Claimed</h6>
+                    <h3>₦{{ total_claimed|floatformat:0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Total Approved</h6>
+                    <h3>₦{{ total_approved|floatformat:0 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <select class="form-control" id="statusFilter" onchange="filterClaims()">
+                <option value="">All Claims</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="under_review" {% if status_filter == 'under_review' %}selected{% endif %}>Under Review</option>
+                <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                <option value="settled" {% if status_filter == 'settled' %}selected{% endif %}>Settled</option>
+            </select>
+        </div>
+        {% if status_filter %}
+        <div class="col-md-2">
+            <a href="{% url 'core:my_claims' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-times"></i> Clear Filter
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Claims List -->
+    {% if claims %}
+        <div class="row">
+            {% for claim in claims %}
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100 claim-card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Claim #{{ claim.claim_number }}</h5>
+                                <span class="badge 
+                                    {% if claim.status == 'approved' %}bg-success
+                                    {% elif claim.status == 'pending' %}bg-warning
+                                    {% elif claim.status == 'under_review' %}bg-info
+                                    {% elif claim.status == 'rejected' %}bg-danger
+                                    {% elif claim.status == 'settled' %}bg-primary
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ claim.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong><i class="fas fa-file-contract"></i> Policy:</strong> {{ claim.policy.policy_number }}</p>
+                                    <p class="mb-2"><strong><i class="fas fa-car"></i> Vehicle:</strong> {{ claim.policy.vehicle.make }} {{ claim.policy.vehicle.model }}</p>
+                                    <p class="mb-2"><strong><i class="fas fa-tag"></i> Type:</strong> {{ claim.get_claim_type_display }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong><i class="fas fa-money-bill"></i> Claimed:</strong> <span class="text-warning fw-bold">₦{{ claim.claimed_amount|floatformat:2 }}</span></p>
+                                    {% if claim.approved_amount %}
+                                        <p class="mb-2"><strong><i class="fas fa-check-circle"></i> Approved:</strong> <span class="text-success fw-bold">₦{{ claim.approved_amount|floatformat:2 }}</span></p>
+                                    {% endif %}
+                                    <p class="mb-2"><strong><i class="fas fa-calendar"></i> Incident:</strong> {{ claim.incident_date|date:"M d, Y" }}</p>
+                                    <p class="mb-2"><strong><i class="fas fa-clock"></i> Filed:</strong> {{ claim.created_at|date:"M d, Y" }}</p>
+                                </div>
+                            </div>
+                            
+                            {% if claim.rejection_reason %}
+                                <div class="alert alert-danger mt-3 mb-0">
+                                    <strong><i class="fas fa-times-circle"></i> Rejection Reason:</strong><br>
+                                    {{ claim.rejection_reason }}
+                                </div>
+                            {% endif %}
+                            
+                            {% if claim.surveyor_notes and claim.status != 'rejected' %}
+                                <div class="alert alert-info mt-3 mb-0">
+                                    <strong><i class="fas fa-clipboard"></i> Surveyor Notes:</strong><br>
+                                    {{ claim.surveyor_notes|truncatechars:100 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="{% url 'core:claim_detail' claim.id %}" class="btn btn-primary w-100">
+                                <i class="fas fa-eye"></i> View Full Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if claims.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if claims.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ claims.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in claims.paginator.page_range %}
+                        {% if claims.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > claims.number|add:'-3' and num < claims.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if claims.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ claims.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                <h4>No Claims Filed Yet</h4>
+                <p class="text-muted">You haven't filed any insurance claims.</p>
+                <a href="{% url 'core:file_claim' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-plus"></i> File Your First Claim
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function filterClaims() {
+    const status = document.getElementById('statusFilter').value;
+    if (status) {
+        window.location.href = `?status=${status}`;
+    } else {
+        window.location.href = window.location.pathname;
+    }
+}
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.claim-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.2s;
+}
+
+.claim-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.card-footer {
+    border-top: 1px solid #e9ecef;
+    border-radius: 0 0 12px 12px !important;
+    padding: 15px 20px;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.pagination .page-link {
+    color: #4169E1;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #4169E1;
+    border-color: #4169E1;
+    color: white;
+}
+
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+</style>
+{% endblock %}

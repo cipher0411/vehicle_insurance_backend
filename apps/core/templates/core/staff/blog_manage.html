@@ -1,0 +1,352 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}Blog Management | VehicleInsure Staff{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-header {
+        background: #4169E1;
+        padding: 30px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 30px;
+    }
+    
+    .staff-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+    
+    .stat-card h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--royal-blue);
+        margin-bottom: 5px;
+    }
+    
+    .stat-card p {
+        color: #64748b;
+        margin-bottom: 0;
+    }
+    
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .filter-tabs {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-tab {
+        padding: 8px 20px;
+        border-radius: 40px;
+        font-weight: 500;
+        color: #64748b;
+        text-decoration: none;
+        transition: all 0.3s;
+        border: 1px solid transparent;
+    }
+    
+    .filter-tab:hover {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .filter-tab.active {
+        background: var(--royal-blue);
+        color: white;
+    }
+    
+    .search-box {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .search-box input {
+        border: 2px solid var(--gray-border);
+        border-radius: 40px;
+        padding: 10px 20px;
+        min-width: 250px;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        overflow-x: auto;
+    }
+    
+    .blog-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .blog-table th {
+        text-align: left;
+        padding: 15px;
+        background: var(--gray-light);
+        font-weight: 600;
+        color: var(--navy-dark);
+        border-bottom: 2px solid var(--gray-border);
+    }
+    
+    .blog-table td {
+        padding: 15px;
+        border-bottom: 1px solid var(--gray-border);
+        color: #475569;
+    }
+    
+    .blog-table tr:hover {
+        background: var(--gray-light);
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-published {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-draft {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    
+    .status-archived {
+        background: #e2e8f0;
+        color: #475569;
+    }
+    
+    .action-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        text-decoration: none;
+        margin-right: 5px;
+    }
+    
+    .btn-edit {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .btn-view {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .btn-delete {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .pagination {
+        justify-content: center;
+        margin-top: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Staff Header -->
+<section class="staff-header">
+    <div class="container">
+        <h1><i class="fas fa-newspaper me-2"></i> Blog Management</h1>
+        <p>Manage your blog posts, categories, and comments</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ stats.total }}</h3>
+            <p>Total Posts</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.published }}</h3>
+            <p>Published</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.draft }}</h3>
+            <p>Drafts</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.total_views }}</h3>
+            <p>Total Views</p>
+        </div>
+    </div>
+    
+    <!-- Navigation Tabs -->
+    <div class="filter-bar">
+        <div class="d-flex gap-3">
+            <a href="{% url 'core:blog_manage' %}" class="filter-tab {% if not status_filter %}active{% endif %}">
+                <i class="fas fa-list me-1"></i> All Posts
+            </a>
+            <a href="?status=published" class="filter-tab {% if status_filter == 'published' %}active{% endif %}">
+                <i class="fas fa-check-circle me-1"></i> Published
+            </a>
+            <a href="?status=draft" class="filter-tab {% if status_filter == 'draft' %}active{% endif %}">
+                <i class="fas fa-pen me-1"></i> Drafts
+            </a>
+            <a href="?status=archived" class="filter-tab {% if status_filter == 'archived' %}active{% endif %}">
+                <i class="fas fa-archive me-1"></i> Archived
+            </a>
+        </div>
+        <div class="d-flex gap-3">
+            <a href="{% url 'core:blog_categories_manage' %}" class="btn-outline-primary-custom">
+                <i class="fas fa-folder me-1"></i> Categories
+            </a>
+            <a href="{% url 'core:blog_comments_manage' %}" class="btn-outline-primary-custom">
+                <i class="fas fa-comments me-1"></i> Comments
+            </a>
+            <a href="{% url 'core:blog_create' %}" class="btn-primary-custom">
+                <i class="fas fa-plus me-1"></i> New Post
+            </a>
+        </div>
+    </div>
+    
+    <!-- Search -->
+    <div class="filter-bar">
+        <form method="get" class="d-flex w-100 gap-3">
+            <div class="search-box flex-grow-1">
+                <input type="text" name="q" placeholder="Search posts..." value="{{ search_query }}" class="form-control">
+                <button type="submit" class="btn-primary-custom">Search</button>
+            </div>
+            {% if search_query %}
+            <a href="{% url 'core:blog_manage' %}" class="btn-outline-primary-custom">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+    
+    <!-- Posts Table -->
+    <div class="table-container">
+        <table class="blog-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Views</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for post in posts %}
+                <tr>
+                    <td>
+                        <strong>{{ post.title|truncatechars:50 }}</strong>
+                        {% if post.is_featured %}
+                        <span class="badge bg-warning ms-2">Featured</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ post.author.get_full_name|default:post.author.username }}</td>
+                    <td>{{ post.category.name|default:"—" }}</td>
+                    <td>
+                        <span class="status-badge status-{{ post.status }}">
+                            {{ post.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ post.views_count }}</td>
+                    <td>{{ post.created_at|date:"M d, Y" }}</td>
+                    <td>
+                        <a href="{{ post.get_absolute_url }}" class="action-btn btn-view" target="_blank">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'core:blog_edit' post.id %}" class="action-btn btn-edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form method="post" action="{% url 'core:blog_delete' post.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this post?');">
+                            {% csrf_token %}
+                            <button type="submit" class="action-btn btn-delete" style="border: none; cursor: pointer;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        <i class="fas fa-newspaper fa-2x mb-3"></i>
+                        <p>No blog posts found.</p>
+                        <a href="{% url 'core:blog_create' %}" class="btn-primary-custom btn-sm">Create Your First Post</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if posts.has_other_pages %}
+    <nav>
+        <ul class="pagination">
+            {% if posts.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ posts.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in posts.paginator.page_range %}
+                {% if posts.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > posts.number|add:'-3' and num < posts.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if posts.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ posts.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

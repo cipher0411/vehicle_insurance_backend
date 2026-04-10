@@ -1,0 +1,219 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Ticket #{{ ticket.ticket_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-ticket-alt"></i> Ticket #{{ ticket.ticket_number }}</h2>
+            <p class="text-muted">Manage and respond to support ticket</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_support_tickets' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Tickets
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Ticket Details Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Ticket Information</h5>
+                        <span class="badge 
+                            {% if ticket.status == 'open' %}bg-primary
+                            {% elif ticket.status == 'in_progress' %}bg-warning
+                            {% elif ticket.status == 'resolved' %}bg-success
+                            {% else %}bg-secondary{% endif %} fs-6">
+                            {{ ticket.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Subject:</strong> {{ ticket.subject }}</p>
+                            <p><strong>Priority:</strong> 
+                                {% if ticket.priority == 'urgent' %}
+                                    <span class="badge bg-danger">Urgent</span>
+                                {% elif ticket.priority == 'high' %}
+                                    <span class="badge bg-warning">High</span>
+                                {% elif ticket.priority == 'medium' %}
+                                    <span class="badge bg-info">Medium</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Low</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Created:</strong> {{ ticket.created_at|date:"F d, Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Customer:</strong> 
+                                <a href="{% url 'core:admin_user_detail' ticket.user.id %}">
+                                    {{ ticket.user.get_full_name|default:ticket.user.email }}
+                                </a>
+                            </p>
+                            <p><strong>Email:</strong> {{ ticket.user.email }}</p>
+                            <p><strong>Phone:</strong> {{ ticket.user.phone_number|default:'N/A' }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Original Message -->
+                    <div class="mb-3">
+                        <strong>Original Message:</strong>
+                        <div class="p-3 bg-light rounded mt-2">
+                            {{ ticket.message|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversation History -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-comments"></i> Conversation History</h5>
+                </div>
+                <div class="card-body">
+                    {% for reply in ticket.replies.all %}
+                        <div class="mb-3 p-3 border rounded {% if reply.user == ticket.user %}bg-light{% else %}border-primary{% endif %}">
+                            <div class="d-flex justify-content-between mb-2">
+                                <div>
+                                    <strong>{{ reply.user.get_full_name|default:reply.user.email }}</strong>
+                                    {% if reply.user.role in 'admin,support,agent' %}
+                                        <span class="badge bg-primary ms-2">Staff</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary ms-2">Customer</span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ reply.created_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                            <p class="mb-0">{{ reply.message|linebreaks }}</p>
+                            {% if reply.attachment %}
+                                <div class="mt-2">
+                                    <a href="{{ reply.attachment.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="fas fa-paperclip"></i> View Attachment
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <p class="text-muted text-center py-3">No replies yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Reply Form -->
+            {% if ticket.status != 'closed' %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-reply"></i> Add Reply</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <textarea class="form-control" name="message" rows="4" placeholder="Type your reply here..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Attachment (Optional)</label>
+                                <input type="file" class="form-control" name="attachment">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="change_status" id="changeStatus">
+                                    <label class="form-check-label" for="changeStatus">
+                                        Update ticket status
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-3" id="statusSelect" style="display: none;">
+                                <select class="form-control" name="new_status">
+                                    <option value="open">Open</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="resolved">Resolved</option>
+                                    <option value="closed">Closed</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Send Reply
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Update Ticket Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-edit"></i> Update Ticket</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-control" name="status">
+                                <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Open</option>
+                                <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                                <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Closed</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Assign To</label>
+                            <select class="form-control" name="assigned_to">
+                                <option value="">-- Unassigned --</option>
+                                {% for staff in staff_users %}
+                                    <option value="{{ staff.id }}" {% if ticket.assigned_to == staff %}selected{% endif %}>
+                                        {{ staff.get_full_name|default:staff.email }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Resolution Notes</label>
+                            <textarea class="form-control" name="resolution" rows="3">{{ ticket.resolution }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save"></i> Update Ticket
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Customer Info Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Customer Summary</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Total Tickets:</strong> {{ ticket.user.support_tickets.count }}</p>
+                    <p><strong>Open Tickets:</strong> {{ ticket.user.support_tickets.filter.status.count }}</p>
+                    <a href="{% url 'core:admin_user_detail' ticket.user.id %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-user"></i> View Full Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('changeStatus')?.addEventListener('change', function() {
+    document.getElementById('statusSelect').style.display = this.checked ? 'block' : 'none';
+});
+</script>
+
+<style>
+.card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 20px; }
+.card-header { background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%); color: white; border-radius: 12px 12px 0 0 !important; padding: 15px 20px; }
+.card-header h5 { margin: 0; font-weight: 600; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.border-primary { border-left: 4px solid #4169E1 !important; }
+</style>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'core/errors/error_base.html' %}
+{% load static %}
+
+{% block title %}403 - Access Denied{% endblock %}
+
+{% block error_icon %}
+<i class="fas fa-lock"></i>
+{% endblock %}
+
+{% block error_code %}403{% endblock %}
+
+{% block error_title %}Access Denied{% endblock %}
+
+{% block error_message %}
+You don't have permission to access this page. This could be because:
+<br><br>
+• You're trying to access a restricted area<br>
+• Your session has expired<br>
+• You need additional privileges
+{% endblock %}
+
+{% block error_actions %}
+<a href="{% url 'core:home' %}" class="btn-primary-custom">
+    <i class="fas fa-home"></i> Back to Home
+</a>
+<a href="{% url 'core:login' %}" class="btn-outline-custom">
+    <i class="fas fa-sign-in-alt"></i> Sign In
+</a>
+{% endblock %}

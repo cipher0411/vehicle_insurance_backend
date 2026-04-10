@@ -1,0 +1,396 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} | VehicleInsure Staff{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-header {
+        background: #4169E1;
+        padding: 30px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 30px;
+    }
+    
+    .staff-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .form-container {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+    }
+    
+    .form-section {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+    }
+    
+    .form-section h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+        font-size: 1.3rem;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 8px;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid var(--gray-border);
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 1rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--royal-blue);
+        box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.1);
+    }
+    
+    .help-text {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 5px;
+    }
+    
+    .errorlist {
+        color: #dc2626;
+        list-style: none;
+        padding: 5px 0 0;
+        margin: 0;
+        font-size: 0.85rem;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid var(--gray-border);
+    }
+    
+    .nav-tabs {
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .nav-tabs .nav-link {
+        color: #64748b;
+        border: none;
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: var(--royal-blue);
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: var(--royal-blue);
+        border-bottom: 2px solid var(--royal-blue);
+        background: transparent;
+    }
+</style>
+<!-- CKEditor -->
+<script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+{% endblock %}
+
+{% block content %}
+<section class="staff-header">
+    <div class="container">
+        <h1><i class="fas fa-pen me-2"></i> {{ title }}</h1>
+        <p>Create and manage job postings</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:jobs_manage' %}">
+                <i class="fas fa-list me-1"></i> All Jobs
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="{% url 'core:job_create' %}">
+                <i class="fas fa-plus me-1"></i> New Job
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:job_categories_manage' %}">
+                <i class="fas fa-folder me-1"></i> Categories
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:job_locations_manage' %}">
+                <i class="fas fa-map-marker-alt me-1"></i> Locations
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:job_types_manage' %}">
+                <i class="fas fa-clock me-1"></i> Job Types
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:job_applications_manage' %}">
+                <i class="fas fa-users me-1"></i> Applications
+            </a>
+        </li>
+    </ul>
+    
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="form-container">
+                <form method="post" id="jobForm">
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-info-circle me-2"></i> Basic Information</h3>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Job Title *</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                            <ul class="errorlist">{% for error in form.title.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Slug</label>
+                            {{ form.slug }}
+                            <p class="help-text">Leave blank to auto-generate from title</p>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Category *</label>
+                                {{ form.category }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Location *</label>
+                                {{ form.location }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Job Type *</label>
+                                {{ form.job_type }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Experience Level</label>
+                                {{ form.experience_level }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Application Deadline</label>
+                                {{ form.expires_at }}
+                                <p class="help-text">Leave blank for no deadline</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Short Description *</label>
+                            {{ form.short_description }}
+                            <p class="help-text">Brief summary for job listing (max 300 characters)</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Salary Information -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-money-bill-wave me-2"></i> Salary Information</h3>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Minimum Salary (₦)</label>
+                                {{ form.salary_min }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Maximum Salary (₦)</label>
+                                {{ form.salary_max }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Currency</label>
+                                {{ form.salary_currency }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.salary_is_visible }}
+                                <label class="form-check-label">Display salary on job posting</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed Content -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-paragraph me-2"></i> Job Details</h3>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Full Description *</label>
+                            {{ form.description }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Requirements *</label>
+                            {{ form.requirements }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Responsibilities *</label>
+                            {{ form.responsibilities }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Benefits</label>
+                            {{ form.benefits }}
+                        </div>
+                    </div>
+                    
+                    <!-- Application Settings -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-envelope me-2"></i> Application Settings</h3>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Application Email *</label>
+                                {{ form.application_email }}
+                                <p class="help-text">Where applications will be sent</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">External Application URL</label>
+                                {{ form.application_url }}
+                                <p class="help-text">Optional: Redirect to external application page</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Publishing Options -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-cog me-2"></i> Publishing Options</h3>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Status</label>
+                                {{ form.status }}
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                <div class="form-check form-check-inline mt-4">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label">Active (visible on site)</label>
+                                </div>
+                                <div class="form-check form-check-inline mt-4">
+                                    {{ form.is_featured }}
+                                    <label class="form-check-label">Featured (highlighted)</label>
+                                </div>
+                                <div class="form-check form-check-inline mt-4">
+                                    {{ form.is_remote }}
+                                    <label class="form-check-label">Remote Available</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- SEO -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-search me-2"></i> SEO Settings</h3>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Meta Title</label>
+                            {{ form.meta_title }}
+                            <p class="help-text">Leave blank to use job title</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Meta Description</label>
+                            {{ form.meta_description }}
+                            <p class="help-text">Recommended: 150-160 characters</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <a href="{% url 'core:jobs_manage' %}" class="btn-outline-primary-custom">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        <button type="submit" name="action" value="draft" class="btn-outline-primary-custom">
+                            <i class="fas fa-save me-1"></i> Save as Draft
+                        </button>
+                        <button type="submit" class="btn-primary-custom">
+                            <i class="fas fa-check me-1"></i> {{ submit_text }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="sidebar">
+                <h4><i class="fas fa-lightbulb me-2" style="color: #FFD700;"></i> Job Posting Tips</h4>
+                <ul class="list-unstyled">
+                    <li class="mb-3"><i class="fas fa-check-circle text-success me-2"></i> Write a clear, descriptive job title</li>
+                    <li class="mb-3"><i class="fas fa-check-circle text-success me-2"></i> Include salary range to attract more applicants</li>
+                    <li class="mb-3"><i class="fas fa-check-circle text-success me-2"></i> List specific requirements and qualifications</li>
+                    <li class="mb-3"><i class="fas fa-check-circle text-success me-2"></i> Highlight unique benefits and perks</li>
+                    <li class="mb-3"><i class="fas fa-check-circle text-success me-2"></i> Set an application deadline for urgency</li>
+                </ul>
+            </div>
+            
+            {% if job %}
+            <div class="sidebar">
+                <h4><i class="fas fa-chart-bar me-2"></i> Statistics</h4>
+                <p><strong>Created:</strong> {{ job.created_at|date:"M d, Y" }}</p>
+                <p><strong>Last Updated:</strong> {{ job.updated_at|date:"M d, Y" }}</p>
+                <p><strong>Views:</strong> {{ job.views_count }}</p>
+                <p><strong>Applications:</strong> {{ job.applications_count }}</p>
+                <a href="{{ job.get_absolute_url }}" class="btn-outline-primary-custom w-100" target="_blank">
+                    <i class="fas fa-eye me-1"></i> View Job
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize CKEditors
+    CKEDITOR.replace('{{ form.description.id_for_label }}', { height: 200 });
+    CKEDITOR.replace('{{ form.requirements.id_for_label }}', { height: 200 });
+    CKEDITOR.replace('{{ form.responsibilities.id_for_label }}', { height: 200 });
+    CKEDITOR.replace('{{ form.benefits.id_for_label }}', { height: 150 });
+    
+    // Auto-generate slug from title
+    const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+    const slugInput = document.getElementById('{{ form.slug.id_for_label }}');
+    
+    if (titleInput && slugInput) {
+        titleInput.addEventListener('blur', function() {
+            if (!slugInput.value) {
+                slugInput.value = this.value
+                    .toLowerCase()
+                    .replace(/[^\w\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/--+/g, '-')
+                    .trim();
+            }
+        });
+    }
+</script>
+{% endblock %}

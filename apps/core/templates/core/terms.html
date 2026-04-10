@@ -1,0 +1,472 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Terms & Conditions | VehicleInsure Nigeria{% endblock %}
+{% block meta_description %}Read the terms and conditions governing the use of VehicleInsure's insurance services, website, and mobile application.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .terms-container {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 50px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .last-updated {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .terms-section {
+        margin-bottom: 35px;
+    }
+    
+    .terms-section h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .terms-section h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin: 20px 0 15px;
+    }
+    
+    .terms-section p {
+        color: #475569;
+        line-height: 1.8;
+        margin-bottom: 15px;
+    }
+    
+    .terms-section ul, .terms-section ol {
+        margin-bottom: 20px;
+        padding-left: 20px;
+    }
+    
+    .terms-section li {
+        color: #475569;
+        line-height: 1.8;
+        margin-bottom: 8px;
+    }
+    
+    .terms-section a {
+        color: var(--royal-blue);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .terms-section a:hover {
+        text-decoration: underline;
+    }
+    
+    .important-notice {
+        background: #fef3c7;
+        border-radius: 16px;
+        padding: 25px;
+        margin: 25px 0;
+        border-left: 4px solid #d97706;
+    }
+    
+    .important-notice h4 {
+        font-weight: 600;
+        color: #92400e;
+        margin-bottom: 10px;
+    }
+    
+    .important-notice p {
+        color: #92400e;
+        margin-bottom: 0;
+    }
+    
+    .table-of-contents {
+        background: var(--gray-light);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .table-of-contents h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .table-of-contents ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 30px;
+    }
+    
+    .table-of-contents li {
+        margin-bottom: 5px;
+    }
+    
+    .table-of-contents a {
+        color: #64748b;
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+    
+    .table-of-contents a:hover {
+        color: var(--royal-blue);
+    }
+    
+    .acceptance-box {
+        background: #eef2ff;
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        margin-top: 40px;
+    }
+    
+    .acceptance-box h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .acceptance-box p {
+        color: #475569;
+        margin-bottom: 20px;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .terms-container {
+            padding: 25px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Terms & Conditions</h1>
+        <p>Please read these terms carefully before using our services</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Terms & Conditions</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <div class="terms-container">
+        <div class="last-updated">
+            <i class="fas fa-calendar-alt me-2"></i> Last Updated: January 1, 2024 | Version 2.0
+        </div>
+        
+        <div class="important-notice">
+            <h4><i class="fas fa-exclamation-triangle me-2"></i> Important Notice</h4>
+            <p>These Terms and Conditions constitute a legally binding agreement between you and VehicleInsure. By accessing our website, using our services, or purchasing an insurance policy, you acknowledge that you have read, understood, and agree to be bound by these terms.</p>
+        </div>
+        
+        <div class="table-of-contents">
+            <h4><i class="fas fa-list me-2"></i> Table of Contents</h4>
+            <ul>
+                <li><a href="#definitions">1. Definitions</a></li>
+                <li><a href="#acceptance">2. Acceptance of Terms</a></li>
+                <li><a href="#eligibility">3. Eligibility</a></li>
+                <li><a href="#account">4. Account Registration</a></li>
+                <li><a href="#insurance-services">5. Insurance Services</a></li>
+                <li><a href="#premiums">6. Premiums & Payments</a></li>
+                <li><a href="#claims">7. Claims Process</a></li>
+                <li><a href="#cancellation">8. Cancellation & Refunds</a></li>
+                <li><a href="#intellectual-property">9. Intellectual Property</a></li>
+                <li><a href="#prohibited">10. Prohibited Activities</a></li>
+                <li><a href="#limitation">11. Limitation of Liability</a></li>
+                <li><a href="#indemnification">12. Indemnification</a></li>
+                <li><a href="#disputes">13. Dispute Resolution</a></li>
+                <li><a href="#governing-law">14. Governing Law</a></li>
+                <li><a href="#contact">15. Contact Information</a></li>
+            </ul>
+        </div>
+        
+        <div class="terms-section" id="definitions">
+            <h2>1. Definitions</h2>
+            <p>In these Terms and Conditions:</p>
+            <ul>
+                <li><strong>"VehicleInsure," "we," "us," "our"</strong> refers to VehicleInsure Nigeria Limited, a company registered in Nigeria with RC Number 1234567.</li>
+                <li><strong>"You," "your," "user"</strong> refers to the individual or entity using our services.</li>
+                <li><strong>"Policy"</strong> means the insurance contract between you and the underwriting insurance company.</li>
+                <li><strong>"Premium"</strong> means the amount payable for insurance coverage.</li>
+                <li><strong>"Services"</strong> includes our website, mobile application, insurance brokerage, and related services.</li>
+                <li><strong>"NAICOM"</strong> means the National Insurance Commission of Nigeria.</li>
+            </ul>
+        </div>
+        
+        <div class="terms-section" id="acceptance">
+            <h2>2. Acceptance of Terms</h2>
+            <p>By accessing or using our services, you confirm that:</p>
+            <ul>
+                <li>You have read and understood these Terms and Conditions</li>
+                <li>You agree to be legally bound by these terms</li>
+                <li>You will comply with all applicable laws and regulations</li>
+                <li>You accept our <a href="{% url 'core:privacy_policy' %}">Privacy Policy</a> and <a href="{% url 'core:cookie_policy' %}">Cookie Policy</a></li>
+            </ul>
+            <p>If you do not agree to these terms, you must not use our services.</p>
+        </div>
+        
+        <div class="terms-section" id="eligibility">
+            <h2>3. Eligibility</h2>
+            <p>To use our services, you must:</p>
+            <ul>
+                <li>Be at least 18 years of age</li>
+                <li>Have legal capacity to enter into a binding contract</li>
+                <li>Be a resident of Nigeria or have a vehicle registered in Nigeria</li>
+                <li>Provide accurate and complete information</li>
+                <li>Not be prohibited from receiving insurance services under Nigerian law</li>
+            </ul>
+        </div>
+        
+        <div class="terms-section" id="account">
+            <h2>4. Account Registration</h2>
+            <p>When creating an account, you agree to:</p>
+            <ul>
+                <li>Provide accurate, current, and complete information</li>
+                <li>Maintain and update your information promptly</li>
+                <li>Keep your login credentials confidential and secure</li>
+                <li>Notify us immediately of any unauthorized account access</li>
+                <li>Be responsible for all activities under your account</li>
+            </ul>
+            <p>We reserve the right to suspend or terminate accounts that violate these terms.</p>
+        </div>
+        
+        <div class="terms-section" id="insurance-services">
+            <h2>5. Insurance Services</h2>
+            
+            <h3>5.1 Role of VehicleInsure</h3>
+            <p>VehicleInsure acts as an insurance broker/intermediary connecting customers with licensed insurance underwriters in Nigeria. We are not an insurance company and do not underwrite policies directly.</p>
+            
+            <h3>5.2 Policy Terms</h3>
+            <p>All insurance policies are subject to the specific terms, conditions, exclusions, and limitations contained in the policy document. You must read your policy document carefully.</p>
+            
+            <h3>5.3 Duty of Disclosure</h3>
+            <p>You have a legal duty to disclose all material facts that may influence an insurer's decision to accept the risk or determine the premium. Failure to disclose material facts may result in policy cancellation or claim denial.</p>
+            
+            <h3>5.4 Policy Issuance</h3>
+            <p>Insurance coverage begins only after:</p>
+            <ul>
+                <li>Full premium payment is received</li>
+                <li>The policy is accepted and issued by the underwriter</li>
+                <li>All required documentation is complete</li>
+            </ul>
+        </div>
+        
+        <div class="terms-section" id="premiums">
+            <h2>6. Premiums & Payments</h2>
+            <ul>
+                <li>Premiums must be paid in full before coverage commences</li>
+                <li>All payments are processed in Nigerian Naira (₦)</li>
+                <li>We accept payment methods as displayed at checkout</li>
+                <li>Installment plans are subject to approval and may incur processing fees</li>
+                <li>Late payments may result in policy cancellation</li>
+                <li>Premium rates are subject to change upon renewal</li>
+            </ul>
+        </div>
+        
+        <div class="terms-section" id="claims">
+            <h2>7. Claims Process</h2>
+            
+            <h3>7.1 Notification</h3>
+            <p>You must notify us of any incident that may give rise to a claim:</p>
+            <ul>
+                <li>Immediately for theft or total loss</li>
+                <li>Within 24 hours for accidents</li>
+                <li>Within 7 days for other incidents</li>
+            </ul>
+            
+            <h3>7.2 Documentation</h3>
+            <p>You must provide all requested documentation including:</p>
+            <ul>
+                <li>Completed claim form</li>
+                <li>Police report (where applicable)</li>
+                <li>Photos of damage</li>
+                <li>Repair estimates</li>
+                <li>Any other documents reasonably requested</li>
+            </ul>
+            
+            <h3>7.3 Cooperation</h3>
+            <p>You must cooperate fully with our claims investigation, including allowing vehicle inspection and providing access to relevant information.</p>
+        </div>
+        
+        <div class="terms-section" id="cancellation">
+            <h2>8. Cancellation & Refunds</h2>
+            
+            <h3>8.1 Cancellation by You</h3>
+            <p>You may cancel your policy at any time. Refunds will be calculated on a pro-rata basis for the unexpired period, less an administration fee of ₦2,500, provided no claims have been made.</p>
+            
+            <h3>8.2 Cancellation by Us</h3>
+            <p>We reserve the right to cancel your policy for:</p>
+            <ul>
+                <li>Non-payment of premium</li>
+                <li>Fraud or misrepresentation</li>
+                <li>Breach of policy terms</li>
+                <li>Regulatory requirements</li>
+            </ul>
+            
+            <h3>8.3 Cooling-Off Period</h3>
+            <p>New policies have a 14-day cooling-off period during which you may cancel for a full refund (minus administrative fees) provided no claims have been made.</p>
+        </div>
+        
+        <div class="terms-section" id="intellectual-property">
+            <h2>9. Intellectual Property</h2>
+            <p>All content on our website and mobile application, including text, graphics, logos, images, software, and trademarks, is the property of VehicleInsure or its licensors and is protected by Nigerian and international intellectual property laws.</p>
+            <p>You may not reproduce, distribute, modify, or create derivative works without our express written permission.</p>
+        </div>
+        
+        <div class="terms-section" id="prohibited">
+            <h2>10. Prohibited Activities</h2>
+            <p>You agree not to:</p>
+            <ul>
+                <li>Provide false or misleading information</li>
+                <li>Use our services for fraudulent purposes</li>
+                <li>Attempt to circumvent our security measures</li>
+                <li>Use automated systems to access our services</li>
+                <li>Interfere with other users' enjoyment of our services</li>
+                <li>Violate any applicable laws or regulations</li>
+            </ul>
+        </div>
+        
+        <div class="terms-section" id="limitation">
+            <h2>11. Limitation of Liability</h2>
+            <p>To the maximum extent permitted by Nigerian law:</p>
+            <ul>
+                <li>VehicleInsure's liability is limited to the value of the insurance policy premium paid</li>
+                <li>We are not liable for indirect, consequential, or punitive damages</li>
+                <li>We are not liable for acts or omissions of third-party insurance underwriters</li>
+                <li>We do not guarantee uninterrupted or error-free service</li>
+            </ul>
+        </div>
+        
+        <div class="terms-section" id="indemnification">
+            <h2>12. Indemnification</h2>
+            <p>You agree to indemnify and hold harmless VehicleInsure, its directors, employees, and agents from any claims, damages, losses, or expenses arising from:</p>
+            <ul>
+                <li>Your breach of these Terms and Conditions</li>
+                <li>Your violation of any law or third-party rights</li>
+                <li>Fraudulent or negligent acts by you</li>
+            </ul>
+        </div>
+        
+        <div class="terms-section" id="disputes">
+            <h2>13. Dispute Resolution</h2>
+            
+            <h3>13.1 Negotiation</h3>
+            <p>Parties shall first attempt to resolve disputes through good-faith negotiations.</p>
+            
+            <h3>13.2 Mediation</h3>
+            <p>If negotiation fails, disputes shall be referred to mediation at the Lagos Multi-Door Courthouse (LMDC).</p>
+            
+            <h3>13.3 Arbitration</h3>
+            <p>If mediation fails, disputes shall be settled by arbitration under the Arbitration and Conciliation Act, Cap A18, Laws of the Federation of Nigeria, 2004. The arbitration shall take place in Lagos and be conducted in English.</p>
+            
+            <h3>13.4 Insurance Ombudsman</h3>
+            <p>You may also refer complaints to the Nigerian Insurance Ombudsman Bureau.</p>
+        </div>
+        
+        <div class="terms-section" id="governing-law">
+            <h2>14. Governing Law</h2>
+            <p>These Terms and Conditions are governed by and construed in accordance with the laws of the Federal Republic of Nigeria. The courts of Lagos State shall have exclusive jurisdiction over any disputes.</p>
+        </div>
+        
+        <div class="terms-section" id="contact">
+            <h2>15. Contact Information</h2>
+            <p>For questions about these Terms and Conditions, contact us at:</p>
+            <ul style="list-style: none; padding-left: 0;">
+                <li><i class="fas fa-envelope me-2" style="color: var(--royal-blue);"></i> <strong>Email:</strong> <a href="mailto:legal@vehicleinsure.ng">legal@vehicleinsure.ng</a></li>
+                <li class="mt-2"><i class="fas fa-phone me-2" style="color: var(--royal-blue);"></i> <strong>Phone:</strong> +234 123 456 7890</li>
+                <li class="mt-2"><i class="fas fa-map-marker-alt me-2" style="color: var(--royal-blue);"></i> <strong>Address:</strong> Legal Department, VehicleInsure, 15B Admiralty Way, Victoria Island, Lagos, Nigeria</li>
+            </ul>
+        </div>
+        
+        <div class="acceptance-box">
+            <h4><i class="fas fa-check-circle me-2" style="color: #10b981;"></i> Acceptance of Terms</h4>
+            <p>By using our services, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.</p>
+            <a href="{% url 'core:register' %}" class="btn-primary-custom">
+                Create Account <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Smooth scroll for table of contents links
+        document.querySelectorAll('.table-of-contents a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

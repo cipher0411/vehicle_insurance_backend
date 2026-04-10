@@ -1,0 +1,938 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Motor Insurance Nigeria | Comprehensive, Third-Party & More | VehicleInsure{% endblock %}
+{% block meta_description %}Get comprehensive, third-party, standalone, and personal accident motor insurance in Nigeria. Instant quotes, affordable premiums, and nationwide NAICOM-licensed coverage.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 60px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 60px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .page-header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        position: relative;
+        animation: slideUp 0.6s ease-out 0.2s both;
+    }
+    
+    .breadcrumb-custom {
+        position: relative;
+        animation: slideUp 0.6s ease-out 0.4s both;
+    }
+    
+    .breadcrumb-custom a {
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+    }
+    
+    .breadcrumb-custom a:hover {
+        color: white;
+    }
+    
+    .breadcrumb-custom .active {
+        color: #FFD700;
+    }
+    
+    .plan-card {
+        background: white;
+        border-radius: 20px;
+        padding: 35px 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s ease;
+    }
+    
+    .plan-card.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .plan-card.featured {
+        border: 2px solid #FFD700;
+    }
+    
+    .plan-card.featured::before {
+        content: 'MOST POPULAR';
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: #FFD700;
+        color: var(--navy-dark);
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    
+    .plan-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    }
+    
+    .plan-name {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .plan-price {
+        margin-bottom: 20px;
+    }
+    
+    .plan-price .currency {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--royal-blue);
+    }
+    
+    .plan-price .amount {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--royal-blue);
+    }
+    
+    .plan-price .period {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    .plan-description {
+        color: #64748b;
+        margin-bottom: 20px;
+        font-size: 0.95rem;
+        min-height: 60px;
+    }
+    
+    .plan-features {
+        list-style: none;
+        padding: 0;
+        margin: 20px 0;
+    }
+    
+    .plan-features li {
+        padding: 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid var(--gray-border);
+        font-size: 0.9rem;
+    }
+    
+    .plan-features li:last-child {
+        border-bottom: none;
+    }
+    
+    .plan-features li i.fa-check {
+        color: #10b981;
+        font-size: 0.9rem;
+    }
+    
+    .plan-features li i.fa-times {
+        color: #ef4444;
+        font-size: 0.9rem;
+    }
+    
+    .plan-features li i.fa-minus {
+        color: #f59e0b;
+        font-size: 0.9rem;
+    }
+    
+    .plan-footer {
+        margin-top: auto;
+        padding-top: 20px;
+    }
+    
+    .benefit-card {
+        text-align: center;
+        padding: 30px 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        opacity: 0;
+        transform: scale(0.9);
+        transition: all 0.6s ease;
+        height: 100%;
+    }
+    
+    .benefit-card.visible {
+        opacity: 1;
+        transform: scale(1);
+    }
+    
+    .benefit-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+    
+    .benefit-icon i {
+        font-size: 1.8rem;
+        color: white;
+    }
+    
+    .benefit-card h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .benefit-card p {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    .comparison-section {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin: 50px 0;
+    }
+    
+    .comparison-section h2 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .comparison-table {
+        width: 100%;
+        overflow-x: auto;
+    }
+    
+    .comparison-table table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+    
+    .comparison-table th {
+        background: var(--royal-blue);
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    .comparison-table th:first-child {
+        text-align: left;
+        border-radius: 12px 0 0 0;
+    }
+    
+    .comparison-table th:last-child {
+        border-radius: 0 12px 0 0;
+    }
+    
+    .comparison-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--gray-border);
+        text-align: center;
+    }
+    
+    .comparison-table td:first-child {
+        text-align: left;
+        font-weight: 500;
+        color: var(--navy-dark);
+    }
+    
+    .comparison-table tr:hover {
+        background: var(--gray-light);
+    }
+    
+    .comparison-table .fa-check {
+        color: #10b981;
+    }
+    
+    .comparison-table .fa-times {
+        color: #ef4444;
+    }
+    
+    .comparison-table .fa-minus {
+        color: #f59e0b;
+    }
+    
+    .faq-section {
+        background: var(--gray-light);
+        padding: 60px 0;
+        border-radius: 30px;
+        margin: 60px 0;
+    }
+    
+    .faq-item {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateX(-20px);
+        transition: all 0.5s ease;
+    }
+    
+    .faq-item.visible {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    
+    .faq-question {
+        padding: 20px 25px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 600;
+        color: var(--navy-dark);
+    }
+    
+    .faq-question i {
+        transition: transform 0.3s;
+        color: var(--royal-blue);
+    }
+    
+    .faq-item.active .faq-question i {
+        transform: rotate(180deg);
+    }
+    
+    .faq-answer {
+        padding: 0 25px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, padding 0.3s ease;
+        color: #64748b;
+        line-height: 1.7;
+    }
+    
+    .faq-item.active .faq-answer {
+        padding: 0 25px 20px 25px;
+        max-height: 500px;
+    }
+    
+    .coverage-highlight {
+        background: #eef2ff;
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    .coverage-highlight i {
+        color: var(--royal-blue);
+        margin-right: 10px;
+    }
+    
+    .cta-section {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 992px) {
+        .plan-card {
+            margin-bottom: 20px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2.2rem;
+        }
+        
+        .comparison-section {
+            padding: 25px;
+        }
+        
+        .plan-name {
+            font-size: 1.4rem;
+        }
+        
+        .plan-price .amount {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Motor Insurance in Nigeria</h1>
+        <p>Four coverage options tailored for Nigerian roads and drivers</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Motor Insurance</span>
+        </div>
+    </div>
+</section>
+
+<!-- Introduction Section -->
+<section class="mb-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6" data-animate>
+                <h2 class="mb-4" style="font-weight: 700; color: var(--navy-dark);">
+                    Protect Your Vehicle with Nigeria's Most Reliable Insurance
+                </h2>
+                <p class="lead mb-4">Whether you're commuting in Lagos traffic, driving across the country, or parking in Abuja, your vehicle deserves the best protection.</p>
+                <p class="mb-4">At VehicleInsure, we offer four types of motor insurance policies designed to meet different needs and budgets. All our policies comply with Nigerian insurance regulations and are backed by NAICOM-licensed underwriters.</p>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'core:get_quote' %}" class="btn-primary-custom btn-lg">
+                        Get Quote <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                    <a href="#plans" class="btn-outline-primary-custom btn-lg">
+                        View Plans <i class="fas fa-chevron-down ms-2"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6" data-animate>
+                <img src="{% static 'images/motor-insurance-nigeria.jpg' %}" 
+                     alt="Motor Insurance Coverage in Nigeria" 
+                     class="img-fluid rounded-4 shadow-lg"
+                     onerror="this.src='https://via.placeholder.com/600x400/4169E1/ffffff?text=Motor+Insurance+Nigeria'">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Insurance Plans Section - 4 Plans matching POLICY_TYPE_CHOICES -->
+<section id="plans" class="py-5">
+    <div class="container">
+        <div class="text-center mb-5" data-animate>
+            <h2 class="display-5 fw-bold mb-3" style="color: var(--navy-dark);">Choose Your Coverage Level</h2>
+            <p class="lead text-muted">Select the plan that best fits your needs and budget</p>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Third Party Plan -->
+            <div class="col-lg-3 col-md-6">
+                <div class="plan-card" data-animate>
+                    <div class="plan-name">Third Party</div>
+                    <div class="plan-price">
+                        <span class="currency">₦</span>
+                        <span class="amount">{{ min_premium_third_party|default:"15,000"|floatformat:"0" }}</span>
+                        <span class="period">/year</span>
+                    </div>
+                    <p class="plan-description">Minimum legal requirement for all vehicles in Nigeria. Covers damages to others.</p>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> Third-party property damage</li>
+                        <li><i class="fas fa-check"></i> Third-party bodily injury</li>
+                        <li><i class="fas fa-check"></i> Legal defense costs</li>
+                        <li><i class="fas fa-check"></i> NAICOM compliant</li>
+                        <li><i class="fas fa-times"></i> Own damage cover</li>
+                        <li><i class="fas fa-times"></i> Theft protection</li>
+                        <li><i class="fas fa-times"></i> Fire & flood cover</li>
+                    </ul>
+                    <div class="plan-footer">
+                        <a href="{% url 'core:get_quote' %}?coverage=third_party" class="btn-outline-primary-custom w-100 justify-content-center">
+                            Get Quote
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Comprehensive Plan (Most Popular) -->
+            <div class="col-lg-3 col-md-6">
+                <div class="plan-card featured" data-animate>
+                    <div class="plan-name">Comprehensive</div>
+                    <div class="plan-price">
+                        <span class="currency">₦</span>
+                        <span class="amount">{{ min_premium_comprehensive|default:"75,000"|floatformat:"0" }}</span>
+                        <span class="period">/year</span>
+                    </div>
+                    <p class="plan-description">Complete protection for your vehicle plus third-party liability. Our most popular plan.</p>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> All Third Party benefits</li>
+                        <li><i class="fas fa-check"></i> Own damage cover</li>
+                        <li><i class="fas fa-check"></i> Theft & hijack protection</li>
+                        <li><i class="fas fa-check"></i> Fire & explosion cover</li>
+                        <li><i class="fas fa-check"></i> Flood protection</li>
+                        <li><i class="fas fa-check"></i> Vandalism cover</li>
+                        <li><i class="fas fa-check"></i> 24/7 roadside assistance</li>
+                    </ul>
+                    <div class="plan-footer">
+                        <a href="{% url 'core:get_quote' %}?coverage=comprehensive" class="btn-primary-custom w-100 justify-content-center">
+                            Get Quote
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Standalone Plan -->
+            <div class="col-lg-3 col-md-6">
+                <div class="plan-card" data-animate>
+                    <div class="plan-name">Standalone</div>
+                    <div class="plan-price">
+                        <span class="currency">₦</span>
+                        <span class="amount">{{ min_premium_standalone|default:"35,000"|floatformat:"0" }}</span>
+                        <span class="period">/year</span>
+                    </div>
+                    <p class="plan-description">Own damage coverage only. Perfect if you already have third-party insurance elsewhere.</p>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> Own damage cover</li>
+                        <li><i class="fas fa-check"></i> Theft protection</li>
+                        <li><i class="fas fa-check"></i> Fire & explosion cover</li>
+                        <li><i class="fas fa-times"></i> Third-party liability</li>
+                        <li><i class="fas fa-check"></i> Flood damage cover</li>
+                        <li><i class="fas fa-check"></i> Vandalism protection</li>
+                        <li><i class="fas fa-minus"></i> Roadside assistance (optional)</li>
+                    </ul>
+                    <div class="plan-footer">
+                        <a href="{% url 'core:get_quote' %}?coverage=standalone" class="btn-outline-primary-custom w-100 justify-content-center">
+                            Get Quote
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Personal Accident Plan -->
+            <div class="col-lg-3 col-md-6">
+                <div class="plan-card" data-animate>
+                    <div class="plan-name">Personal Accident</div>
+                    <div class="plan-price">
+                        <span class="currency">₦</span>
+                        <span class="amount">{{ min_premium_personal_accident|default:"10,000"|floatformat:"0" }}</span>
+                        <span class="period">/year</span>
+                    </div>
+                    <p class="plan-description">Protection for you and your passengers in case of accidents, regardless of fault.</p>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> Accidental death cover</li>
+                        <li><i class="fas fa-check"></i> Permanent disability cover</li>
+                        <li><i class="fas fa-check"></i> Medical expenses cover</li>
+                        <li><i class="fas fa-check"></i> Passenger coverage</li>
+                        <li><i class="fas fa-times"></i> Vehicle damage cover</li>
+                        <li><i class="fas fa-times"></i> Third-party liability</li>
+                        <li><i class="fas fa-check"></i> Hospital cash benefit</li>
+                    </ul>
+                    <div class="plan-footer">
+                        <a href="{% url 'core:get_quote' %}?coverage=personal_accident" class="btn-outline-primary-custom w-100 justify-content-center">
+                            Get Quote
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Coverage Comparison Table -->
+<section class="comparison-section">
+    <div class="container">
+        <h2>Coverage Comparison</h2>
+        <div class="comparison-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Coverage Feature</th>
+                        <th>Third Party</th>
+                        <th>Comprehensive</th>
+                        <th>Standalone</th>
+                        <th>Personal Accident</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Third-Party Property Damage</td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Third-Party Bodily Injury</td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Own Damage Cover</td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Theft & Hijack Protection</td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Fire & Explosion Cover</td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Flood & Natural Disaster</td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Personal Accident Cover</td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-minus"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Medical Expenses</td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Roadside Assistance</td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-minus"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Legal Defense Costs</td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Vandalism Cover</td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Windscreen Replacement</td>
+                        <td><i class="fas fa-times"></i></td>
+                        <td><i class="fas fa-check"></i></td>
+                        <td><i class="fas fa-minus"></i></td>
+                        <td><i class="fas fa-times"></i></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="text-muted small mt-3 text-center">
+            <i class="fas fa-check text-success"></i> Included &nbsp;&nbsp; 
+            <i class="fas fa-times text-danger"></i> Not Included &nbsp;&nbsp; 
+            <i class="fas fa-minus text-warning"></i> Optional Add-on
+        </p>
+    </div>
+</section>
+
+<!-- Benefits Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5" data-animate>
+            <h2 class="display-5 fw-bold mb-3" style="color: var(--navy-dark);">Why Insure With Us</h2>
+            <p class="lead text-muted">Experience the VehicleInsure difference</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="benefit-card" data-animate>
+                    <div class="benefit-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h4>Instant Policy Issuance</h4>
+                    <p>Get your insurance certificate immediately after payment. No waiting period.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="benefit-card" data-animate>
+                    <div class="benefit-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4>NAICOM Licensed</h4>
+                    <p>Fully licensed and regulated by the National Insurance Commission.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="benefit-card" data-animate>
+                    <div class="benefit-icon">
+                        <i class="fas fa-car-crash"></i>
+                    </div>
+                    <h4>Fast Claims Process</h4>
+                    <p>Average claim settlement within 48 hours of complete documentation.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="benefit-card" data-animate>
+                    <div class="benefit-icon">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    <h4>Nationwide Coverage</h4>
+                    <p>Valid in all 36 states including FCT Abuja. Protection wherever you drive.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- What's Covered Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4" data-animate>
+                <img src="{% static 'images/coverage-nigeria.jpg' %}" 
+                     alt="Insurance Coverage in Nigeria" 
+                     class="img-fluid rounded-4"
+                     onerror="this.src='https://via.placeholder.com/600x400/4169E1/ffffff?text=Insurance+Coverage'">
+            </div>
+            <div class="col-lg-6" data-animate>
+                <h2 class="fw-bold mb-4" style="color: var(--navy-dark);">What's Covered?</h2>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="d-flex gap-3 mb-3">
+                            <i class="fas fa-check-circle fa-2x" style="color: #10b981;"></i>
+                            <div>
+                                <h5>Accidental Damage</h5>
+                                <p class="text-muted">Coverage for damage from collisions and accidents</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex gap-3 mb-3">
+                            <i class="fas fa-check-circle fa-2x" style="color: #10b981;"></i>
+                            <div>
+                                <h5>Theft & Hijack</h5>
+                                <p class="text-muted">Protection against vehicle theft and carjacking</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex gap-3 mb-3">
+                            <i class="fas fa-check-circle fa-2x" style="color: #10b981;"></i>
+                            <div>
+                                <h5>Fire & Explosion</h5>
+                                <p class="text-muted">Cover for fire damage and explosion incidents</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex gap-3 mb-3">
+                            <i class="fas fa-check-circle fa-2x" style="color: #10b981;"></i>
+                            <div>
+                                <h5>Flood Damage</h5>
+                                <p class="text-muted">Protection against flooding and natural disasters</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex gap-3 mb-3">
+                            <i class="fas fa-check-circle fa-2x" style="color: #10b981;"></i>
+                            <div>
+                                <h5>Third-Party Liability</h5>
+                                <p class="text-muted">Cover for damage to other people's property</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex gap-3 mb-3">
+                            <i class="fas fa-check-circle fa-2x" style="color: #10b981;"></i>
+                            <div>
+                                <h5>Personal Accident</h5>
+                                <p class="text-muted">Medical expenses for driver and passengers</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="coverage-highlight">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> Coverage varies by plan. Comprehensive offers the most complete protection. Check the comparison table above for details.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="faq-section">
+    <div class="container">
+        <div class="text-center mb-5" data-animate>
+            <h2 class="fw-bold mb-3" style="color: var(--navy-dark);">Frequently Asked Questions</h2>
+            <p class="lead text-muted">Everything you need to know about motor insurance in Nigeria</p>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="faq-item" data-animate>
+                    <div class="faq-question">
+                        <span>Is motor insurance mandatory in Nigeria?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, <strong>third-party motor insurance is mandatory</strong> for all vehicles on Nigerian roads as stipulated by the Insurance Act. Driving without valid insurance is an offense punishable by law with fines up to ₦250,000 or imprisonment.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item" data-animate>
+                    <div class="faq-question">
+                        <span>What's the difference between Comprehensive and Standalone?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p><strong>Comprehensive</strong> includes both own-damage cover AND third-party liability protection—it's complete coverage. <strong>Standalone</strong> covers only damage to your own vehicle—it does NOT include third-party liability. Standalone is ideal if you already have third-party coverage elsewhere.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item" data-animate>
+                    <div class="faq-question">
+                        <span>How much does car insurance cost in Nigeria?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Third-party insurance starts from ₦15,000 per year. Comprehensive insurance typically costs between 3% to 5% of the vehicle's value. Final premiums depend on vehicle type, age, engine capacity, usage, and location.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item" data-animate>
+                    <div class="faq-question">
+                        <span>How quickly can I get my insurance certificate?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>With VehicleInsure, you receive your <strong>digital insurance certificate immediately</strong> after payment. It's valid for all legal purposes. Physical documents can be delivered within 3-5 working days at no extra cost.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item" data-animate>
+                    <div class="faq-question">
+                        <span>What documents do I need for motor insurance?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>You'll need a valid means of identification (National ID, Driver's License, or International Passport), vehicle particulars (registration number, make, model, year), and proof of address. For comprehensive cover, vehicle inspection photos may be requested.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item" data-animate>
+                    <div class="faq-question">
+                        <span>How do I file a claim?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>You can file a claim online through your dashboard, via our mobile app, or by calling our 24/7 claims hotline at <strong>0800-CLAIM-HELP</strong>. You'll need to provide accident details, photos, and a police report (for theft or major accidents).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5 mb-5">
+    <div class="container">
+        <div class="cta-section rounded-4 p-5" data-animate>
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h2 class="text-white fw-bold mb-3">Ready to Get Covered?</h2>
+                    <p class="text-white opacity-75 mb-0">Get your personalized motor insurance quote in under 60 seconds.</p>
+                </div>
+                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                    <a href="{% url 'core:get_quote' %}" class="btn btn-light btn-lg px-4">
+                        Get Instant Quote <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Intersection Observer for animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    
+    document.querySelectorAll('[data-animate]').forEach(el => {
+        observer.observe(el);
+    });
+    
+    // FAQ Accordion
+    document.querySelectorAll('.faq-question').forEach(question => {
+        question.addEventListener('click', () => {
+            const faqItem = question.closest('.faq-item');
+            const isActive = faqItem.classList.contains('active');
+            
+            // Close other FAQs
+            document.querySelectorAll('.faq-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Toggle current FAQ
+            if (!isActive) {
+                faqItem.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

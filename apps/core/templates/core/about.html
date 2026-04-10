@@ -1,0 +1,892 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}About VehicleInsure Nigeria | Trusted Car Insurance Provider{% endblock %}
+{% block meta_description %}VehicleInsure is Nigeria's leading digital-first vehicle insurance provider. NAICOM licensed, instant quotes, and nationwide coverage.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 60px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 60px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .page-header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        position: relative;
+        animation: slideUp 0.6s ease-out 0.2s both;
+    }
+    
+    .our-story-image {
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        position: relative;
+    }
+    
+    .our-story-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    
+    .our-story-image:hover img {
+        transform: scale(1.05);
+    }
+    
+    .story-badge {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: var(--royal-blue);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        z-index: 2;
+    }
+    
+    .mission-section {
+        padding: 60px 0;
+    }
+    
+    .mission-card {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        height: 100%;
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s ease;
+    }
+    
+    .mission-card.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .mission-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 25px;
+    }
+    
+    .mission-icon i {
+        font-size: 2rem;
+        color: white;
+    }
+    
+    .stats-section {
+        background: var(--gray-light);
+        padding: 80px 0;
+        margin: 60px 0;
+    }
+    
+    .stat-card {
+        text-align: center;
+        padding: 30px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        opacity: 0;
+        transform: scale(0.9);
+        transition: all 0.6s ease;
+    }
+    
+    .stat-card.visible {
+        opacity: 1;
+        transform: scale(1);
+    }
+    
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 700;
+        color: var(--royal-blue);
+        margin-bottom: 10px;
+    }
+    
+    .stat-label {
+        font-size: 1.1rem;
+        color: #64748b;
+    }
+    
+    .team-section {
+        padding: 60px 0;
+    }
+    
+    .team-card {
+        text-align: center;
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s ease;
+    }
+    
+    .team-card.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .team-image {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        margin: 0 auto 20px;
+        overflow: hidden;
+        border: 4px solid var(--royal-blue);
+    }
+    
+    .team-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .team-name {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 5px;
+    }
+    
+    .team-role {
+        color: var(--royal-blue);
+        font-weight: 500;
+        margin-bottom: 15px;
+    }
+    
+    .partner-section {
+        background: white;
+        padding: 60px 0;
+        border-top: 1px solid var(--gray-border);
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    /* Sliding Partners Logo */
+    .partners-slider {
+        overflow: hidden;
+        position: relative;
+        padding: 20px 0;
+    }
+    
+    .partners-track {
+        display: flex;
+        animation: scroll 30s linear infinite;
+        width: fit-content;
+    }
+    
+    .partners-track:hover {
+        animation-play-state: paused;
+    }
+    
+    .partner-logo-item {
+        flex-shrink: 0;
+        width: 180px;
+        height: 100px;
+        margin: 0 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 16px;
+        padding: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .partner-logo-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(65, 105, 225, 0.1);
+    }
+    
+    .partner-logo-item img {
+        max-width: 100%;
+        max-height: 70px;
+        object-fit: contain;
+        filter: grayscale(100%);
+        opacity: 0.7;
+        transition: all 0.3s ease;
+    }
+    
+    .partner-logo-item:hover img {
+        filter: grayscale(0%);
+        opacity: 1;
+    }
+    
+    @keyframes scroll {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+    
+    /* Partner Grid for Mobile */
+    .partners-grid {
+        display: none;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+    
+    .partner-grid-item {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    
+    .partner-grid-item img {
+        max-width: 100%;
+        max-height: 60px;
+        object-fit: contain;
+    }
+    
+    .timeline {
+        position: relative;
+        padding: 40px 0;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 3px;
+        height: 100%;
+        background: var(--royal-blue);
+    }
+    
+    .timeline-item {
+        margin-bottom: 50px;
+        position: relative;
+        opacity: 0;
+        transform: translateX(-30px);
+        transition: all 0.6s ease;
+    }
+    
+    .timeline-item.visible {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    
+    .timeline-item:nth-child(even) {
+        transform: translateX(30px);
+    }
+    
+    .timeline-item:nth-child(even).visible {
+        transform: translateX(0);
+    }
+    
+    .timeline-content {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        width: calc(50% - 40px);
+        position: relative;
+    }
+    
+    .timeline-item:nth-child(odd) .timeline-content {
+        margin-left: auto;
+    }
+    
+    .timeline-year {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: var(--royal-blue);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 50px;
+        font-weight: 700;
+    }
+    
+    .timeline-item:nth-child(odd) .timeline-year {
+        left: 50%;
+        margin-left: -60px;
+    }
+    
+    .timeline-item:nth-child(even) .timeline-year {
+        right: 50%;
+        margin-right: -60px;
+    }
+    
+    /* CTA Section */
+    .cta-section-about {
+        background: linear-gradient(135deg, #1a2a6c 0%, var(--royal-blue) 50%, #6b8eeb 100%);
+        border-radius: 24px;
+        padding: 60px 50px;
+        text-align: center;
+        color: white;
+        margin: 60px 0;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s ease;
+    }
+    
+    .cta-section-about.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .cta-section-about::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+        border-radius: 50%;
+        animation: pulse 6s ease-in-out infinite;
+    }
+    
+    .cta-section-about::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -5%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        border-radius: 50%;
+        animation: pulse 8s ease-in-out infinite reverse;
+    }
+    
+    .cta-section-about h2 {
+        font-weight: 700;
+        margin-bottom: 20px;
+        font-size: 2.5rem;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .cta-section-about p {
+        opacity: 0.9;
+        margin-bottom: 30px;
+        font-size: 1.2rem;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .cta-section-about .btn-light {
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .cta-section-about .btn-light:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+        50% {
+            transform: scale(1.2);
+            opacity: 0.8;
+        }
+    }
+    
+    @media (max-width: 992px) {
+        .partners-slider {
+            display: none;
+        }
+        
+        .partners-grid {
+            display: grid;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2.2rem;
+        }
+        
+        .timeline::before {
+            left: 20px;
+        }
+        
+        .timeline-content {
+            width: calc(100% - 50px);
+            margin-left: 50px !important;
+        }
+        
+        .timeline-year {
+            left: 20px !important;
+            right: auto !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            transform: translate(-50%, -50%);
+        }
+        
+        .cta-section-about {
+            padding: 40px 25px;
+        }
+        
+        .cta-section-about h2 {
+            font-size: 2rem;
+        }
+        
+        .partners-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>About VehicleInsure Nigeria</h1>
+        <p>Revolutionizing vehicle insurance across Nigeria with technology and trust</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">About Us</span>
+        </div>
+    </div>
+</section>
+
+<!-- Our Story Section -->
+<section class="container">
+    <div class="row align-items-center mb-5">
+        <div class="col-lg-6" data-animate>
+            <h2 class="fw-bold mb-4" style="color: var(--navy-dark); font-size: 2.2rem;">Our Story</h2>
+            <p class="lead mb-4">Founded in 2020, VehicleInsure was born from a simple observation: getting vehicle insurance in Nigeria was too complicated, slow, and expensive.</p>
+            <p class="mb-3">Our founders, experienced insurance professionals and tech entrepreneurs, saw an opportunity to transform the industry using technology. They envisioned a platform where Nigerians could get instant quotes, purchase policies online, and file claims seamlessly - all from their mobile phones.</p>
+            <p>Today, VehicleInsure serves over 30,000 customers across all 36 states of Nigeria, processing thousands of policies monthly and settling claims within 48 hours on average. We're proud to be Nigeria's fastest-growing digital-first insurance provider.</p>
+        </div>
+        <div class="col-lg-6" data-animate>
+            <div class="our-story-image">
+                <img src="{% static 'images/car-insurance-nigeria.jpg' %}" 
+                     alt="Car Insurance in Nigeria - VehicleInsure" 
+                     class="img-fluid"
+                     onerror="this.src='https://images.pexels.com/photos/3807277/pexels-photo-3807277.jpeg?auto=compress&cs=tinysrgb&w=600'">
+                <div class="story-badge">
+                    <i class="fas fa-shield-alt me-2"></i>NAICOM Licensed
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Mission & Vision -->
+<section class="mission-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="mission-card" data-animate>
+                    <div class="mission-icon">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3" style="color: var(--navy-dark);">Our Mission</h3>
+                    <p class="text-muted">To make vehicle insurance accessible, affordable, and hassle-free for every Nigerian driver through innovative technology and exceptional service.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mission-card" data-animate>
+                    <div class="mission-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3" style="color: var(--navy-dark);">Our Vision</h3>
+                    <p class="text-muted">To become Nigeria's most trusted insurance partner, setting the standard for transparency, speed, and customer satisfaction in the industry.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mission-card" data-animate>
+                    <div class="mission-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3" style="color: var(--navy-dark);">Our Values</h3>
+                    <p class="text-muted">Integrity, Innovation, Customer-First, Excellence, and Accessibility guide everything we do at VehicleInsure.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold" style="color: var(--navy-dark); font-size: 2.2rem;">VehicleInsure by the Numbers</h2>
+            <p class="lead text-muted">Our impact across Nigeria</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-3 col-6">
+                <div class="stat-card" data-animate>
+                    <div class="stat-number" data-target="50000">0</div>
+                    <div class="stat-label">Active Policies</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card" data-animate>
+                    <div class="stat-number" data-target="2500000000">₦0</div>
+                    <div class="stat-label">Claims Paid</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card" data-animate>
+                    <div class="stat-number" data-target="30000">0</div>
+                    <div class="stat-label">Happy Customers</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card" data-animate>
+                    <div class="stat-number" data-target="36">0</div>
+                    <div class="stat-label">States Covered</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Our Journey Timeline -->
+<section class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold" style="color: var(--navy-dark); font-size: 2.2rem;">Our Journey</h2>
+        <p class="lead text-muted">From startup to industry leader</p>
+    </div>
+    
+    <div class="timeline">
+        <div class="timeline-item" data-animate>
+            <div class="timeline-year">2020</div>
+            <div class="timeline-content">
+                <h4 class="fw-bold">Founded VehicleInsure</h4>
+                <p class="text-muted">Launched in Lagos with a mission to digitize vehicle insurance in Nigeria.</p>
+            </div>
+        </div>
+        
+        <div class="timeline-item" data-animate>
+            <div class="timeline-year">2021</div>
+            <div class="timeline-content">
+                <h4 class="fw-bold">NAICOM License & First 1,000 Customers</h4>
+                <p class="text-muted">Received full licensing from the National Insurance Commission and reached our first milestone of 1,000 active policies.</p>
+            </div>
+        </div>
+        
+        <div class="timeline-item" data-animate>
+            <div class="timeline-year">2022</div>
+            <div class="timeline-content">
+                <h4 class="fw-bold">Expanded Nationwide</h4>
+                <p class="text-muted">Extended coverage to all 36 states, launched mobile app, and processed over ₦500M in claims.</p>
+            </div>
+        </div>
+        
+        <div class="timeline-item" data-animate>
+            <div class="timeline-year">2023</div>
+            <div class="timeline-content">
+                <h4 class="fw-bold">30,000+ Customers & Awards</h4>
+                <p class="text-muted">Reached 30,000 customers, won "Insurtech of the Year" at the Nigeria Technology Awards.</p>
+            </div>
+        </div>
+        
+        <div class="timeline-item" data-animate>
+            <div class="timeline-year">2024</div>
+            <div class="timeline-content">
+                <h4 class="fw-bold">Innovation & Growth</h4>
+                <p class="text-muted">Launched AI-powered claims processing, fleet management solutions, and expanded partnership network.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Leadership Team -->
+<section class="team-section">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold" style="color: var(--navy-dark); font-size: 2.2rem;">Meet Our Leadership</h2>
+            <p class="lead text-muted">Experienced professionals driving innovation in Nigerian insurance</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="team-card" data-animate>
+                    <div class="team-image">
+                        <img src="{% static 'images/team/ceo.jpg' %}" alt="CEO" onerror="this.style.background='#eef2ff'; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22180%22 height=%22180%22%3E%3Crect width=%22180%22 height=%22180%22 fill=%22%234169E1%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2260%22%3EOA%3C/text%3E%3C/svg%3E'">
+                    </div>
+                    <h4 class="team-name">Oluwaseun Adebayo</h4>
+                    <div class="team-role">CEO & Co-Founder</div>
+                    <p class="text-muted small">20+ years in insurance and technology across Nigeria and UK</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="team-card" data-animate>
+                    <div class="team-image">
+                        <img src="{% static 'images/team/coo.jpg' %}" alt="COO" onerror="this.style.background='#eef2ff'; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22180%22 height=%22180%22%3E%3Crect width=%22180%22 height=%22180%22 fill=%22%234169E1%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2260%22%3ECN%3C/text%3E%3C/svg%3E'">
+                    </div>
+                    <h4 class="team-name">Chioma Nwachukwu</h4>
+                    <div class="team-role">COO & Co-Founder</div>
+                    <p class="text-muted small">Former Head of Operations at a leading Nigerian insurance firm</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="team-card" data-animate>
+                    <div class="team-image">
+                        <img src="{% static 'images/team/cto.jpg' %}" alt="CTO" onerror="this.style.background='#eef2ff'; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22180%22 height=%22180%22%3E%3Crect width=%22180%22 height=%22180%22 fill=%22%234169E1%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2260%22%3EIO%3C/text%3E%3C/svg%3E'">
+                    </div>
+                    <h4 class="team-name">Ibrahim Okonkwo</h4>
+                    <div class="team-role">Chief Technology Officer</div>
+                    <p class="text-muted small">Tech innovator with experience at Andela and Flutterwave</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="team-card" data-animate>
+                    <div class="team-image">
+                        <img src="{% static 'images/team/cfo.jpg' %}" alt="CFO" onerror="this.style.background='#eef2ff'; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22180%22 height=%22180%22%3E%3Crect width=%22180%22 height=%22180%22 fill=%22%234169E1%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2260%22%3EFA%3C/text%3E%3C/svg%3E'">
+                    </div>
+                    <h4 class="team-name">Fatima Adamu</h4>
+                    <div class="team-role">Chief Financial Officer</div>
+                    <p class="text-muted small">Chartered Accountant with expertise in insurance finance</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Partners Section with Sliding Logos -->
+<section class="partner-section">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold" style="color: var(--navy-dark); font-size: 2.2rem;">Our Partners & Accreditations</h2>
+            <p class="lead text-muted">Working with trusted organizations across Nigeria</p>
+        </div>
+        
+        <!-- Sliding Partners (Desktop) -->
+        <div class="partners-slider">
+            <div class="partners-track">
+                <!-- First set of logos -->
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3ENAICOM%3C/text%3E%3C/svg%3E" alt="NAICOM">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3ENIA%3C/text%3E%3C/svg%3E" alt="Nigerian Insurers Association">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3EFRSC%3C/text%3E%3C/svg%3E" alt="FRSC">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3ELeadway%3C/text%3E%3C/svg%3E" alt="Leadway Assurance">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3EAIG%3C/text%3E%3C/svg%3E" alt="AIG Nigeria">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3EAXA%3C/text%3E%3C/svg%3E" alt="AXA Mansard">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3EAllianz%3C/text%3E%3C/svg%3E" alt="Allianz Nigeria">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3ECustodian%3C/text%3E%3C/svg%3E" alt="Custodian Insurance">
+                </div>
+                
+                <!-- Duplicate set for seamless looping -->
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3ENAICOM%3C/text%3E%3C/svg%3E" alt="NAICOM">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3ENIA%3C/text%3E%3C/svg%3E" alt="Nigerian Insurers Association">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3EFRSC%3C/text%3E%3C/svg%3E" alt="FRSC">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3ELeadway%3C/text%3E%3C/svg%3E" alt="Leadway Assurance">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3EAIG%3C/text%3E%3C/svg%3E" alt="AIG Nigeria">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3EAXA%3C/text%3E%3C/svg%3E" alt="AXA Mansard">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3EAllianz%3C/text%3E%3C/svg%3E" alt="Allianz Nigeria">
+                </div>
+                <div class="partner-logo-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3ECustodian%3C/text%3E%3C/svg%3E" alt="Custodian Insurance">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Partners Grid (Mobile) -->
+        <div class="partners-grid">
+            <div class="partner-grid-item">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3ENAICOM%3C/text%3E%3C/svg%3E" alt="NAICOM">
+            </div>
+            <div class="partner-grid-item">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3ENIA%3C/text%3E%3C/svg%3E" alt="Nigerian Insurers Association">
+            </div>
+            <div class="partner-grid-item">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3EFRSC%3C/text%3E%3C/svg%3E" alt="FRSC">
+            </div>
+            <div class="partner-grid-item">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3ELeadway%3C/text%3E%3C/svg%3E" alt="Leadway Assurance">
+            </div>
+            <div class="partner-grid-item">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3EAIG%3C/text%3E%3C/svg%3E" alt="AIG Nigeria">
+            </div>
+            <div class="partner-grid-item">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3EAXA%3C/text%3E%3C/svg%3E" alt="AXA Mansard">
+            </div>
+            <div class="partner-grid-item">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3EAllianz%3C/text%3E%3C/svg%3E" alt="Allianz Nigeria">
+            </div>
+            <div class="partner-grid-item">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50'%3E%3Crect width='150' height='50' fill='%23f8fafc'/%3E%3Ctext x='75' y='30' text-anchor='middle' fill='%234169E1' font-weight='bold' font-size='14'%3ECustodian%3C/text%3E%3C/svg%3E" alt="Custodian Insurance">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="container">
+    <div class="cta-section-about" data-animate>
+        <h2>Join Thousands of Satisfied Nigerian Drivers</h2>
+        <p>Get your personalized quote in 60 seconds and join Nigeria's most trusted insurance community.</p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="{% url 'core:get_quote' %}" class="btn btn-light btn-lg">
+                Get Instant Quote <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+            <a href="{% url 'core:contact' %}" class="btn btn-outline-light btn-lg">
+                Contact Us <i class="fas fa-phone-alt ms-2"></i>
+            </a>
+        </div>
+        <p class="small opacity-75 mt-4 mb-0">
+            <i class="fas fa-shield-alt me-1"></i>
+            NAICOM Licensed • 256-bit SSL Secure • 24/7 Support
+        </p>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Intersection Observer for animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    
+    document.querySelectorAll('[data-animate]').forEach(el => {
+        observer.observe(el);
+    });
+    
+    // Animate stats numbers
+    const statNumbers = document.querySelectorAll('.stat-number');
+    
+    const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const target = entry.target;
+                const targetValue = parseInt(target.dataset.target);
+                const isCurrency = target.textContent.includes('₦');
+                let current = 0;
+                
+                const increment = targetValue / 50;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= targetValue) {
+                        current = targetValue;
+                        clearInterval(timer);
+                    }
+                    
+                    if (isCurrency) {
+                        target.textContent = '₦' + Math.floor(current).toLocaleString();
+                    } else {
+                        target.textContent = Math.floor(current).toLocaleString() + '+';
+                    }
+                }, 20);
+                
+                statsObserver.unobserve(target);
+            }
+        });
+    }, { threshold: 0.5 });
+    
+    statNumbers.forEach(stat => statsObserver.observe(stat));
+    
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (href !== '#') {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

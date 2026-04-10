@@ -1,0 +1,172 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Customer Details - {{ customer.email }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-user"></i> Customer Details</h2>
+            <p class="text-muted">{{ customer.email }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:staff_customers' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Customers
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user-circle"></i> Profile</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if customer.profile_picture %}
+                        <img src="{{ customer.profile_picture.url }}" class="rounded-circle mb-3" width="100" height="100">
+                    {% else %}
+                        <i class="fas fa-user-circle fa-5x mb-3" style="color: #4169E1;"></i>
+                    {% endif %}
+                    <h5>{{ customer.get_full_name|default:"No Name" }}</h5>
+                    <p class="text-muted">{{ customer.email }}</p>
+                    <hr>
+                    <p><i class="fas fa-phone"></i> {{ customer.phone_number|default:"Not provided" }}</p>
+                    <p><i class="fas fa-calendar"></i> Joined: {{ customer.date_joined|date:"M d, Y" }}</p>
+                    <p>
+                        <span class="badge {% if customer.is_verified %}bg-success{% else %}bg-warning{% endif %}">
+                            {% if customer.is_verified %}Verified{% else %}Unverified{% endif %}
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <!-- Policies -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-contract"></i> Policies ({{ policies.count }})</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Policy #</th>
+                                <th>Type</th>
+                                <th>Premium</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for policy in policies %}
+                                <tr>
+                                    <td>{{ policy.policy_number }}</td>
+                                    <td>{{ policy.get_policy_type_display }}</td>
+                                    <td>₦{{ policy.premium_amount|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="badge {% if policy.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                            {{ policy.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'core:staff_policy_detail' policy.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="5" class="text-center py-3">No policies</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Claims -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Claims ({{ claims.count }})</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Claim #</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for claim in claims %}
+                                <tr>
+                                    <td>{{ claim.claim_number }}</td>
+                                    <td>{{ claim.get_claim_type_display }}</td>
+                                    <td>₦{{ claim.claimed_amount|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ claim.status }}">{{ claim.get_status_display }}</span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'core:staff_claim_detail' claim.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="5" class="text-center py-3">No claims</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Vehicles -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-car"></i> Vehicles ({{ vehicles.count }})</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Registration</th>
+                                <th>Vehicle</th>
+                                <th>Year</th>
+                                <th>Insured</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vehicle in vehicles %}
+                                <tr>
+                                    <td>{{ vehicle.registration_number }}</td>
+                                    <td>{{ vehicle.make }} {{ vehicle.model }}</td>
+                                    <td>{{ vehicle.year }}</td>
+                                    <td>
+                                        {% if vehicle.is_insured %}
+                                            <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="4" class="text-center py-3">No vehicles</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 20px; }
+.card-header { background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%); color: white; border-radius: 12px 12px 0 0 !important; padding: 15px 20px; }
+.card-header h5 { margin: 0; font-weight: 600; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.table th { font-weight: 600; }
+</style>
+{% endblock %}

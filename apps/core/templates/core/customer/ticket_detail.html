@@ -1,0 +1,195 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Ticket #{{ ticket.ticket_number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Toast Container -->
+            <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+                <div id="notificationToast" class="toast" role="alert">
+                    <div class="toast-header">
+                        <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                        <strong class="me-auto" id="toastTitle">Notification</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body" id="toastMessage"></div>
+                </div>
+            </div>
+
+            <!-- Display Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fas fa-ticket-alt"></i> Ticket #{{ ticket.ticket_number }}</h4>
+                        <span class="badge 
+                            {% if ticket.status == 'open' %}bg-primary
+                            {% elif ticket.status == 'in_progress' %}bg-warning
+                            {% elif ticket.status == 'resolved' %}bg-success
+                            {% else %}bg-secondary{% endif %} fs-6">
+                            {{ ticket.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Ticket Info -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>Subject:</strong> {{ ticket.subject }}</p>
+                            <p><strong>Priority:</strong> 
+                                {% if ticket.priority == 'urgent' %}
+                                    <span class="badge bg-danger">Urgent</span>
+                                {% elif ticket.priority == 'high' %}
+                                    <span class="badge bg-warning">High</span>
+                                {% elif ticket.priority == 'medium' %}
+                                    <span class="badge bg-info">Medium</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Low</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Created:</strong> {{ ticket.created_at|date:"F d, Y H:i" }}</p>
+                            <p><strong>Last Updated:</strong> {{ ticket.updated_at|date:"F d, Y H:i" }}</p>
+                            {% if ticket.assigned_to %}
+                                <p><strong>Assigned To:</strong> {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.email }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Resolution if resolved -->
+                    {% if ticket.status == 'resolved' and ticket.resolution %}
+                        <div class="alert alert-success mb-4">
+                            <h6><i class="fas fa-check-circle"></i> Resolution</h6>
+                            <p class="mb-0">{{ ticket.resolution }}</p>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Original Message -->
+                    <div class="mb-4">
+                        <h6><i class="fas fa-comment"></i> Original Message</h6>
+                        <div class="p-3 bg-light rounded">
+                            {{ ticket.message|linebreaks }}
+                        </div>
+                    </div>
+                    
+                    <!-- Replies -->
+                    <div class="mb-4">
+                        <h6><i class="fas fa-comments"></i> Conversation History</h6>
+                        {% for reply in ticket.replies.all %}
+                            <div class="mb-3 p-3 border rounded {% if reply.user.role in 'admin,support,agent' %}border-primary bg-light{% endif %}">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <div>
+                                        <strong>{{ reply.user.get_full_name|default:reply.user.email }}</strong>
+                                        {% if reply.user.role in 'admin,support,agent' %}
+                                            <span class="badge bg-primary ms-2">Support Staff</span>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">{{ reply.created_at|date:"M d, Y H:i" }}</small>
+                                </div>
+                                <p class="mb-0">{{ reply.message|linebreaks }}</p>
+                                {% if reply.attachment %}
+                                    <div class="mt-2">
+                                        <a href="{{ reply.attachment.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                            <i class="fas fa-paperclip"></i> View Attachment
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <p class="text-muted text-center py-3">No replies yet. Our support team will respond shortly.</p>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Reply Form -->
+                    {% if ticket.status != 'closed' %}
+                        <div class="mt-4">
+                            <h6><i class="fas fa-reply"></i> Add Reply</h6>
+                            <form method="post" enctype="multipart/form-data" id="replyForm">
+                                {% csrf_token %}
+                                
+                                <!-- Honeypot field -->
+                                <input type="text" name="website" class="honeypot" style="display:none !important; position:absolute; left:-9999px;" tabindex="-1" autocomplete="off">
+                                <input type="hidden" name="timestamp" id="timestamp" value="">
+                                
+                                <div class="mb-3">
+                                    <textarea class="form-control" name="message" rows="4" maxlength="3000" placeholder="Type your reply here..." required></textarea>
+                                    <small class="text-muted">Maximum 3000 characters</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Attachment (Optional)</label>
+                                    <input type="file" class="form-control" name="attachment" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                    <small class="text-muted">Max 5MB - PDF, DOC, JPG, PNG</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="replyBtn">
+                                    <i class="fas fa-paper-plane"></i> Send Reply
+                                </button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> This ticket is closed. Please create a new ticket if you need further assistance.
+                        </div>
+                    {% endif %}
+                    
+                    <div class="text-center mt-4">
+                        <a href="{% url 'core:support_tickets' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Tickets
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set timestamp for bot detection
+    const timestampField = document.getElementById('timestamp');
+    if (timestampField) {
+        timestampField.value = Math.floor(Date.now() / 1000);
+    }
+    
+    // Form submission loading state
+    const form = document.getElementById('replyForm');
+    if (form) {
+        form.addEventListener('submit', function() {
+            const replyBtn = document.getElementById('replyBtn');
+            replyBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
+            replyBtn.disabled = true;
+        });
+    }
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h4 { margin: 0; font-weight: 600; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.toast { background: white; border-left: 4px solid #4169E1; }
+.honeypot { display: none !important; }
+.border-primary { border-left: 4px solid #4169E1 !important; }
+</style>
+{% endblock %}

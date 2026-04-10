@@ -1,0 +1,565 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Cookie Settings | VehicleInsure Nigeria{% endblock %}
+{% block meta_description %}Customize your cookie preferences for VehicleInsure. Choose which types of cookies you want to allow.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .settings-container {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 50px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .settings-intro {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .cookie-category-card {
+        background: var(--gray-light);
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 25px;
+        transition: all 0.3s;
+    }
+    
+    .cookie-category-card:hover {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    
+    .category-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+    
+    .category-title {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .category-icon {
+        width: 50px;
+        height: 50px;
+        background: white;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .category-icon i {
+        font-size: 1.5rem;
+        color: var(--royal-blue);
+    }
+    
+    .category-title h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 5px;
+        font-size: 1.3rem;
+    }
+    
+    .category-badge {
+        background: var(--royal-blue);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .category-badge.essential {
+        background: #10b981;
+    }
+    
+    .category-description {
+        color: #64748b;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    
+    .cookie-list {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    
+    .cookie-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .cookie-item:last-child {
+        border-bottom: none;
+    }
+    
+    .cookie-name {
+        font-weight: 500;
+        color: var(--navy-dark);
+    }
+    
+    .cookie-duration {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    
+    .toggle-switch {
+        position: relative;
+        width: 55px;
+        height: 28px;
+    }
+    
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #cbd5e1;
+        transition: .3s;
+        border-radius: 34px;
+    }
+    
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+    
+    input:checked + .toggle-slider {
+        background-color: var(--royal-blue);
+    }
+    
+    input:checked + .toggle-slider:before {
+        transform: translateX(27px);
+    }
+    
+    input:disabled + .toggle-slider {
+        background-color: #10b981;
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+    
+    .settings-actions {
+        display: flex;
+        gap: 20px;
+        justify-content: flex-end;
+        margin-top: 30px;
+        padding-top: 30px;
+        border-top: 1px solid var(--gray-border);
+    }
+    
+    .btn-save {
+        background: var(--royal-blue);
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-save:hover {
+        background: var(--royal-blue-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(65, 105, 225, 0.3);
+    }
+    
+    .btn-accept-all {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-accept-all:hover {
+        background: #059669;
+        transform: translateY(-2px);
+    }
+    
+    .btn-outline {
+        background: transparent;
+        border: 2px solid var(--gray-border);
+        color: #64748b;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-outline:hover {
+        border-color: var(--royal-blue);
+        color: var(--royal-blue);
+    }
+    
+    .success-message {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        display: none;
+    }
+    
+    .success-message.show {
+        display: block;
+        animation: slideDown 0.3s ease-out;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .settings-container {
+            padding: 25px;
+        }
+        
+        .settings-actions {
+            flex-direction: column;
+        }
+        
+        .btn-save, .btn-accept-all, .btn-outline {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .category-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Cookie Settings</h1>
+        <p>Customize your cookie preferences</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Cookie Settings</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <div class="settings-container">
+        <div class="success-message" id="successMessage">
+            <i class="fas fa-check-circle me-2"></i>
+            Your cookie preferences have been saved successfully!
+        </div>
+        
+        <div class="settings-intro">
+            <p>When you visit our website, we store cookies on your browser to collect information. This information might be about you, your preferences, or your device and is mostly used to make the site work as you expect it to. The information does not usually directly identify you, but it can give you a more personalized web experience.</p>
+            <p class="mb-0">You can choose not to allow some types of cookies. Click on the different category headings to find out more and change our default settings.</p>
+        </div>
+        
+        <!-- Essential Cookies -->
+        <div class="cookie-category-card">
+            <div class="category-header">
+                <div class="category-title">
+                    <div class="category-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div>
+                        <h3>Essential Cookies</h3>
+                        <span class="category-badge essential">Always Active</span>
+                    </div>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="essentialToggle" checked disabled>
+                    <span class="toggle-slider"></span>
+                </div>
+            </div>
+            <p class="category-description">These cookies are necessary for the website to function and cannot be switched off in our systems. They are usually only set in response to actions made by you such as setting privacy preferences, logging in, or filling forms.</p>
+            <div class="cookie-list">
+                <div class="cookie-item">
+                    <span class="cookie-name">sessionid</span>
+                    <span class="cookie-duration">Session</span>
+                </div>
+                <div class="cookie-item">
+                    <span class="cookie-name">csrftoken</span>
+                    <span class="cookie-duration">1 year</span>
+                </div>
+                <div class="cookie-item">
+                    <span class="cookie-name">cookie_consent</span>
+                    <span class="cookie-duration">1 year</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Analytics Cookies -->
+        <div class="cookie-category-card">
+            <div class="category-header">
+                <div class="category-title">
+                    <div class="category-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div>
+                        <h3>Analytics Cookies</h3>
+                        <span class="category-badge">Recommended</span>
+                    </div>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="analyticsToggle" checked>
+                    <span class="toggle-slider"></span>
+                </div>
+            </div>
+            <p class="category-description">These cookies allow us to count visits and traffic sources so we can measure and improve the performance of our site. They help us know which pages are the most and least popular and see how visitors move around the site.</p>
+            <div class="cookie-list">
+                <div class="cookie-item">
+                    <span class="cookie-name">_ga (Google Analytics)</span>
+                    <span class="cookie-duration">2 years</span>
+                </div>
+                <div class="cookie-item">
+                    <span class="cookie-name">_gid (Google Analytics)</span>
+                    <span class="cookie-duration">24 hours</span>
+                </div>
+                <div class="cookie-item">
+                    <span class="cookie-name">_gat (Google Analytics)</span>
+                    <span class="cookie-duration">1 minute</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Functional Cookies -->
+        <div class="cookie-category-card">
+            <div class="category-header">
+                <div class="category-title">
+                    <div class="category-icon">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <div>
+                        <h3>Functional Cookies</h3>
+                        <span class="category-badge">Recommended</span>
+                    </div>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="functionalToggle" checked>
+                    <span class="toggle-slider"></span>
+                </div>
+            </div>
+            <p class="category-description">These cookies enable the website to provide enhanced functionality and personalization. They may be set by us or by third-party providers whose services we have added to our pages.</p>
+            <div class="cookie-list">
+                <div class="cookie-item">
+                    <span class="cookie-name">user_preferences</span>
+                    <span class="cookie-duration">1 year</span>
+                </div>
+                <div class="cookie-item">
+                    <span class="cookie-name">recently_viewed</span>
+                    <span class="cookie-duration">30 days</span>
+                </div>
+                <div class="cookie-item">
+                    <span class="cookie-name">language_pref</span>
+                    <span class="cookie-duration">1 year</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Marketing Cookies -->
+        <div class="cookie-category-card">
+            <div class="category-header">
+                <div class="category-title">
+                    <div class="category-icon">
+                        <i class="fas fa-ad"></i>
+                    </div>
+                    <div>
+                        <h3>Marketing Cookies</h3>
+                        <span class="category-badge">Optional</span>
+                    </div>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="marketingToggle">
+                    <span class="toggle-slider"></span>
+                </div>
+            </div>
+            <p class="category-description">These cookies are used to deliver advertisements more relevant to you and your interests. They may be used to limit the number of times you see an advertisement and measure the effectiveness of advertising campaigns.</p>
+            <div class="cookie-list">
+                <div class="cookie-item">
+                    <span class="cookie-name">_fbp (Facebook)</span>
+                    <span class="cookie-duration">3 months</span>
+                </div>
+                <div class="cookie-item">
+                    <span class="cookie-name">_gcl_au (Google Ads)</span>
+                    <span class="cookie-duration">3 months</span>
+                </div>
+                <div class="cookie-item">
+                    <span class="cookie-name">IDE (Google DoubleClick)</span>
+                    <span class="cookie-duration">1 year</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="settings-actions">
+            <a href="{% url 'core:cookie_policy' %}" class="btn-outline">
+                <i class="fas fa-arrow-left me-2"></i> Cookie Policy
+            </a>
+            <button class="btn-save" onclick="saveSettings()">
+                <i class="fas fa-save me-2"></i> Save My Preferences
+            </button>
+            <button class="btn-accept-all" onclick="acceptAll()">
+                <i class="fas fa-check me-2"></i> Accept All Cookies
+            </button>
+        </div>
+        
+        <p class="text-muted small mt-4 text-center">
+            For more information about how we process personal data, please see our 
+            <a href="{% url 'core:privacy_policy' %}">Privacy Policy</a>.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function saveSettings() {
+        const preferences = {
+            essential: true,
+            analytics: document.getElementById('analyticsToggle').checked,
+            functional: document.getElementById('functionalToggle').checked,
+            marketing: document.getElementById('marketingToggle').checked
+        };
+        
+        localStorage.setItem('cookiePreferences', JSON.stringify(preferences));
+        localStorage.setItem('cookieConsent', 'custom');
+        
+        // Show success message
+        const successMsg = document.getElementById('successMessage');
+        successMsg.classList.add('show');
+        
+        // Scroll to top to show message
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Hide message after 3 seconds
+        setTimeout(() => {
+            successMsg.classList.remove('show');
+        }, 3000);
+    }
+    
+    function acceptAll() {
+        document.getElementById('analyticsToggle').checked = true;
+        document.getElementById('functionalToggle').checked = true;
+        document.getElementById('marketingToggle').checked = true;
+        
+        const preferences = {
+            essential: true,
+            analytics: true,
+            functional: true,
+            marketing: true
+        };
+        
+        localStorage.setItem('cookiePreferences', JSON.stringify(preferences));
+        localStorage.setItem('cookieConsent', 'accepted');
+        
+        // Show success message
+        const successMsg = document.getElementById('successMessage');
+        successMsg.innerHTML = '<i class="fas fa-check-circle me-2"></i> All cookies have been accepted!';
+        successMsg.classList.add('show');
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        setTimeout(() => {
+            successMsg.classList.remove('show');
+        }, 3000);
+    }
+    
+    // Load saved preferences
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedPreferences = localStorage.getItem('cookiePreferences');
+        if (savedPreferences) {
+            const preferences = JSON.parse(savedPreferences);
+            document.getElementById('analyticsToggle').checked = preferences.analytics;
+            document.getElementById('functionalToggle').checked = preferences.functional;
+            document.getElementById('marketingToggle').checked = preferences.marketing;
+        }
+    });
+</script>
+{% endblock %}

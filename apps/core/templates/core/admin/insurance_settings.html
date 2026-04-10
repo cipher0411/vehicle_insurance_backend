@@ -1,0 +1,413 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Insurance Premium Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-cogs"></i> Insurance Premium Settings</h2>
+            <p class="text-muted">Configure premium calculation parameters and add-on costs</p>
+        </div>
+        <div class="col-auto">
+            <button type="submit" form="settingsForm" class="btn btn-success">
+                <i class="fas fa-save"></i> Save All Settings
+            </button>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" id="settingsForm">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Coverage Type Multipliers -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Coverage Type Multipliers</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small">Multipliers applied to base premium based on coverage type</p>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Comprehensive Coverage</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="comprehensive_multiplier" 
+                                       value="{{ settings.comprehensive_multiplier }}" step="0.1" min="0.1" max="5.0" required>
+                                <span class="input-group-text">x Base Premium</span>
+                            </div>
+                            <small class="text-muted">Recommended: 1.5 - 2.0</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Third Party Only</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="third_party_multiplier" 
+                                       value="{{ settings.third_party_multiplier }}" step="0.1" min="0.1" max="5.0" required>
+                                <span class="input-group-text">x Base Premium</span>
+                            </div>
+                            <small class="text-muted">Recommended: 1.0</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Standalone Own Damage</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="standalone_multiplier" 
+                                       value="{{ settings.standalone_multiplier }}" step="0.1" min="0.1" max="5.0" required>
+                                <span class="input-group-text">x Base Premium</span>
+                            </div>
+                            <small class="text-muted">Recommended: 1.2 - 1.4</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Personal Accident</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="personal_accident_multiplier" 
+                                       value="{{ settings.personal_accident_multiplier }}" step="0.1" min="0.1" max="5.0" required>
+                                <span class="input-group-text">x Base Premium</span>
+                            </div>
+                            <small class="text-muted">Recommended: 0.5 - 0.8</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Base Premium Settings -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-money-bill"></i> Base Premium Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Base Premium Amount (₦)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                <input type="number" class="form-control" name="base_premium_amount" 
+                                       value="{{ settings.base_premium_amount }}" step="1000" min="10000" required>
+                            </div>
+                            <small class="text-muted">Starting premium before multipliers</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Base Coverage Reference (₦)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                <input type="number" class="form-control" name="base_coverage_reference" 
+                                       value="{{ settings.base_coverage_reference }}" step="100000" min="500000" required>
+                            </div>
+                            <small class="text-muted">Reference value for coverage amount calculations</small>
+                        </div>
+                        
+                        <hr>
+                        <h6 class="mb-3">Minimum Premium Amounts</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Comprehensive Min</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₦</span>
+                                    <input type="number" class="form-control" name="min_premium_comprehensive" 
+                                           value="{{ settings.min_premium_comprehensive }}" step="5000" min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Third Party Min</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₦</span>
+                                    <input type="number" class="form-control" name="min_premium_third_party" 
+                                           value="{{ settings.min_premium_third_party }}" step="1000" min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Standalone Min</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₦</span>
+                                    <input type="number" class="form-control" name="min_premium_standalone" 
+                                           value="{{ settings.min_premium_standalone }}" step="5000" min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Personal Accident Min</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₦</span>
+                                    <input type="number" class="form-control" name="min_premium_personal_accident" 
+                                           value="{{ settings.min_premium_personal_accident }}" step="1000" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Vehicle Age Multipliers -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Vehicle Age Multipliers</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">0-1 Years</label>
+                                <input type="number" class="form-control" name="age_0_1_multiplier" 
+                                       value="{{ settings.age_0_1_multiplier }}" step="0.1" min="0.1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">2-3 Years</label>
+                                <input type="number" class="form-control" name="age_2_3_multiplier" 
+                                       value="{{ settings.age_2_3_multiplier }}" step="0.1" min="0.1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">4-5 Years</label>
+                                <input type="number" class="form-control" name="age_4_5_multiplier" 
+                                       value="{{ settings.age_4_5_multiplier }}" step="0.1" min="0.1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">6-10 Years</label>
+                                <input type="number" class="form-control" name="age_6_10_multiplier" 
+                                       value="{{ settings.age_6_10_multiplier }}" step="0.1" min="0.1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">10+ Years</label>
+                                <input type="number" class="form-control" name="age_10_plus_multiplier" 
+                                       value="{{ settings.age_10_plus_multiplier }}" step="0.1" min="0.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Vehicle Type Multipliers -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-car"></i> Vehicle Type Multipliers</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Car</label>
+                                <input type="number" class="form-control" name="car_multiplier" 
+                                       value="{{ settings.car_multiplier }}" step="0.1" min="0.1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Motorcycle</label>
+                                <input type="number" class="form-control" name="motorcycle_multiplier" 
+                                       value="{{ settings.motorcycle_multiplier }}" step="0.1" min="0.1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Truck</label>
+                                <input type="number" class="form-control" name="truck_multiplier" 
+                                       value="{{ settings.truck_multiplier }}" step="0.1" min="0.1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Bus</label>
+                                <input type="number" class="form-control" name="bus_multiplier" 
+                                       value="{{ settings.bus_multiplier }}" step="0.1" min="0.1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Rickshaw</label>
+                                <input type="number" class="form-control" name="rickshaw_multiplier" 
+                                       value="{{ settings.rickshaw_multiplier }}" step="0.1" min="0.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Engine Capacity Multipliers -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-tachometer-alt"></i> Engine Capacity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Above 3000 CC</label>
+                            <input type="number" class="form-control" name="engine_above_3000_multiplier" 
+                                   value="{{ settings.engine_above_3000_multiplier }}" step="0.1" min="0.1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">2000 - 3000 CC</label>
+                            <input type="number" class="form-control" name="engine_2000_3000_multiplier" 
+                                   value="{{ settings.engine_2000_3000_multiplier }}" step="0.1" min="0.1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">1000 - 2000 CC</label>
+                            <input type="number" class="form-control" name="engine_1000_2000_multiplier" 
+                                   value="{{ settings.engine_1000_2000_multiplier }}" step="0.1" min="0.1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Below 1000 CC</label>
+                            <input type="number" class="form-control" name="engine_below_1000_multiplier" 
+                                   value="{{ settings.engine_below_1000_multiplier }}" step="0.1" min="0.1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Deductible Settings -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-percent"></i> Deductible Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Deductible Percentage (%)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="deductible_percentage" 
+                                       value="{{ settings.deductible_percentage }}" step="1" min="0" max="100">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Minimum Deductible (₦)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                <input type="number" class="form-control" name="min_deductible" 
+                                       value="{{ settings.min_deductible }}" step="1000" min="0">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Maximum Deductible (₦)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                <input type="number" class="form-control" name="max_deductible" 
+                                       value="{{ settings.max_deductible }}" step="5000" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Add-on Costs & Promo Default -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-plus-circle"></i> Add-on Costs</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Roadside Assistance (₦)</label>
+                            <input type="number" class="form-control" name="roadside_assistance_cost" 
+                                   value="{{ settings.roadside_assistance_cost }}" step="1000" min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Zero Depreciation (₦)</label>
+                            <input type="number" class="form-control" name="zero_depreciation_cost" 
+                                   value="{{ settings.zero_depreciation_cost }}" step="1000" min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Engine Protection (₦)</label>
+                            <input type="number" class="form-control" name="engine_protection_cost" 
+                                   value="{{ settings.engine_protection_cost }}" step="1000" min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Personal Accident Cover (₦)</label>
+                            <input type="number" class="form-control" name="personal_accident_cover_cost" 
+                                   value="{{ settings.personal_accident_cover_cost }}" step="1000" min="0">
+                        </div>
+                        <hr>
+                        <div class="mb-3">
+                            <label class="form-label">Default Promo Percentage (%)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="default_promo_percentage" 
+                                       value="{{ settings.default_promo_percentage }}" step="1" min="0" max="100">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mb-4">
+            <button type="submit" class="btn btn-primary btn-lg px-5">
+                <i class="fas fa-save"></i> Save All Settings
+            </button>
+        </div>
+    </form>
+    
+    <!-- Current Settings Summary -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-info-circle"></i> Last Updated</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0">
+                <strong>Last Updated:</strong> {{ settings.updated_at|date:"F d, Y H:i" }} 
+                by {{ settings.updated_by.get_full_name|default:"System" }}
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.form-control:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

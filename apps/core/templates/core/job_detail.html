@@ -1,0 +1,1030 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+{% block meta_description %}{{ meta_description }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 40px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+    }
+    
+    .job-hero {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .job-hero::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(65,105,225,0.03) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+    
+    .job-category-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #eef2ff;
+        color: var(--royal-blue);
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+    
+    .job-category-badge:hover {
+        background: var(--royal-blue);
+        color: white;
+    }
+    
+    .job-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--navy-dark);
+        margin-bottom: 25px;
+        line-height: 1.3;
+    }
+    
+    .job-highlights {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        margin-bottom: 30px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .highlight-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .highlight-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+    
+    .highlight-content {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .highlight-label {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    
+    .highlight-value {
+        font-weight: 700;
+        color: var(--navy-dark);
+        font-size: 1.1rem;
+    }
+    
+    .highlight-value.salary {
+        color: #10b981;
+    }
+    
+    .job-meta-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 20px 30px;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    .job-meta-bar i {
+        color: var(--royal-blue);
+        margin-right: 6px;
+        width: 16px;
+    }
+    
+    .job-meta-bar .badge {
+        background: #eef2ff;
+        color: var(--royal-blue);
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-weight: 500;
+    }
+    
+    .expired-banner {
+        background: #fef3c7;
+        border-radius: 16px;
+        padding: 18px 25px;
+        margin-bottom: 30px;
+        color: #92400e;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border-left: 4px solid #d97706;
+    }
+    
+    .expired-banner i {
+        font-size: 1.8rem;
+    }
+    
+    .expired-banner strong {
+        display: block;
+        margin-bottom: 3px;
+    }
+    
+    .success-message {
+        background: #d1fae5;
+        border-radius: 16px;
+        padding: 18px 25px;
+        margin-bottom: 30px;
+        color: #065f46;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border-left: 4px solid #10b981;
+    }
+    
+    .success-message i {
+        font-size: 1.8rem;
+    }
+    
+    .job-content-section {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin-bottom: 40px;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 25px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--royal-blue);
+        display: inline-block;
+    }
+    
+    .job-content {
+        color: #334155;
+        line-height: 1.85;
+        font-size: 1.05rem;
+    }
+    
+    .job-content h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin: 30px 0 15px;
+    }
+    
+    .job-content p {
+        margin-bottom: 20px;
+    }
+    
+    .job-content ul, .job-content ol {
+        margin-bottom: 25px;
+        padding-left: 20px;
+    }
+    
+    .job-content li {
+        margin-bottom: 10px;
+    }
+    
+    .job-content li::marker {
+        color: var(--royal-blue);
+    }
+    
+    .application-section {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin-bottom: 40px;
+    }
+    
+    .application-section .section-title {
+        margin-bottom: 30px;
+    }
+    
+    .application-form .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .application-form label {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 8px;
+    }
+    
+    .application-form .required-star {
+        color: #dc2626;
+    }
+    
+    .application-form .form-control, 
+    .application-form .form-select {
+        border: 2px solid var(--gray-border);
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .application-form .form-control:focus, 
+    .application-form .form-select:focus {
+        border-color: var(--royal-blue);
+        box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.1);
+    }
+    
+    .application-form textarea.form-control {
+        min-height: 120px;
+    }
+    
+    .file-upload-wrapper {
+        border: 2px dashed var(--gray-border);
+        border-radius: 16px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: #fafbfc;
+    }
+    
+    .file-upload-wrapper:hover {
+        border-color: var(--royal-blue);
+        background: #eef2ff;
+    }
+    
+    .file-upload-wrapper i {
+        font-size: 2.5rem;
+        color: var(--royal-blue);
+        margin-bottom: 15px;
+    }
+    
+    .file-upload-wrapper p {
+        color: #64748b;
+        margin-bottom: 5px;
+    }
+    
+    .file-upload-wrapper .small {
+        font-size: 0.85rem;
+        color: #94a3b8;
+    }
+    
+    .file-upload-wrapper input {
+        display: none;
+    }
+    
+    .file-selected {
+        margin-top: 15px;
+        padding: 12px 18px;
+        background: #eef2ff;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--royal-blue);
+    }
+    
+    .file-selected i {
+        font-size: 1.2rem;
+    }
+    
+    .btn-submit-application {
+        background: var(--royal-blue);
+        color: white;
+        border: none;
+        padding: 16px 40px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1.05rem;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(65, 105, 225, 0.3);
+    }
+    
+    .btn-submit-application:hover {
+        background: var(--royal-blue-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(65, 105, 225, 0.4);
+    }
+    
+    .btn-external-apply {
+        background: white;
+        color: var(--royal-blue);
+        border: 2px solid var(--royal-blue);
+        padding: 16px 40px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1.05rem;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-external-apply:hover {
+        background: var(--royal-blue);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .applications-closed {
+        text-align: center;
+        padding: 50px 30px;
+    }
+    
+    .applications-closed i {
+        font-size: 4rem;
+        color: #cbd5e1;
+        margin-bottom: 20px;
+    }
+    
+    .applications-closed h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .applications-closed p {
+        color: #64748b;
+        margin-bottom: 25px;
+    }
+    
+    .info-sidebar {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+    }
+    
+    .info-sidebar h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 25px;
+        font-size: 1.2rem;
+    }
+    
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .info-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .info-list li:last-child {
+        border-bottom: none;
+    }
+    
+    .info-list i {
+        color: var(--royal-blue);
+        width: 22px;
+        font-size: 1.1rem;
+        margin-top: 2px;
+    }
+    
+    .info-list strong {
+        display: block;
+        color: var(--navy-dark);
+        font-size: 0.95rem;
+        margin-bottom: 3px;
+    }
+    
+    .info-list span {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    .share-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid var(--gray-border);
+    }
+    
+    .share-box span {
+        font-weight: 600;
+        color: var(--navy-dark);
+        font-size: 0.9rem;
+    }
+    
+    .share-link {
+        width: 38px;
+        height: 38px;
+        background: var(--gray-light);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--royal-blue);
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    
+    .share-link:hover {
+        background: var(--royal-blue);
+        color: white;
+    }
+    
+    .related-jobs-sidebar {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    
+    .related-jobs-sidebar h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+    }
+    
+    .related-job-card {
+        padding: 18px 0;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .related-job-card:last-child {
+        border-bottom: none;
+    }
+    
+    .related-job-card h5 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 6px;
+        font-size: 1rem;
+    }
+    
+    .related-job-card h5 a {
+        color: var(--navy-dark);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    
+    .related-job-card h5 a:hover {
+        color: var(--royal-blue);
+    }
+    
+    .related-job-meta {
+        display: flex;
+        gap: 15px;
+        color: #94a3b8;
+        font-size: 0.8rem;
+    }
+    
+    .related-job-meta i {
+        margin-right: 4px;
+    }
+    
+    .view-all-link {
+        display: inline-flex;
+        align-items: center;
+        color: var(--royal-blue);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-top: 20px;
+        transition: gap 0.3s;
+    }
+    
+    .view-all-link i {
+        margin-left: 8px;
+        transition: transform 0.3s;
+    }
+    
+    .view-all-link:hover {
+        gap: 5px;
+    }
+    
+    .view-all-link:hover i {
+        transform: translateX(3px);
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 1.8rem;
+        }
+        
+        .job-hero {
+            padding: 25px;
+        }
+        
+        .job-title {
+            font-size: 1.8rem;
+        }
+        
+        .job-highlights {
+            gap: 20px;
+        }
+        
+        .highlight-item {
+            width: 100%;
+        }
+        
+        .job-content-section,
+        .application-section {
+            padding: 25px;
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>{{ job.title }}</h1>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <a href="{% url 'core:careers' %}">Careers</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">{{ job.title|truncatechars:30 }}</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Expired Banner -->
+    {% if not job.is_open %}
+    <div class="expired-banner">
+        <i class="fas fa-exclamation-circle"></i>
+        <div>
+            <strong>This position is no longer accepting applications.</strong>
+            <span>Check out our other open positions below.</span>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Success Message -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="success-message">
+            <i class="fas fa-check-circle"></i>
+            <div>
+                <strong>{{ message }}</strong>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Job Hero Section -->
+            <div class="job-hero">
+                <a href="{% url 'core:careers_category' job.category.slug %}" class="job-category-badge">
+                    <i class="fas fa-folder me-2"></i> {{ job.category.name }}
+                </a>
+                
+                <h1 class="job-title">{{ job.title }}</h1>
+                
+                <div class="job-highlights">
+                    <div class="highlight-item">
+                        <div class="highlight-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="highlight-content">
+                            <span class="highlight-label">Location</span>
+                            <span class="highlight-value">
+                                {{ job.location.name|default:"Remote" }}
+                                {% if job.is_remote %}
+                                <span class="badge ms-2">Remote</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="highlight-item">
+                        <div class="highlight-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <div class="highlight-content">
+                            <span class="highlight-label">Job Type</span>
+                            <span class="highlight-value">{{ job.job_type.name }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="highlight-item">
+                        <div class="highlight-icon">
+                            <i class="fas fa-signal"></i>
+                        </div>
+                        <div class="highlight-content">
+                            <span class="highlight-label">Experience</span>
+                            <span class="highlight-value">{{ job.get_experience_level_display }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="highlight-item">
+                        <div class="highlight-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="highlight-content">
+                            <span class="highlight-label">Salary</span>
+                            <span class="highlight-value salary">{{ job.salary_display }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="job-meta-bar">
+                    <span><i class="far fa-calendar-alt"></i> Posted: {{ job.published_at|date:"F d, Y" }}</span>
+                    {% if job.expires_at %}
+                    <span><i class="far fa-clock"></i> Apply by: {{ job.expires_at|date:"F d, Y" }}</span>
+                    {% endif %}
+                    <span><i class="far fa-eye"></i> {{ job.views_count }} views</span>
+                    <span><i class="far fa-file-alt"></i> {{ job.applications_count }} applications</span>
+                </div>
+            </div>
+            
+            <!-- Job Description -->
+            <div class="job-content-section">
+                <h2 class="section-title">Job Description</h2>
+                <div class="job-content">
+                    {{ job.description|safe }}
+                </div>
+            </div>
+            
+            <!-- Requirements -->
+            <div class="job-content-section">
+                <h2 class="section-title">Requirements</h2>
+                <div class="job-content">
+                    {{ job.requirements|safe }}
+                </div>
+            </div>
+            
+            <!-- Responsibilities -->
+            <div class="job-content-section">
+                <h2 class="section-title">Responsibilities</h2>
+                <div class="job-content">
+                    {{ job.responsibilities|safe }}
+                </div>
+            </div>
+            
+            <!-- Benefits -->
+            {% if job.benefits %}
+            <div class="job-content-section">
+                <h2 class="section-title">Benefits & Perks</h2>
+                <div class="job-content">
+                    {{ job.benefits|safe }}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Application Section -->
+            <div class="application-section" id="apply">
+                <h2 class="section-title">
+                    <i class="fas fa-paper-plane me-2"></i> Apply for this Position
+                </h2>
+                
+                {% if job.is_open %}
+                    {% if job.application_url %}
+                    <div class="text-center py-4">
+                        <p class="mb-4 lead">This position uses an external application system.</p>
+                        <a href="{{ job.application_url }}" target="_blank" class="btn-external-apply">
+                            Apply on External Site <i class="fas fa-external-link-alt ms-2"></i>
+                        </a>
+                    </div>
+                    {% else %}
+                    <form method="post" enctype="multipart/form-data" class="application-form" id="applicationForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.full_name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.email|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.phone|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.location|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.current_company|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.current_role|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.years_experience|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.expected_salary|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.available_from|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                Resume/CV <span class="required-star">*</span>
+                            </label>
+                            <div class="file-upload-wrapper" onclick="document.getElementById('id_resume').click()">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p><strong>Click to upload</strong> or drag and drop</p>
+                                <p class="small">PDF, DOC, DOCX (Max 5MB)</p>
+                                {{ form.resume }}
+                            </div>
+                            <div id="selectedFile" class="file-selected" style="display: none;"></div>
+                            {% if form.resume.errors %}
+                            <div class="invalid-feedback d-block">{{ form.resume.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        {{ form.cover_letter|as_crispy_field }}
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                {{ form.portfolio_url|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.linkedin_url|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.github_url|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="privacyConsent" required>
+                                <label class="form-check-label" for="privacyConsent">
+                                    I agree to VehicleInsure processing my personal data for this application in accordance with the 
+                                    <a href="{% url 'core:privacy_policy' %}" target="_blank">Privacy Policy</a>.
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn-submit-application">
+                                <i class="fas fa-paper-plane me-2"></i> Submit Application
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+                {% else %}
+                <div class="applications-closed">
+                    <i class="fas fa-lock"></i>
+                    <h4>Applications Closed</h4>
+                    <p>This position is no longer accepting applications.</p>
+                    <a href="{% url 'core:careers' %}" class="btn-primary-custom">
+                        View Other Opportunities <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Job Info Sidebar -->
+            <div class="info-sidebar">
+                <h4><i class="fas fa-info-circle me-2"></i> Job Overview</h4>
+                <ul class="info-list">
+                    <li>
+                        <i class="fas fa-calendar-alt"></i>
+                        <div>
+                            <strong>Posted Date</strong>
+                            <span>{{ job.published_at|date:"F d, Y" }}</span>
+                        </div>
+                    </li>
+                    {% if job.expires_at %}
+                    <li>
+                        <i class="fas fa-hourglass-end"></i>
+                        <div>
+                            <strong>Application Deadline</strong>
+                            <span>{{ job.expires_at|date:"F d, Y" }}</span>
+                        </div>
+                    </li>
+                    {% endif %}
+                    <li>
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <strong>Location</strong>
+                            <span>
+                                {{ job.location.name|default:"Remote" }}
+                                {% if job.location.address %}<br>{{ job.location.address }}{% endif %}
+                            </span>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fas fa-briefcase"></i>
+                        <div>
+                            <strong>Job Type</strong>
+                            <span>{{ job.job_type.name }}</span>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fas fa-signal"></i>
+                        <div>
+                            <strong>Experience Level</strong>
+                            <span>{{ job.get_experience_level_display }}</span>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fas fa-money-bill-wave"></i>
+                        <div>
+                            <strong>Salary</strong>
+                            <span>{{ job.salary_display }}</span>
+                        </div>
+                    </li>
+                    {% if job.is_remote %}
+                    <li>
+                        <i class="fas fa-laptop-house"></i>
+                        <div>
+                            <strong>Remote Work</strong>
+                            <span>Available</span>
+                        </div>
+                    </li>
+                    {% endif %}
+                    <li>
+                        <i class="fas fa-folder"></i>
+                        <div>
+                            <strong>Department</strong>
+                            <span>{{ job.category.name }}</span>
+                        </div>
+                    </li>
+                </ul>
+                
+                <!-- Share -->
+                <div class="share-box">
+                    <span>Share this job:</span>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="share-link">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ job.title }}" target="_blank" class="share-link">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}" target="_blank" class="share-link">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    <a href="https://wa.me/?text={{ job.title }}%20{{ request.build_absolute_uri }}" target="_blank" class="share-link">
+                        <i class="fab fa-whatsapp"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Related Jobs Sidebar -->
+            {% if related_jobs %}
+            <div class="related-jobs-sidebar">
+                <h4><i class="fas fa-briefcase me-2"></i> Related Jobs</h4>
+                <div class="related-jobs-list">
+                    {% for related in related_jobs %}
+                    <div class="related-job-card">
+                        <h5><a href="{{ related.get_absolute_url }}">{{ related.title }}</a></h5>
+                        <div class="related-job-meta">
+                            <span><i class="fas fa-map-marker-alt"></i> {{ related.location.name|default:"Remote" }}</span>
+                            <span><i class="fas fa-clock"></i> {{ related.job_type.name }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <a href="{% url 'core:careers' %}" class="view-all-link">
+                    View all positions <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            {% endif %}
+            
+            <!-- Contact Note -->
+            <div class="info-sidebar" style="background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);">
+                <h4><i class="fas fa-question-circle me-2"></i> Questions?</h4>
+                <p class="mb-3">If you have any questions about this position or the application process, feel free to reach out.</p>
+                <a href="mailto:careers@vehicleinsure.ng" class="text-decoration-none">
+                    <i class="fas fa-envelope me-2"></i> careers@vehicleinsure.ng
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // File upload display
+        const fileInput = document.getElementById('id_resume');
+        const selectedFileDiv = document.getElementById('selectedFile');
+        const uploadWrapper = document.querySelector('.file-upload-wrapper');
+        
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const file = this.files[0];
+                    selectedFileDiv.style.display = 'inline-flex';
+                    selectedFileDiv.innerHTML = `<i class="fas fa-file-pdf"></i> ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                } else {
+                    selectedFileDiv.style.display = 'none';
+                }
+            });
+        }
+        
+        // Drag and drop
+        if (uploadWrapper) {
+            uploadWrapper.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadWrapper.style.borderColor = 'var(--royal-blue)';
+                uploadWrapper.style.background = '#eef2ff';
+            });
+            
+            uploadWrapper.addEventListener('dragleave', () => {
+                uploadWrapper.style.borderColor = 'var(--gray-border)';
+                uploadWrapper.style.background = '#fafbfc';
+            });
+            
+            uploadWrapper.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadWrapper.style.borderColor = 'var(--gray-border)';
+                uploadWrapper.style.background = '#fafbfc';
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    const event = new Event('change', { bubbles: true });
+                    fileInput.dispatchEvent(event);
+                }
+            });
+        }
+        
+        // Smooth scroll to application form
+        if (window.location.hash === '#apply') {
+            const applySection = document.getElementById('apply');
+            if (applySection) {
+                setTimeout(() => {
+                    applySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,385 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}Press Management | VehicleInsure Staff{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-header {
+        background: #4169E1;
+        padding: 30px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 30px;
+    }
+    
+    .staff-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+    
+    .stat-card h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--royal-blue);
+        margin-bottom: 5px;
+    }
+    
+    .stat-card p {
+        color: #64748b;
+        margin-bottom: 0;
+    }
+    
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .filter-tabs {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-tab {
+        padding: 8px 20px;
+        border-radius: 40px;
+        font-weight: 500;
+        color: #64748b;
+        text-decoration: none;
+        transition: all 0.3s;
+        border: 1px solid transparent;
+    }
+    
+    .filter-tab:hover {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .filter-tab.active {
+        background: var(--royal-blue);
+        color: white;
+    }
+    
+    .nav-tabs {
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .nav-tabs .nav-link {
+        color: #64748b;
+        border: none;
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: var(--royal-blue);
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: var(--royal-blue);
+        border-bottom: 2px solid var(--royal-blue);
+        background: transparent;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        overflow-x: auto;
+    }
+    
+    .press-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .press-table th {
+        text-align: left;
+        padding: 15px;
+        background: var(--gray-light);
+        font-weight: 600;
+        color: var(--navy-dark);
+        border-bottom: 2px solid var(--gray-border);
+    }
+    
+    .press-table td {
+        padding: 15px;
+        border-bottom: 1px solid var(--gray-border);
+        color: #475569;
+    }
+    
+    .press-table tr:hover {
+        background: var(--gray-light);
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-published {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-draft {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    
+    .status-archived {
+        background: #e2e8f0;
+        color: #475569;
+    }
+    
+    .action-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        text-decoration: none;
+        margin-right: 5px;
+    }
+    
+    .btn-view {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .btn-edit {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .btn-delete {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .pagination {
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #64748b;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--gray-border);
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="staff-header">
+    <div class="container">
+        <h1><i class="fas fa-newspaper me-2"></i> Press Management</h1>
+        <p>Manage press releases, media coverage, and media kit resources</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link active" href="{% url 'core:press_manage' %}">
+                <i class="fas fa-newspaper me-1"></i> Press Releases
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:press_categories_manage' %}">
+                <i class="fas fa-folder me-1"></i> Categories
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:media_coverage_manage' %}">
+                <i class="fas fa-tv me-1"></i> Media Coverage
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:media_kit_manage' %}">
+                <i class="fas fa-download me-1"></i> Media Kit
+            </a>
+        </li>
+    </ul>
+    
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ stats.total }}</h3>
+            <p>Total Releases</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.published }}</h3>
+            <p>Published</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.draft }}</h3>
+            <p>Drafts</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.archived }}</h3>
+            <p>Archived</p>
+        </div>
+    </div>
+    
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-tabs">
+            <a href="?" class="filter-tab {% if not status_filter %}active{% endif %}">
+                <i class="fas fa-list me-1"></i> All
+            </a>
+            <a href="?status=published" class="filter-tab {% if status_filter == 'published' %}active{% endif %}">
+                <i class="fas fa-check-circle me-1"></i> Published
+            </a>
+            <a href="?status=draft" class="filter-tab {% if status_filter == 'draft' %}active{% endif %}">
+                <i class="fas fa-pen me-1"></i> Drafts
+            </a>
+            <a href="?status=archived" class="filter-tab {% if status_filter == 'archived' %}active{% endif %}">
+                <i class="fas fa-archive me-1"></i> Archived
+            </a>
+        </div>
+        <div class="d-flex gap-2">
+            <form method="get" class="search-box d-flex gap-2">
+                <input type="hidden" name="status" value="{{ status_filter }}">
+                <input type="text" name="q" class="form-control" placeholder="Search releases..." value="{{ search_query }}">
+                <button type="submit" class="btn-primary-custom">Search</button>
+                {% if search_query %}
+                <a href="?status={{ status_filter }}" class="btn-outline-primary-custom">Clear</a>
+                {% endif %}
+            </form>
+            <a href="{% url 'core:press_create' %}" class="btn-primary-custom">
+                <i class="fas fa-plus me-1"></i> New Release
+            </a>
+        </div>
+    </div>
+    
+    <!-- Press Releases Table -->
+    <div class="table-container">
+        {% if releases %}
+        <table class="press-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Author</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Views</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for release in releases %}
+                <tr>
+                    <td>
+                        <strong>{{ release.title|truncatechars:50 }}</strong>
+                        {% if release.is_featured %}
+                        <span class="badge bg-warning ms-2">Featured</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ release.category.name|default:"—" }}</td>
+                    <td>{{ release.author.get_full_name|default:release.author.username }}</td>
+                    <td>
+                        <span class="status-badge status-{{ release.status }}">
+                            {{ release.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ release.press_date|default:release.published_at|date:"M d, Y" }}</td>
+                    <td>{{ release.views_count }}</td>
+                    <td>
+                        <a href="{{ release.get_absolute_url }}" class="action-btn btn-view" target="_blank">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'core:press_edit' release.id %}" class="action-btn btn-edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form method="post" action="{% url 'core:press_delete' release.id %}" style="display: inline;" onsubmit="return confirm('Delete this press release?');">
+                            {% csrf_token %}
+                            <button type="submit" class="action-btn btn-delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-newspaper"></i>
+            <h3>No Press Releases</h3>
+            <p>{% if search_query %}No results found.{% else %}Create your first press release.{% endif %}</p>
+            <a href="{% url 'core:press_create' %}" class="btn-primary-custom">Create Release</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if releases.has_other_pages %}
+    <nav>
+        <ul class="pagination">
+            {% if releases.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ releases.previous_page_number }}&status={{ status_filter }}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in releases.paginator.page_range %}
+                {% if releases.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > releases.number|add:'-3' and num < releases.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}&status={{ status_filter }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if releases.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ releases.next_page_number }}&status={{ status_filter }}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,452 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}{{ document.title }} | VehicleInsure Nigeria{% endblock %}
+{% block meta_description %}View and download {{ document.title }} - {{ document.get_document_type_display }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: #4169E1;
+        padding: 40px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+    }
+    
+    .document-container {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+    }
+    
+    .document-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 25px;
+        margin-bottom: 30px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .document-icon-large {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .document-icon-large i {
+        font-size: 2.5rem;
+    }
+    
+    .document-title-section {
+        flex: 1;
+    }
+    
+    .document-type-badge {
+        display: inline-block;
+        background: var(--royal-blue);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 15px;
+    }
+    
+    .document-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .document-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px 30px;
+        color: #64748b;
+        font-size: 0.95rem;
+    }
+    
+    .document-meta i {
+        color: var(--royal-blue);
+        margin-right: 8px;
+        width: 18px;
+    }
+    
+    .verification-box {
+        background: linear-gradient(135deg, #eef2ff 0%, white 100%);
+        border-radius: 16px;
+        padding: 25px;
+        margin: 30px 0;
+        border: 1px solid var(--royal-blue);
+    }
+    
+    .verification-box h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .verification-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    
+    .verification-item {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .verification-label {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+    
+    .verification-value {
+        font-weight: 600;
+        color: var(--navy-dark);
+        font-family: 'Courier New', monospace;
+    }
+    
+    .verification-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .verification-status.verified {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .verification-status.pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    
+    .document-actions-large {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin: 30px 0;
+    }
+    
+    .btn-doc-large {
+        padding: 14px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .document-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+        padding-top: 25px;
+        border-top: 1px solid var(--gray-border);
+    }
+    
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .info-label {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+    
+    .info-value {
+        font-weight: 500;
+        color: var(--navy-dark);
+    }
+    
+    .related-documents {
+        margin-top: 40px;
+        padding-top: 25px;
+        border-top: 1px solid var(--gray-border);
+    }
+    
+    .related-documents h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .related-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .related-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .related-item:last-child {
+        border-bottom: none;
+    }
+    
+    .related-item a {
+        color: var(--navy-dark);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .related-item a:hover {
+        color: var(--royal-blue);
+    }
+    
+    .related-item i {
+        color: var(--royal-blue);
+        margin-right: 10px;
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 1.8rem;
+        }
+        
+        .document-container {
+            padding: 25px;
+        }
+        
+        .document-header {
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .document-title {
+            font-size: 1.6rem;
+        }
+        
+        .document-meta {
+            gap: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>{{ document.title }}</h1>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <a href="{% url 'core:dashboard' %}">Dashboard</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <a href="{% url 'core:digital_documents' %}">Documents</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">{{ document.title|truncatechars:30 }}</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <div class="document-container">
+        <!-- Document Header -->
+        <div class="document-header">
+            <div class="document-icon-large" style="background: {{ document.file_icon_color }}20; color: {{ document.file_icon_color }};">
+                <i class="fas {{ document.file_icon }}"></i>
+            </div>
+            <div class="document-title-section">
+                <span class="document-type-badge">{{ document.get_document_type_display }}</span>
+                <h1 class="document-title">{{ document.title }}</h1>
+                <div class="document-meta">
+                    {% if document.document_number %}
+                    <span><i class="fas fa-hashtag"></i> Ref: {{ document.document_number }}</span>
+                    {% endif %}
+                    <span><i class="far fa-calendar"></i> Issued: {{ document.issue_date|date:"F d, Y"|default:"—" }}</span>
+                    {% if document.valid_until %}
+                    <span><i class="far fa-clock"></i> Valid until: {{ document.valid_until|date:"F d, Y" }}</span>
+                    {% endif %}
+                    <span><i class="far fa-hdd"></i> {{ document.file_size }}</span>
+                    <span><i class="far fa-eye"></i> {{ document.view_count }} views</span>
+                    <span><i class="far fa-download"></i> {{ document.download_count }} downloads</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Verification Box -->
+        <div class="verification-box">
+            <h4><i class="fas fa-shield-alt me-2"></i> Document Verification</h4>
+            <div class="verification-details">
+                <div class="verification-item">
+                    <span class="verification-label">Status</span>
+                    <span class="verification-value">
+                        <span class="verification-status {% if document.is_verified %}verified{% else %}pending{% endif %}">
+                            <i class="fas {% if document.is_verified %}fa-check-circle{% else %}fa-clock{% endif %}"></i>
+                            {{ document.is_verified|yesno:"Verified,Pending Verification" }}
+                        </span>
+                    </span>
+                </div>
+                {% if document.verification_hash %}
+                <div class="verification-item">
+                    <span class="verification-label">Verification Hash</span>
+                    <span class="verification-value">{{ document.verification_hash|slice:":16" }}...</span>
+                </div>
+                {% endif %}
+                {% if document.verified_at %}
+                <div class="verification-item">
+                    <span class="verification-label">Verified On</span>
+                    <span class="verification-value">{{ document.verified_at|date:"F d, Y H:i" }}</span>
+                </div>
+                {% endif %}
+                {% if document.verified_by %}
+                <div class="verification-item">
+                    <span class="verification-label">Verified By</span>
+                    <span class="verification-value">{{ document.verified_by.get_full_name|default:document.verified_by.email }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Document Actions -->
+        <div class="document-actions-large">
+            <a href="{% url 'core:public_document_download' document.slug %}" class="btn-doc-large btn-primary-custom">
+                <i class="fas fa-download"></i> Download Document
+            </a>
+            <button class="btn-doc-large btn-outline-primary-custom" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+            <button class="btn-doc-large btn-outline-primary-custom" onclick="shareDocument()">
+                <i class="fas fa-share-alt"></i> Share
+            </button>
+        </div>
+        
+        <!-- Document Description -->
+        {% if document.description %}
+        <div style="margin: 30px 0;">
+            <h4 style="font-weight: 600; color: var(--navy-dark); margin-bottom: 15px;">Description</h4>
+            <p style="color: #475569; line-height: 1.7;">{{ document.description }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Document Info Grid -->
+        <div class="document-info-grid">
+            {% if document.policy %}
+            <div class="info-item">
+                <span class="info-label">Related Policy</span>
+                <span class="info-value">{{ document.policy.policy_number }}</span>
+            </div>
+            {% endif %}
+            {% if document.claim %}
+            <div class="info-item">
+                <span class="info-label">Related Claim</span>
+                <span class="info-value">{{ document.claim.claim_number }}</span>
+            </div>
+            {% endif %}
+            {% if document.payment %}
+            <div class="info-item">
+                <span class="info-label">Related Payment</span>
+                <span class="info-value">{{ document.payment.transaction_id }}</span>
+            </div>
+            {% endif %}
+            {% if document.category %}
+            <div class="info-item">
+                <span class="info-label">Category</span>
+                <span class="info-value">{{ document.category.name }}</span>
+            </div>
+            {% endif %}
+            {% if document.tags %}
+            <div class="info-item">
+                <span class="info-label">Tags</span>
+                <span class="info-value">{{ document.tags }}</span>
+            </div>
+            {% endif %}
+            <div class="info-item">
+                <span class="info-label">File Type</span>
+                <span class="info-value">{{ document.file_extension }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Uploaded</span>
+                <span class="info-value">{{ document.created_at|date:"F d, Y" }}</span>
+            </div>
+        </div>
+        
+        <!-- Related Documents -->
+        {% if related_documents %}
+        <div class="related-documents">
+            <h4><i class="fas fa-link me-2"></i> Related Documents</h4>
+            <div class="related-list">
+                {% for related in related_documents %}
+                <div class="related-item">
+                    <a href="{% url 'core:public_document_detail' related.slug %}">
+                        <i class="fas {{ related.file_icon }}"></i> {{ related.title }}
+                    </a>
+                    <a href="{% url 'core:public_document_download' related.slug %}" class="btn-outline-primary-custom btn-sm">
+                        <i class="fas fa-download"></i>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function shareDocument() {
+        if (navigator.share) {
+            navigator.share({
+                title: '{{ document.title }}',
+                text: 'Check out this document from VehicleInsure',
+                url: window.location.href
+            });
+        } else {
+            // Fallback - copy to clipboard
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                alert('Link copied to clipboard!');
+            });
+        }
+    }
+</script>
+{% endblock %}

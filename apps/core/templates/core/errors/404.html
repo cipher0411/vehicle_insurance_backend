@@ -1,0 +1,27 @@
+{% extends 'core/errors/error_base.html' %}
+{% load static %}
+
+{% block title %}404 - Page Not Found{% endblock %}
+
+{% block error_icon %}
+<i class="fas fa-map-signs"></i>
+{% endblock %}
+
+{% block error_code %}404{% endblock %}
+
+{% block error_title %}Page Not Found{% endblock %}
+
+{% block error_message %}
+The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
+<br><br>
+Don't worry, let's get you back on track!
+{% endblock %}
+
+{% block error_actions %}
+<a href="{% url 'core:home' %}" class="btn-primary-custom">
+    <i class="fas fa-home"></i> Back to Home
+</a>
+<a href="{% url 'core:contact' %}" class="btn-outline-custom">
+    <i class="fas fa-envelope"></i> Contact Support
+</a>
+{% endblock %}

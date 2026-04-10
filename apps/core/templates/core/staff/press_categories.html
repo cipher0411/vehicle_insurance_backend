@@ -1,0 +1,695 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}Press Categories Management | VehicleInsure Staff{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-header {
+        background: #4169E1;
+        padding: 30px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 30px;
+    }
+    
+    .staff-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .nav-tabs {
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .nav-tabs .nav-link {
+        color: #64748b;
+        border: none;
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: var(--royal-blue);
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: var(--royal-blue);
+        border-bottom: 2px solid var(--royal-blue);
+        background: transparent;
+    }
+    
+    .page-container {
+        background: white;
+        border-radius: 24px;
+        padding: 30px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .section-header h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 0;
+    }
+    
+    .categories-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .categories-table th {
+        text-align: left;
+        padding: 15px;
+        background: var(--gray-light);
+        font-weight: 600;
+        color: var(--navy-dark);
+        border-bottom: 2px solid var(--gray-border);
+    }
+    
+    .categories-table td {
+        padding: 15px;
+        border-bottom: 1px solid var(--gray-border);
+        color: #475569;
+    }
+    
+    .categories-table tr:hover {
+        background: var(--gray-light);
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-inactive {
+        background: #e2e8f0;
+        color: #475569;
+    }
+    
+    .action-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        text-decoration: none;
+        margin-right: 5px;
+        display: inline-block;
+    }
+    
+    .btn-edit {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .btn-delete {
+        background: #fee2e2;
+        color: #dc2626;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .add-category-form {
+        background: var(--gray-light);
+        border-radius: 16px;
+        padding: 25px;
+        margin-top: 30px;
+    }
+    
+    .add-category-form h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 8px;
+    }
+    
+    .form-control {
+        border: 2px solid var(--gray-border);
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        background: white;
+        width: 100%;
+    }
+    
+    .form-control:focus {
+        border-color: var(--royal-blue);
+        box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.1);
+        outline: none;
+    }
+    
+    .help-text {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 5px;
+    }
+    
+    .errorlist {
+        color: #dc2626;
+        list-style: none;
+        padding: 5px 0 0;
+        margin: 0;
+        font-size: 0.85rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #64748b;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: var(--gray-border);
+        margin-bottom: 15px;
+    }
+    
+    /* Modal Styles */
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .modal-backdrop.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .custom-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.9);
+        background: white;
+        border-radius: 24px;
+        padding: 0;
+        width: 90%;
+        max-width: 450px;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    }
+    
+    .custom-modal.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    
+    .modal-header {
+        padding: 25px 30px 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .modal-header h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 0;
+        font-size: 1.3rem;
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #94a3b8;
+        transition: color 0.3s;
+        padding: 5px;
+    }
+    
+    .modal-close:hover {
+        color: #dc2626;
+    }
+    
+    .modal-body {
+        padding: 25px 30px;
+    }
+    
+    .modal-body p {
+        color: #475569;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    
+    .modal-footer {
+        padding: 15px 30px 25px;
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+        border-top: 1px solid var(--gray-border);
+    }
+    
+    .modal-btn {
+        padding: 10px 24px;
+        border-radius: 40px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .modal-btn-cancel {
+        background: var(--gray-light);
+        color: #64748b;
+    }
+    
+    .modal-btn-cancel:hover {
+        background: #e2e8f0;
+    }
+    
+    .modal-btn-confirm {
+        background: #dc2626;
+        color: white;
+    }
+    
+    .modal-btn-confirm:hover {
+        background: #b91c1c;
+    }
+    
+    /* Toast Notification */
+    .toast-notification {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: white;
+        border-radius: 16px;
+        padding: 16px 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        z-index: 10000;
+        transform: translateX(400px);
+        opacity: 0;
+        transition: all 0.4s ease;
+        border-left: 4px solid #10b981;
+    }
+    
+    .toast-notification.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    
+    .toast-notification.error {
+        border-left-color: #dc2626;
+    }
+    
+    .toast-icon {
+        width: 40px;
+        height: 40px;
+        background: #d1fae5;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #065f46;
+        font-size: 1.2rem;
+    }
+    
+    .toast-notification.error .toast-icon {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .toast-content h5 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 2px;
+    }
+    
+    .toast-content p {
+        color: #64748b;
+        margin-bottom: 0;
+        font-size: 0.9rem;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 5px;
+        margin-left: 10px;
+    }
+    
+    .toast-close:hover {
+        color: #475569;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Staff Header -->
+<section class="staff-header">
+    <div class="container">
+        <h1><i class="fas fa-folder me-2"></i> Press Categories</h1>
+        <p>Manage categories for organizing press releases</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:press_manage' %}">
+                <i class="fas fa-newspaper me-1"></i> Press Releases
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="{% url 'core:press_categories_manage' %}">
+                <i class="fas fa-folder me-1"></i> Categories
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:media_coverage_manage' %}">
+                <i class="fas fa-tv me-1"></i> Media Coverage
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:media_kit_manage' %}">
+                <i class="fas fa-download me-1"></i> Media Kit
+            </a>
+        </li>
+    </ul>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="page-container">
+                <div class="section-header">
+                    <h3><i class="fas fa-list me-2"></i> All Categories</h3>
+                    <span class="badge bg-primary">{{ categories.count }} Total</span>
+                </div>
+                
+                {% if categories %}
+                <div class="table-responsive">
+                    <table class="categories-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Slug</th>
+                                <th>Description</th>
+                                <th>Releases</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in categories %}
+                            <tr>
+                                <td><strong>{{ category.name }}</strong></td>
+                                <td><code>{{ category.slug }}</code></td>
+                                <td>{{ category.description|truncatechars:40|default:"—" }}</td>
+                                <td>{{ category.release_count }}</td>
+                                <td>
+                                    <span class="status-badge {% if category.is_active %}status-active{% else %}status-inactive{% endif %}">
+                                        {{ category.is_active|yesno:"Active,Inactive" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {# Use category.id directly - works with both UUID and integer #}
+                                    <a href="{% url 'core:press_category_edit' category.id %}" class="action-btn btn-edit">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <button type="button" class="action-btn btn-delete" onclick="openDeleteModal('{{ category.id }}', '{{ category.name|escapejs }}', {{ category.release_count }})">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <h4>No Categories Yet</h4>
+                    <p>Create your first category using the form.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="page-container">
+                <div class="section-header">
+                    <h3><i class="fas fa-plus-circle me-2"></i> Add New Category</h3>
+                </div>
+                
+                <form method="post" class="add-category-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label class="form-label">Category Name *</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <ul class="errorlist">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Slug</label>
+                        {{ form.slug }}
+                        <p class="help-text">Leave blank to auto-generate from name</p>
+                        {% if form.slug.errors %}
+                        <ul class="errorlist">{% for error in form.slug.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                        <p class="help-text">Optional brief description</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                Active (visible on site)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary-custom w-100">
+                        <i class="fas fa-plus me-1"></i> Create Category
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Tips Card -->
+            <div class="page-container mt-3">
+                <h4><i class="fas fa-lightbulb me-2" style="color: #FFD700;"></i> Category Tips</h4>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Use clear, descriptive names</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Keep categories broad enough for multiple releases</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Common categories: Company News, Product Updates, Events, Awards</li>
+                    <li><i class="fas fa-check-circle text-success me-2"></i> Deactivate instead of deleting if releases exist</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop" id="modalBackdrop"></div>
+
+<!-- Delete Confirmation Modal -->
+<div class="custom-modal" id="deleteModal">
+    <div class="modal-header">
+        <h3><i class="fas fa-trash me-2" style="color: #dc2626;"></i> Delete Category</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+        <p>Are you sure you want to delete this category?</p>
+        <div class="bg-light p-3 rounded-3">
+            <strong id="deleteCategoryName"></strong>
+            <br>
+            <span id="deleteCategoryCount" class="small text-muted"></span>
+        </div>
+        <p class="mb-0 text-danger mt-3" id="deleteWarningMessage">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            <span>Releases in this category will be uncategorized.</span>
+        </p>
+    </div>
+    <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal()">
+            <i class="fas fa-times me-1"></i> Cancel
+        </button>
+        <form method="post" id="deleteForm">
+            {% csrf_token %}
+            <button type="submit" class="modal-btn modal-btn-confirm">
+                <i class="fas fa-trash me-1"></i> Delete Permanently
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-notification" id="toastNotification">
+    <div class="toast-icon" id="toastIcon">
+        <i class="fas fa-check"></i>
+    </div>
+    <div class="toast-content">
+        <h5 id="toastTitle">Success</h5>
+        <p id="toastMessage">Action completed successfully.</p>
+    </div>
+    <button class="toast-close" onclick="hideToast()">&times;</button>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-generate slug from name
+    const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+    const slugInput = document.getElementById('{{ form.slug.id_for_label }}');
+    
+    if (nameInput && slugInput) {
+        nameInput.addEventListener('input', function() {
+            if (!slugInput.value || slugInput.value === slugify(this.value)) {
+                slugInput.value = slugify(this.value);
+            }
+        });
+    }
+    
+    function slugify(text) {
+        return text
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/--+/g, '-')
+            .trim();
+    }
+    
+    // Modal Functions
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const deleteModal = document.getElementById('deleteModal');
+    const deleteForm = document.getElementById('deleteForm');
+    
+    function openModal() {
+        deleteModal.classList.add('show');
+        modalBackdrop.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeModal() {
+        deleteModal.classList.remove('show');
+        modalBackdrop.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+    
+    function openDeleteModal(categoryId, categoryName, releaseCount) {
+        document.getElementById('deleteCategoryName').textContent = categoryName;
+        
+        const countSpan = document.getElementById('deleteCategoryCount');
+        const warningSpan = document.querySelector('#deleteWarningMessage span');
+        
+        if (releaseCount > 0) {
+            countSpan.textContent = `${releaseCount} release${releaseCount !== 1 ? 's' : ''} will be affected.`;
+            warningSpan.textContent = 'Releases in this category will be uncategorized.';
+        } else {
+            countSpan.textContent = 'No releases in this category.';
+            warningSpan.textContent = 'This action cannot be undone.';
+        }
+        
+        // Set the form action URL with the category ID
+        deleteForm.action = `/staff/press/categories/${categoryId}/delete/`;
+        openModal();
+    }
+    
+    modalBackdrop.addEventListener('click', closeModal);
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && deleteModal.classList.contains('show')) {
+            closeModal();
+        }
+    });
+    
+    // Toast Notification
+    function showToast(title, message, type = 'success') {
+        const toast = document.getElementById('toastNotification');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastIcon = document.getElementById('toastIcon');
+        
+        toastTitle.textContent = title;
+        toastMessage.textContent = message;
+        
+        if (type === 'error') {
+            toast.classList.add('error');
+            toastIcon.innerHTML = '<i class="fas fa-exclamation"></i>';
+        } else {
+            toast.classList.remove('error');
+            toastIcon.innerHTML = '<i class="fas fa-check"></i>';
+        }
+        
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            hideToast();
+        }, 5000);
+    }
+    
+    function hideToast() {
+        document.getElementById('toastNotification').classList.remove('show');
+    }
+    
+    // Check for Django messages
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if messages %}
+            {% for message in messages %}
+                showToast(
+                    '{% if message.tags == "success" %}Success{% elif message.tags == "error" %}Error{% else %}Info{% endif %}',
+                    '{{ message|escapejs }}',
+                    '{% if message.tags == "success" %}success{% elif message.tags == "error" %}error{% else %}success{% endif %}'
+                );
+            {% endfor %}
+        {% endif %}
+    });
+</script>
+{% endblock %}

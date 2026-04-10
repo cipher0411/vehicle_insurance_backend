@@ -1,0 +1,799 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Press & Media | VehicleInsure Nigeria{% endblock %}
+{% block meta_description %}Latest news, press releases, and media coverage about VehicleInsure Nigeria. Download our media kit and brand assets.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .filter-tabs {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-tab {
+        padding: 8px 20px;
+        border-radius: 40px;
+        font-weight: 500;
+        color: #64748b;
+        text-decoration: none;
+        transition: all 0.3s;
+        border: 1px solid transparent;
+    }
+    
+    .filter-tab:hover {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .filter-tab.active {
+        background: var(--royal-blue);
+        color: white;
+    }
+    
+    .search-box {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .search-box input {
+        border: 2px solid var(--gray-border);
+        border-radius: 40px;
+        padding: 10px 20px;
+        min-width: 250px;
+    }
+    
+    .media-kit-section {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+    }
+    
+    .media-kit-section h2 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .media-resources {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+    
+    .resource-card {
+        background: var(--gray-light);
+        border-radius: 16px;
+        padding: 25px;
+        text-align: center;
+        transition: all 0.3s;
+        text-decoration: none;
+    }
+    
+    .resource-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    
+    .resource-card i {
+        font-size: 2.5rem;
+        color: var(--royal-blue);
+        margin-bottom: 15px;
+    }
+    
+    .resource-card h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .resource-card p {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+    
+    .featured-releases {
+        margin-bottom: 40px;
+    }
+    
+    .featured-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .featured-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+    }
+    
+    .featured-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.1);
+    }
+    
+    .featured-image {
+        height: 200px;
+        background-size: cover;
+        background-position: center;
+    }
+    
+    .featured-content {
+        padding: 25px;
+    }
+    
+    .featured-category {
+        display: inline-block;
+        background: var(--royal-blue);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-bottom: 15px;
+    }
+    
+    .featured-content h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+        font-size: 1.2rem;
+    }
+    
+    .featured-content p {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+    
+    .press-date {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        margin-bottom: 15px;
+    }
+    
+    .press-date i {
+        margin-right: 5px;
+        color: var(--royal-blue);
+    }
+    
+    .press-release-card {
+        background: white;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        transition: all 0.3s;
+        display: flex;
+        gap: 20px;
+    }
+    
+    .press-release-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(65, 105, 225, 0.1);
+    }
+    
+    .press-release-image {
+        width: 120px;
+        height: 120px;
+        border-radius: 12px;
+        background-size: cover;
+        background-position: center;
+        flex-shrink: 0;
+    }
+    
+    .press-release-content {
+        flex: 1;
+    }
+    
+    .press-release-content h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .press-release-content p {
+        color: #64748b;
+        margin-bottom: 15px;
+        line-height: 1.6;
+    }
+    
+    .media-coverage-section {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin: 40px 0;
+    }
+    
+    .coverage-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+        margin-top: 30px;
+    }
+    
+    .coverage-item {
+        padding: 25px;
+        background: var(--gray-light);
+        border-radius: 16px;
+        transition: all 0.3s;
+    }
+    
+    .coverage-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    
+    .coverage-logo {
+        height: 40px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .coverage-logo img {
+        max-height: 100%;
+        filter: grayscale(100%);
+        opacity: 0.7;
+    }
+    
+    .coverage-item h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+    }
+    
+    .coverage-item p {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+    
+    .coverage-link {
+        color: var(--royal-blue);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .sidebar {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+    }
+    
+    .sidebar h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .category-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .category-list li {
+        margin-bottom: 12px;
+    }
+    
+    .category-list a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #64748b;
+        text-decoration: none;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--gray-border);
+        transition: all 0.3s;
+    }
+    
+    .category-list a:hover {
+        color: var(--royal-blue);
+        padding-left: 5px;
+    }
+    
+    .category-list span {
+        background: var(--gray-light);
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+    
+    .recent-item {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+    
+    .recent-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        background-size: cover;
+        background-position: center;
+        flex-shrink: 0;
+    }
+    
+    .recent-content h5 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .recent-content .date {
+        color: #94a3b8;
+        font-size: 0.8rem;
+    }
+    
+    .contact-media {
+        background: linear-gradient(135deg, var(--gray-light) 0%, white 100%);
+        border-radius: 24px;
+        padding: 40px;
+        text-align: center;
+        margin-top: 40px;
+    }
+    
+    .contact-media h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .pagination {
+        justify-content: center;
+        margin-top: 40px;
+    }
+    
+    .page-link {
+        border: none;
+        padding: 10px 18px;
+        margin: 0 5px;
+        border-radius: 10px;
+        color: #64748b;
+    }
+    
+    .page-link:hover {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .page-item.active .page-link {
+        background: var(--royal-blue);
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--gray-border);
+        margin-bottom: 20px;
+    }
+    
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .filter-bar {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .press-release-card {
+            flex-direction: column;
+        }
+        
+        .press-release-image {
+            width: 100%;
+            height: 180px;
+        }
+        
+        .media-kit-section, .media-coverage-section {
+            padding: 25px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Press & Media</h1>
+        <p>Latest news, press releases, and media resources</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Press</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-tabs">
+            <a href="{% url 'core:press' %}" class="filter-tab {% if not selected_category and not selected_year %}active{% endif %}">
+                <i class="fas fa-list me-1"></i> All Releases
+            </a>
+            {% for category in categories %}
+            <a href="?category={{ category.slug }}" class="filter-tab {% if selected_category and selected_category.id == category.id %}active{% endif %}">
+                {{ category.name }}
+            </a>
+            {% endfor %}
+        </div>
+        <div class="search-box">
+            <form method="get" class="d-flex gap-2">
+                {% if selected_category %}
+                <input type="hidden" name="category" value="{{ selected_category.slug }}">
+                {% endif %}
+                <input type="text" name="q" placeholder="Search press releases..." value="{{ search_query }}">
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fas fa-search"></i>
+                </button>
+                {% if search_query %}
+                <a href="?" class="btn-outline-primary-custom">
+                    <i class="fas fa-times"></i>
+                </a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+    <!-- Active Filters -->
+    {% if selected_category or selected_year or search_query %}
+    <div class="active-filters mb-3">
+        {% if selected_category %}
+        <span class="filter-badge">
+            Category: {{ selected_category.name }}
+            <a href="?{% if search_query %}q={{ search_query }}{% endif %}"><i class="fas fa-times"></i></a>
+        </span>
+        {% endif %}
+        {% if selected_year %}
+        <span class="filter-badge">
+            Year: {{ selected_year }}
+            <a href="?{% if selected_category %}category={{ selected_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"><i class="fas fa-times"></i></a>
+        </span>
+        {% endif %}
+        {% if search_query %}
+        <span class="filter-badge">
+            Search: "{{ search_query }}"
+            <a href="?{% if selected_category %}category={{ selected_category.slug }}{% endif %}"><i class="fas fa-times"></i></a>
+        </span>
+        {% endif %}
+        <span class="filter-badge">{{ total_releases }} result{{ total_releases|pluralize }}</span>
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Featured Releases -->
+            {% if featured_releases and not search_query and not selected_category %}
+            <div class="featured-releases">
+                <h3 class="fw-bold mb-4" style="color: var(--navy-dark);">
+                    <i class="fas fa-star me-2" style="color: #FFD700;"></i> Featured News
+                </h3>
+                <div class="featured-grid">
+                    {% for featured in featured_releases %}
+                    <div class="featured-card">
+                        {% if featured.featured_image %}
+                        <div class="featured-image" style="background-image: url('{{ featured.featured_image.url }}');"></div>
+                        {% else %}
+                        <div class="featured-image" style="background-image: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);"></div>
+                        {% endif %}
+                        <div class="featured-content">
+                            <span class="featured-category">{{ featured.category.name }}</span>
+                            <h3><a href="{{ featured.get_absolute_url }}" style="color: var(--navy-dark); text-decoration: none;">{{ featured.title }}</a></h3>
+                            <p>{{ featured.excerpt|truncatechars:120 }}</p>
+                            <div class="press-date">
+                                <i class="far fa-calendar"></i> {{ featured.press_date|default:featured.published_at|date:"F d, Y" }}
+                                {% if featured.location %}
+                                <span class="ms-3"><i class="fas fa-map-marker-alt"></i> {{ featured.location }}</span>
+                                {% endif %}
+                            </div>
+                            <a href="{{ featured.get_absolute_url }}" class="read-more">
+                                Read Full Release <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Press Releases List -->
+            <h3 class="fw-bold mb-4" style="color: var(--navy-dark);">
+                <i class="fas fa-newspaper me-2"></i> Press Releases
+            </h3>
+            
+            {% if releases %}
+                {% for release in releases %}
+                <div class="press-release-card">
+                    {% if release.featured_image %}
+                    <div class="press-release-image" style="background-image: url('{{ release.featured_image.url }}');"></div>
+                    {% else %}
+                    <div class="press-release-image" style="background-image: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);"></div>
+                    {% endif %}
+                    <div class="press-release-content">
+                        <h4><a href="{{ release.get_absolute_url }}" style="color: var(--navy-dark); text-decoration: none;">{{ release.title }}</a></h4>
+                        <div class="press-date">
+                            <i class="far fa-calendar"></i> {{ release.press_date|default:release.published_at|date:"F d, Y" }}
+                            <span class="ms-3"><i class="far fa-folder"></i> {{ release.category.name }}</span>
+                            {% if release.location %}
+                            <span class="ms-3"><i class="fas fa-map-marker-alt"></i> {{ release.location }}</span>
+                            {% endif %}
+                        </div>
+                        <p>{{ release.excerpt|truncatechars:200 }}</p>
+                        <a href="{{ release.get_absolute_url }}" class="read-more">
+                            Read More <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Pagination -->
+                {% if releases.has_other_pages %}
+                <nav>
+                    <ul class="pagination">
+                        {% if releases.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ releases.previous_page_number }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in releases.paginator.page_range %}
+                            {% if releases.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            {% elif num > releases.number|add:'-3' and num < releases.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if releases.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ releases.next_page_number }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-newspaper"></i>
+                    <h3>No Press Releases Found</h3>
+                    <p>{% if search_query %}No results for "{{ search_query }}".{% else %}Check back soon for updates.{% endif %}</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Categories -->
+            <div class="sidebar">
+                <h4><i class="fas fa-folder me-2"></i> Categories</h4>
+                <ul class="category-list">
+                    {% for category in categories %}
+                    <li>
+                        <a href="?category={{ category.slug }}">
+                            <span>{{ category.name }}</span>
+                            <span>{{ category.release_count }}</span>
+                        </a>
+                    </li>
+                    {% empty %}
+                    <li class="text-muted">No categories</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <!-- Archives by Year -->
+            {% if years %}
+            <div class="sidebar">
+                <h4><i class="fas fa-archive me-2"></i> Archives</h4>
+                <ul class="category-list">
+                    {% for year in years %}
+                    <li>
+                        <a href="?year={{ year.year }}">
+                            <span>{{ year.year }}</span>
+                            <span class="badge bg-light">{{ year.year }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <!-- Recent Releases -->
+            {% if recent_releases %}
+            <div class="sidebar">
+                <h4><i class="fas fa-clock me-2"></i> Recent Releases</h4>
+                {% for recent in recent_releases %}
+                <div class="recent-item">
+                    {% if recent.featured_image %}
+                    <div class="recent-image" style="background-image: url('{{ recent.featured_image.url }}');"></div>
+                    {% else %}
+                    <div class="recent-image" style="background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);"></div>
+                    {% endif %}
+                    <div class="recent-content">
+                        <h5><a href="{{ recent.get_absolute_url }}" style="color: var(--navy-dark); text-decoration: none;">{{ recent.title|truncatechars:50 }}</a></h5>
+                        <span class="date"><i class="far fa-calendar"></i> {{ recent.press_date|default:recent.published_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Media Contact -->
+            <div class="sidebar">
+                <h4><i class="fas fa-address-card me-2"></i> Media Contact</h4>
+                <p class="mb-2"><i class="fas fa-user me-2" style="color: var(--royal-blue);"></i> <strong>Funke Adeyemi</strong></p>
+                <p class="mb-2"><i class="fas fa-briefcase me-2" style="color: var(--royal-blue);"></i> Head of Communications</p>
+                <p class="mb-2"><i class="fas fa-envelope me-2" style="color: var(--royal-blue);"></i> <a href="mailto:press@vehicleinsure.ng">press@vehicleinsure.ng</a></p>
+                <p><i class="fas fa-phone me-2" style="color: var(--royal-blue);"></i> +234 123 456 7890</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Media Coverage Section -->
+    {% if media_coverage %}
+    <div class="media-coverage-section">
+        <h3 class="fw-bold mb-4 text-center" style="color: var(--navy-dark);">
+            <i class="fas fa-tv me-2"></i> In the News
+        </h3>
+        <div class="coverage-grid">
+            {% for coverage in media_coverage %}
+            <div class="coverage-item">
+                <div class="coverage-logo">
+                    {% if coverage.publication_logo %}
+                    <img src="{{ coverage.publication_logo.url }}" alt="{{ coverage.publication }}">
+                    {% else %}
+                    <i class="fas fa-newspaper fa-2x" style="color: var(--royal-blue);"></i>
+                    <span class="ms-2 fw-bold">{{ coverage.publication }}</span>
+                    {% endif %}
+                </div>
+                <h4>{{ coverage.title }}</h4>
+                <p>{{ coverage.excerpt|truncatechars:100 }}</p>
+                <a href="{{ coverage.url }}" target="_blank" class="coverage-link">
+                    Read Article <i class="fas fa-external-link-alt ms-1"></i>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Media Kit Section -->
+    {% if media_kit %}
+    <div class="media-kit-section">
+        <h3 class="fw-bold text-center" style="color: var(--navy-dark);">
+            <i class="fas fa-download me-2"></i> Media Kit & Resources
+        </h3>
+        <p class="text-center text-muted">Download our brand assets, logos, and executive photos for media use.</p>
+        
+        <div class="media-resources">
+            {% for kit in media_kit %}
+            <a href="{% url 'core:media_kit_download' kit.id %}" class="resource-card">
+                {% if kit.file_type == 'pdf' %}
+                <i class="fas fa-file-pdf"></i>
+                {% elif kit.file_type == 'image' %}
+                <i class="fas fa-image"></i>
+                {% elif kit.file_type == 'video' %}
+                <i class="fas fa-video"></i>
+                {% else %}
+                <i class="fas fa-file"></i>
+                {% endif %}
+                <h4>{{ kit.title }}</h4>
+                <p>{{ kit.description|truncatechars:50 }}</p>
+                <small class="text-muted">{{ kit.file_size }}</small>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Media Contact CTA -->
+    <div class="contact-media">
+        <h3>Media Inquiries</h3>
+        <p class="mb-4">For press inquiries, interview requests, or media opportunities, please contact our communications team.</p>
+        <a href="mailto:press@vehicleinsure.ng" class="btn-primary-custom btn-lg">
+            Contact Media Relations <i class="fas fa-arrow-right ms-2"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Intersection Observer for animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    
+    document.querySelectorAll('[data-animate]').forEach(el => {
+        observer.observe(el);
+    });
+</script>
+{% endblock %}

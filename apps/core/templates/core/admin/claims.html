@@ -1,0 +1,244 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Manage Claims{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-clipboard-list"></i> Manage Claims</h2>
+            <p class="text-muted">Review and process insurance claims</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_export_data' %}?model=claims&format=csv" class="btn btn-success">
+                <i class="fas fa-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Claims</h6>
+                    <h3>{{ total_claims }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Pending</h6>
+                    <h3 class="text-warning">{{ pending_claims }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Under Review</h6>
+                    <h3 class="text-info">{{ under_review_claims }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Approved</h6>
+                    <h3 class="text-success">{{ approved_claims }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Claimed</h6>
+                    <h3>₦{{ total_claimed|floatformat:0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Approved</h6>
+                    <h3>₦{{ total_approved|floatformat:0 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <input type="text" class="form-control" id="searchInput" name="search" placeholder="Search by claim #, user, or policy..." value="{{ request.GET.search }}">
+        </div>
+        <div class="col-md-3">
+            <select class="form-control" id="statusFilter" name="status">
+                <option value="">All Status</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="under_review" {% if status_filter == 'under_review' %}selected{% endif %}>Under Review</option>
+                <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                <option value="settled" {% if status_filter == 'settled' %}selected{% endif %}>Settled</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-control" id="typeFilter" name="claim_type">
+                <option value="">All Types</option>
+                <option value="accident" {% if type_filter == 'accident' %}selected{% endif %}>Accident</option>
+                <option value="theft" {% if type_filter == 'theft' %}selected{% endif %}>Theft</option>
+                <option value="natural_disaster" {% if type_filter == 'natural_disaster' %}selected{% endif %}>Natural Disaster</option>
+                <option value="fire" {% if type_filter == 'fire' %}selected{% endif %}>Fire</option>
+                <option value="vandalism" {% if type_filter == 'vandalism' %}selected{% endif %}>Vandalism</option>
+                <option value="third_party" {% if type_filter == 'third_party' %}selected{% endif %}>Third Party</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+        </div>
+    </div>
+
+    <!-- Claims Table -->
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead style="background-color: #4169E1; color: white;">
+                <tr>
+                    <th>Claim #</th>
+                    <th>User</th>
+                    <th>Policy #</th>
+                    <th>Type</th>
+                    <th>Claimed (₦)</th>
+                    <th>Approved (₦)</th>
+                    <th>Incident Date</th>
+                    <th>Status</th>
+                    <th>Filed On</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for claim in claims %}
+                <tr>
+                    <td><strong>{{ claim.claim_number }}</strong></td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-circle me-2" style="color: #4169E1;"></i>
+                            <div>
+                                {{ claim.user.get_full_name|default:claim.user.email }}
+                                <br><small class="text-muted">{{ claim.user.email }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ claim.policy.policy_number }}</td>
+                    <td>{{ claim.get_claim_type_display }}</td>
+                    <td>₦{{ claim.claimed_amount|floatformat:2 }}</td>
+                    <td>{% if claim.approved_amount %}₦{{ claim.approved_amount|floatformat:2 }}{% else %}-{% endif %}</td>
+                    <td>{{ claim.incident_date|date:"M d, Y" }}</td>
+                    <td>
+                        {% if claim.status == 'approved' %}
+                            <span class="badge bg-success">Approved</span>
+                        {% elif claim.status == 'pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% elif claim.status == 'under_review' %}
+                            <span class="badge bg-info">Under Review</span>
+                        {% elif claim.status == 'rejected' %}
+                            <span class="badge bg-danger">Rejected</span>
+                        {% elif claim.status == 'settled' %}
+                            <span class="badge bg-primary">Settled</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ claim.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ claim.created_at|date:"M d, Y" }}</td>
+                    <td>
+                        <a href="{% url 'core:admin_claim_detail' claim.id %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> Review
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="text-center py-4">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No claims found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if claims.has_other_pages %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if claims.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ claims.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&claim_type={{ type_filter }}{% endif %}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% for num in claims.paginator.page_range %}
+                {% if claims.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > claims.number|add:'-3' and num < claims.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&claim_type={{ type_filter }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if claims.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ claims.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&claim_type={{ type_filter }}{% endif %}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<script>
+function applyFilters() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    const claimType = document.getElementById('typeFilter').value;
+    
+    let url = '?';
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    if (status) url += `status=${status}&`;
+    if (claimType) url += `claim_type=${claimType}&`;
+    
+    window.location.href = url.slice(0, -1);
+}
+
+document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') applyFilters();
+});
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.pagination .page-link { color: #4169E1; }
+.pagination .page-item.active .page-link { background-color: #4169E1; border-color: #4169E1; }
+</style>
+{% endblock %}

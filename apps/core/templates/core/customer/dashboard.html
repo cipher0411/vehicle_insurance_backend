@@ -1,0 +1,322 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Welcome back, {{ user.get_full_name|default:user.email }}!</h2>
+            <p class="text-muted">Here's what's happening with your insurance today.</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Active Policies</h6>
+                            <h3 class="mb-0">{{ active_policies_count }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Premium Paid</h6>
+                            <h3 class="mb-0">₦{{ total_premium_paid|floatformat:2 }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Pending Claims</h6>
+                            <h3 class="mb-0">{{ pending_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Vehicles Insured</h6>
+                            <h3 class="mb-0">{{ insured_vehicles_count|default:vehicles.count }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-car"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Policies -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-file-contract"></i> Recent Policies</h5>
+                    <a href="{% url 'core:my_policies' %}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if policies %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Policy Number</th>
+                                        <th>Type</th>
+                                        <th>Premium</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for policy in policies %}
+                                        <tr>
+                                            <td><strong>{{ policy.policy_number }}</strong></td>
+                                            <td>{{ policy.get_policy_type_display }}</td>
+                                            <td>₦{{ policy.premium_amount|floatformat:2 }}</td>
+                                            <td>
+                                                <span class="badge 
+                                                    {% if policy.status == 'active' %}bg-success
+                                                    {% elif policy.status == 'pending' %}bg-warning
+                                                    {% elif policy.status == 'expired' %}bg-danger
+                                                    {% else %}bg-secondary{% endif %}">
+                                                    {{ policy.get_status_display }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-file-contract fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No policies yet.</p>
+                            <a href="{% url 'core:get_quote' %}" class="btn btn-primary">Get a Quote</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Claims -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Recent Claims</h5>
+                    <a href="{% url 'core:my_claims' %}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if claims %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Claim Number</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for claim in claims %}
+                                        <tr>
+                                            <td><strong>{{ claim.claim_number }}</strong></td>
+                                            <td>{{ claim.get_claim_type_display }}</td>
+                                            <td>₦{{ claim.claimed_amount|floatformat:2 }}</td>
+                                            <td>
+                                                <span class="badge 
+                                                    {% if claim.status == 'approved' %}bg-success
+                                                    {% elif claim.status == 'pending' %}bg-warning
+                                                    {% elif claim.status == 'under_review' %}bg-info
+                                                    {% elif claim.status == 'rejected' %}bg-danger
+                                                    {% elif claim.status == 'settled' %}bg-primary
+                                                    {% else %}bg-secondary{% endif %}">
+                                                    {{ claim.get_status_display }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No claims filed yet.</p>
+                            <a href="{% url 'core:file_claim' %}" class="btn btn-primary">File a Claim</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Activity -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for activity in recent_activities %}
+                            <div class="mb-3 pb-3 border-bottom">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ activity.get_action_display }}</strong>
+                                    <small class="text-muted">{{ activity.created_at|timesince }} ago</small>
+                                </div>
+                                {% if activity.details %}
+                                    <p class="text-muted small mb-0">{{ activity.details|truncatechars:100 }}</p>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <p class="text-muted text-center py-3">No recent activity.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-bell"></i> Notifications</h5>
+                    {% if notifications %}
+                        <a href="{% url 'core:notifications' %}" class="btn btn-sm btn-outline-light">View All</a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% for notification in notifications %}
+                        <div class="mb-3 pb-3 border-bottom {% if not notification.is_read %}bg-light p-2 rounded{% endif %}">
+                            <div class="d-flex justify-content-between">
+                                <strong>
+                                    {% if not notification.is_read %}
+                                        <span class="badge bg-primary me-1">New</span>
+                                    {% endif %}
+                                    {{ notification.title }}
+                                </strong>
+                                <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                            </div>
+                            <p class="text-muted mb-0">{{ notification.message|truncatechars:150 }}</p>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted text-center py-3">No new notifications.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 col-6 mb-2">
+                            <a href="{% url 'core:vehicles' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-plus-circle"></i> Add Vehicle
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
+                            <a href="{% url 'core:get_quote' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-calculator"></i> Get Quote
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
+                            <a href="{% url 'core:file_claim' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-file-alt"></i> File Claim
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
+                            <a href="{% url 'core:support_tickets' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-headset"></i> Support
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+.btn-outline-primary {
+    color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-outline-primary:hover {
+    background-color: #4169E1;
+    color: white;
+}
+.btn-outline-light {
+    color: white;
+    border-color: rgba(255,255,255,0.5);
+}
+.btn-outline-light:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
+    border-color: white;
+}
+.table td { vertical-align: middle; }
+</style>
+{% endblock %}

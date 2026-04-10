@@ -1,0 +1,645 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-chart-line"></i> Admin Dashboard</h2>
+            <p class="text-muted">Welcome back, {{ user.get_full_name|default:user.email }}!</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-secondary" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <a href="{% url 'core:admin_reports' %}" class="btn btn-primary">
+                <i class="fas fa-chart-bar"></i> View Reports
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards - Row 1 -->
+    <div class="row mb-4">
+        <div class="col-md-2 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Users</h6>
+                            <h3>{{ total_users }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <small class="text-success">
+                        <i class="fas fa-check-circle"></i> {{ verified_users }} Verified
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">KYC Pending</h6>
+                            <h3 class="text-warning">{{ kyc_pending }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-id-card text-warning"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">Awaiting verification</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Policies</h6>
+                            <h3>{{ total_policies }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                    </div>
+                    <small class="text-success">
+                        <i class="fas fa-check"></i> {{ active_policies }} Active
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Expiring Soon</h6>
+                            <h3 class="text-warning">{{ expiring_policies }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-exclamation text-warning"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">Within 30 days</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Claims</h6>
+                            <h3>{{ total_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                    </div>
+                    <small class="text-warning">
+                        <i class="fas fa-clock"></i> {{ pending_claims }} Pending
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Revenue</h6>
+                            <h3>₦{{ total_revenue|floatformat:0 }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill text-success"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-hourglass-half"></i> {{ pending_payments }} pending
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards - Row 2 -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Approved Claims</h6>
+                            <h3 class="text-success">{{ approved_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">Ready for settlement</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Settled Claims</h6>
+                            <h3 class="text-primary">{{ settled_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill-wave text-primary"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">Fully processed</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Vehicles</h6>
+                            <h3>{{ total_vehicles }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-car"></i>
+                        </div>
+                    </div>
+                    <small class="text-success">
+                        <i class="fas fa-shield-alt"></i> {{ insured_vehicles }} Insured
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Support Tickets</h6>
+                            <h3 class="text-info">{{ open_tickets }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-headset text-info"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-ticket-alt"></i> {{ total_tickets }} total · 
+                        <i class="fas fa-user-slash"></i> {{ unassigned_tickets }} unassigned
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Monthly Revenue (₦)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Policies by Type</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="policyChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Claims by Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="claimsChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> User Growth</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="userGrowthChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Data Tables -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-users"></i> Recent Users</h5>
+                    <a href="{% url 'core:admin_users' %}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in recent_users %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if user.profile_picture %}
+                                                    <img src="{{ user.profile_picture.url }}" width="30" height="30" class="rounded-circle me-2">
+                                                {% else %}
+                                                    <i class="fas fa-user-circle me-2" style="color: #4169E1;"></i>
+                                                {% endif %}
+                                                {{ user.get_full_name|default:"N/A" }}
+                                            </div>
+                                        </td>
+                                        <td>{{ user.email|truncatechars:25 }}</td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ user.get_role_display }}</span>
+                                        </td>
+                                        <td>
+                                            {% if user.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="5" class="text-center py-3 text-muted">No recent users</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-file-contract"></i> Recent Policies</h5>
+                    <a href="{% url 'core:admin_policies' %}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Policy #</th>
+                                    <th>User</th>
+                                    <th>Premium</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for policy in recent_policies %}
+                                    <tr>
+                                        <td><strong>{{ policy.policy_number }}</strong></td>
+                                        <td>{{ policy.user.email|truncatechars:20 }}</td>
+                                        <td>₦{{ policy.premium_amount|floatformat:2 }}</td>
+                                        <td>
+                                            {% if policy.status == 'active' %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% elif policy.status == 'pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% elif policy.status == 'expired' %}
+                                                <span class="badge bg-danger">Expired</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ policy.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ policy.created_at|date:"M d, Y" }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="5" class="text-center py-3 text-muted">No recent policies</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Recent Claims</h5>
+                    <a href="{% url 'core:admin_claims' %}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Claim #</th>
+                                    <th>User</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Filed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for claim in recent_claims %}
+                                    <tr>
+                                        <td><strong>{{ claim.claim_number }}</strong></td>
+                                        <td>{{ claim.user.email|truncatechars:20 }}</td>
+                                        <td>₦{{ claim.claimed_amount|floatformat:2 }}</td>
+                                        <td>
+                                            {% if claim.status == 'approved' %}
+                                                <span class="badge bg-success">Approved</span>
+                                            {% elif claim.status == 'pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% elif claim.status == 'under_review' %}
+                                                <span class="badge bg-info">Under Review</span>
+                                            {% elif claim.status == 'rejected' %}
+                                                <span class="badge bg-danger">Rejected</span>
+                                            {% elif claim.status == 'settled' %}
+                                                <span class="badge bg-primary">Settled</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ claim.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ claim.created_at|date:"M d, Y" }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="5" class="text-center py-3 text-muted">No recent claims</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Recent Payments</h5>
+                    <a href="{% url 'core:admin_payments' %}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Transaction</th>
+                                    <th>User</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in recent_payments %}
+                                    <tr>
+                                        <td>{{ payment.transaction_id|truncatechars:15 }}</td>
+                                        <td>{{ payment.user.email|truncatechars:20 }}</td>
+                                        <td><strong class="text-success">₦{{ payment.amount|floatformat:2 }}</strong></td>
+                                        <td>{{ payment.get_payment_method_display }}</td>
+                                        <td>{{ payment.paid_at|date:"M d, Y" }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="5" class="text-center py-3 text-muted">No recent payments</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Tickets -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-headset"></i> Recent Support Tickets</h5>
+                    <a href="{% url 'core:admin_support_tickets' %}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Ticket #</th>
+                                    <th>User</th>
+                                    <th>Subject</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in recent_tickets %}
+                                    <tr>
+                                        <td><strong>{{ ticket.ticket_number }}</strong></td>
+                                        <td>{{ ticket.user.email|truncatechars:20 }}</td>
+                                        <td>{{ ticket.subject|truncatechars:30 }}</td>
+                                        <td>
+                                            {% if ticket.priority == 'urgent' %}
+                                                <span class="badge bg-danger">Urgent</span>
+                                            {% elif ticket.priority == 'high' %}
+                                                <span class="badge bg-warning">High</span>
+                                            {% elif ticket.priority == 'medium' %}
+                                                <span class="badge bg-info">Medium</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Low</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if ticket.status == 'open' %}
+                                                <span class="badge bg-warning">Open</span>
+                                            {% elif ticket.status == 'in_progress' %}
+                                                <span class="badge bg-info">In Progress</span>
+                                            {% elif ticket.status == 'resolved' %}
+                                                <span class="badge bg-success">Resolved</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Closed</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="5" class="text-center py-3 text-muted">No recent tickets</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: {{ months|safe }},
+            datasets: [{
+                label: 'Revenue (₦)',
+                data: {{ revenues|safe }},
+                borderColor: '#4169E1',
+                backgroundColor: 'rgba(65, 105, 225, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return '₦' + context.parsed.y.toLocaleString('en-NG', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            return '₦' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Policy Chart
+    const policyCtx = document.getElementById('policyChart').getContext('2d');
+    new Chart(policyCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ policy_types|safe }},
+            datasets: [{
+                data: {{ policy_counts|safe }},
+                backgroundColor: ['#4169E1', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+    
+    // Claims Chart
+    const claimsCtx = document.getElementById('claimsChart').getContext('2d');
+    new Chart(claimsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ claim_statuses|safe }},
+            datasets: [{
+                label: 'Number of Claims',
+                data: {{ claim_counts|safe }},
+                backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#dc3545', '#4169E1', '#6c757d']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+    
+    // User Growth Chart
+    const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
+    new Chart(userGrowthCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ user_growth_labels|safe }},
+            datasets: [{
+                label: 'New Users',
+                data: {{ user_growth_data|safe }},
+                backgroundColor: '#4169E1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
+.table th { font-weight: 600; text-transform: uppercase; font-size: 0.75rem; }
+.table td { vertical-align: middle; }
+.badge { padding: 5px 8px; border-radius: 20px; font-weight: 500; font-size: 0.7rem; }
+.btn-outline-light { color: white; border-color: rgba(255,255,255,0.5); }
+.btn-outline-light:hover { background-color: rgba(255,255,255,0.1); color: white; }
+canvas { max-height: 250px; }
+</style>
+{% endblock %}

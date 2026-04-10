@@ -1,0 +1,207 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Promotions & Discounts{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-tags"></i> Available Promotions</h2>
+            <p class="text-muted">Use these promo codes to get discounts on your insurance policies</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:get_quote' %}" class="btn btn-primary">
+                <i class="fas fa-calculator"></i> Get a Quote
+            </a>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+        <div id="copyToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">Promo code copied to clipboard!</div>
+        </div>
+    </div>
+    
+    {% if promotions %}
+        <div class="row">
+            {% for promo in promotions %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100 promo-card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tag"></i> 
+                            {% if promo.discount_type == 'percentage' %}
+                                {{ promo.discount_value }}% OFF
+                            {% else %}
+                                ₦{{ promo.discount_value|floatformat:2 }} OFF
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <div class="bg-light p-3 rounded">
+                                <h3 class="text-primary mb-0 promo-code-display">{{ promo.code }}</h3>
+                                <small class="text-muted">Promo Code</small>
+                            </div>
+                        </div>
+                        
+                        {% if promo.description %}
+                            <p class="mb-3">{{ promo.description }}</p>
+                        {% endif %}
+                        
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-calendar text-primary me-2"></i>
+                                <strong>Valid until:</strong> {{ promo.valid_to|date:"F d, Y" }}
+                            </li>
+                            {% if promo.min_purchase_amount > 0 %}
+                            <li class="mb-2">
+                                <i class="fas fa-shopping-cart text-primary me-2"></i>
+                                <strong>Min. purchase:</strong> ₦{{ promo.min_purchase_amount|floatformat:2 }}
+                            </li>
+                            {% endif %}
+                            {% if promo.max_discount_amount %}
+                            <li class="mb-2">
+                                <i class="fas fa-arrow-up text-primary me-2"></i>
+                                <strong>Max discount:</strong> ₦{{ promo.max_discount_amount|floatformat:2 }}
+                            </li>
+                            {% endif %}
+                            <li class="mb-2">
+                                <i class="fas fa-users text-primary me-2"></i>
+                                <strong>Available for:</strong> 
+                                {% if promo.applicable_to == 'all' %}
+                                    All Customers
+                                {% elif promo.applicable_to == 'new' %}
+                                    New Customers Only
+                                {% else %}
+                                    Existing Customers Only
+                                {% endif %}
+                            </li>
+                        </ul>
+                        
+                        <hr>
+                        
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="copyPromoCode('{{ promo.code }}')">
+                                <i class="fas fa-copy"></i> Copy Code
+                            </button>
+                            <a href="{% url 'core:get_quote' %}" class="btn btn-success">
+                                <i class="fas fa-calculator"></i> Use This Promo
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent text-muted small">
+                        <i class="fas fa-info-circle"></i> 
+                        {% if promo.used_count > 0 %}
+                            {{ promo.used_count }} time{{ promo.used_count|pluralize }} used
+                        {% else %}
+                            Be the first to use this promo!
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-tags fa-4x text-muted mb-3"></i>
+                <h4>No Active Promotions</h4>
+                <p class="text-muted">There are no active promotions available at this time.</p>
+                <p class="text-muted">Check back later for special offers!</p>
+                <a href="{% url 'core:get_quote' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-calculator"></i> Get a Quote Anyway
+                </a>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- How to Get Promos Card -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-gift"></i> How to Get More Promo Codes</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 text-center mb-3">
+                    <i class="fas fa-envelope fa-2x text-primary mb-2"></i>
+                    <h6>Newsletter Signup</h6>
+                    <p class="small text-muted">Subscribe to our newsletter for exclusive offers and updates.</p>
+                </div>
+                <div class="col-md-4 text-center mb-3">
+                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                    <h6>Refer a Friend</h6>
+                    <p class="small text-muted">Refer friends and earn discount codes when they purchase.</p>
+                </div>
+                <div class="col-md-4 text-center mb-3">
+                    <i class="fas fa-calendar-alt fa-2x text-primary mb-2"></i>
+                    <h6>Seasonal Offers</h6>
+                    <p class="small text-muted">Check back during holidays and special events.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyPromoCode(code) {
+    navigator.clipboard.writeText(code).then(() => {
+        const toast = new bootstrap.Toast(document.getElementById('copyToast'));
+        toast.show();
+    }).catch(err => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = code;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        const toast = new bootstrap.Toast(document.getElementById('copyToast'));
+        toast.show();
+    });
+}
+</script>
+
+<style>
+.promo-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.promo-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
+.card-footer {
+    border-top: 1px solid #e9ecef;
+    border-radius: 0 0 12px 12px !important;
+    padding: 12px 20px;
+}
+.promo-code-display {
+    font-family: monospace;
+    letter-spacing: 2px;
+    font-size: 2rem;
+}
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.btn-success { background-color: #28a745; border-color: #28a745; }
+.btn-success:hover { background-color: #218838; border-color: #1e7e34; }
+.btn-outline-primary { color: #4169E1; border-color: #4169E1; }
+.btn-outline-primary:hover { background-color: #4169E1; color: white; }
+.toast { background: white; border-left: 4px solid #4169E1; }
+</style>
+{% endblock %}

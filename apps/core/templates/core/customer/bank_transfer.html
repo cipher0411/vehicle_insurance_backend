@@ -1,0 +1,251 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Bank Transfer Instructions{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-university"></i> Bank Transfer Payment</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h5>Amount to Pay</h5>
+                        <h2 class="text-primary">₦{{ payment.amount|floatformat:2 }}</h2>
+                        <p class="text-muted">Policy #{{ payment.policy.policy_number }}</p>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Important:</strong> Please use your Payment Reference as the transfer description.
+                    </div>
+                    
+                    <div class="card mb-4 border-primary">
+                        <div class="card-body">
+                            <h5 class="text-primary mb-3">Bank Account Details</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Bank Name:</th>
+                                    <td><strong>{{ bank_details.bank_name }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Account Name:</th>
+                                    <td><strong>{{ bank_details.account_name }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Account Number:</th>
+                                    <td>
+                                        <h4 class="text-primary mb-0">{{ bank_details.account_number }}</h4>
+                                        <button class="btn btn-sm btn-outline-primary mt-1" onclick="copyToClipboard('{{ bank_details.account_number }}')">
+                                            <i class="fas fa-copy"></i> Copy
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% if bank_details.sort_code %}
+                                <tr>
+                                    <th>Sort Code:</th>
+                                    <td>{{ bank_details.sort_code }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6><i class="fas fa-info-circle text-primary"></i> Your Payment Reference</h6>
+                            <h4 class="text-primary">{{ payment.payment_reference }}</h4>
+                            <p class="text-muted small">Use this reference when making the transfer</p>
+                            <button class="btn btn-outline-primary btn-sm" onclick="copyToClipboard('{{ payment.payment_reference }}')">
+                                <i class="fas fa-copy"></i> Copy Reference
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3">After Making Transfer</h5>
+                    <form method="post" action="{% url 'core:confirm_bank_transfer' payment.id %}" id="transferForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Bank You Transferred From</label>
+                            <input type="text" class="form-control" name="bank_name" placeholder="e.g., GTBank, First Bank" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Transfer Reference/Session ID</label>
+                            <input type="text" class="form-control" name="transfer_reference" placeholder="Enter the transfer reference number" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Transfer Date</label>
+                            <input type="date" class="form-control" name="transfer_date" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Additional Notes (Optional)</label>
+                            <textarea class="form-control" name="notes" rows="2" placeholder="Any additional information"></textarea>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-clock"></i>
+                            Your payment will be verified within 24 hours. You will receive a notification once confirmed.
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-check-circle"></i> I Have Made the Transfer
+                            </button>
+                            <a href="{% url 'core:my_policies' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to My Policies
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> Need Help?</h5>
+                </div>
+                <div class="card-body">
+                    <p>If you have any questions about making payment, please contact our support team:</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-phone text-primary me-2"></i> +234 800 456 7890</li>
+                        <li><i class="fab fa-whatsapp text-success me-2"></i> +234 800 456 7890 (WhatsApp)</li>
+                        <li><i class="fas fa-envelope text-primary me-2"></i> payments@vehicleinsurance.ng</li>
+                    </ul>
+                    <a href="{% url 'core:support_tickets' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-headset"></i> Create Support Ticket
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="copyToast" class="toast" role="alert">
+        <div class="toast-header">
+            <i class="fas fa-check-circle text-success me-2"></i>
+            <strong class="me-auto">Copied!</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">Copied to clipboard</div>
+    </div>
+</div>
+
+<script>
+let toastInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('copyToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 2000 });
+    }
+    
+    // Set default transfer date to today
+    const dateInput = document.querySelector('input[name="transfer_date"]');
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+        dateInput.max = today;
+    }
+    
+    // Form submission
+    const form = document.getElementById('transferForm');
+    if (form) {
+        form.addEventListener('submit', function() {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
+            submitBtn.disabled = true;
+        });
+    }
+});
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        toastInstance.show();
+    });
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h4, .card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.border-primary {
+    border: 2px solid #4169E1 !important;
+}
+
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+
+.btn-outline-primary {
+    color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4169E1;
+    color: white;
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
+}
+
+.form-control:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffecb5;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #eef2ff;
+    border-color: #4169E1;
+    color: #1e293b;
+}
+
+.table td {
+    vertical-align: middle;
+}
+</style>
+{% endblock %}

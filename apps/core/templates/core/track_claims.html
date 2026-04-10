@@ -1,0 +1,415 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}How We Track Claims | VehicleInsure Nigeria{% endblock %}
+{% block meta_description %}Learn how our claims tracking system keeps you informed every step of the way. Real-time updates, transparent process, and dedicated support.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .intro-section {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .intro-section h2 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .intro-section p {
+        color: #475569;
+        line-height: 1.8;
+        font-size: 1.1rem;
+    }
+    
+    .section-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 40px;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .tracking-features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin: 40px 0;
+    }
+    
+    .feature-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    }
+    
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    .feature-icon i {
+        font-size: 1.8rem;
+        color: white;
+    }
+    
+    .feature-card h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+    }
+    
+    .feature-card p {
+        color: #64748b;
+        line-height: 1.6;
+        margin-bottom: 0;
+    }
+    
+    .timeline-section {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin: 50px 0;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.6s forwards;
+    }
+    
+    .claim-stages {
+        display: flex;
+        justify-content: space-between;
+        margin: 40px 0;
+        position: relative;
+    }
+    
+    .claim-stages::before {
+        content: '';
+        position: absolute;
+        top: 25px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gray-border);
+        z-index: 1;
+    }
+    
+    .stage-item {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        flex: 1;
+    }
+    
+    .stage-icon {
+        width: 50px;
+        height: 50px;
+        background: white;
+        border: 2px solid var(--gray-border);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 1.2rem;
+        color: #64748b;
+    }
+    
+    .stage-item h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 8px;
+    }
+    
+    .stage-item p {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+    
+    .info-box {
+        background: var(--gray-light);
+        border-radius: 20px;
+        padding: 30px;
+        margin-top: 30px;
+    }
+    
+    .info-box h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .info-box ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .info-box li {
+        padding: 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #475569;
+    }
+    
+    .info-box li i {
+        color: var(--royal-blue);
+    }
+    
+    .cta-section-track {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        border-radius: 24px;
+        padding: 50px 40px;
+        text-align: center;
+        color: white;
+        margin-top: 50px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.8s forwards;
+    }
+    
+    .cta-section-track h3 {
+        font-weight: 700;
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .intro-section, .timeline-section, .cta-section-track {
+            padding: 25px;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+        }
+        
+        .claim-stages {
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .claim-stages::before {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>How We Track Your Claims</h1>
+        <p>Real-time updates and complete transparency throughout your claim journey</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Track Claims</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Introduction -->
+    <div class="intro-section">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h2>Never Wonder About Your Claim Status Again</h2>
+                <p class="mb-0">When you file a claim with VehicleInsure, you're never left in the dark. Our advanced claims tracking system provides real-time updates at every stage of the process. From submission to settlement, you'll know exactly where your claim stands and what to expect next.</p>
+            </div>
+            <div class="col-lg-4 text-center mt-4 mt-lg-0">
+                <i class="fas fa-chart-line fa-5x" style="color: var(--royal-blue);"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tracking Features -->
+    <h2 class="section-title" style="animation-delay: 0.3s;">How Our Claims Tracking Benefits You</h2>
+    
+    <div class="tracking-features">
+        <div class="feature-card" style="animation-delay: 0.35s;">
+            <div class="feature-icon">
+                <i class="fas fa-eye"></i>
+            </div>
+            <h3>Real-Time Visibility</h3>
+            <p>See your claim's current status, assigned adjuster, and estimated completion date at a glance.</p>
+        </div>
+        
+        <div class="feature-card" style="animation-delay: 0.4s;">
+            <div class="feature-icon">
+                <i class="fas fa-bell"></i>
+            </div>
+            <h3>Automatic Updates</h3>
+            <p>Receive SMS and email notifications whenever your claim moves to the next stage.</p>
+        </div>
+        
+        <div class="feature-card" style="animation-delay: 0.45s;">
+            <div class="feature-icon">
+                <i class="fas fa-history"></i>
+            </div>
+            <h3>Complete History</h3>
+            <p>Access the full timeline of your claim—every update, document, and communication in one place.</p>
+        </div>
+        
+        <div class="feature-card" style="animation-delay: 0.5s;">
+            <div class="feature-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <h3>Direct Communication</h3>
+            <p>Message your assigned claims handler directly through the tracking portal.</p>
+        </div>
+        
+        <div class="feature-card" style="animation-delay: 0.55s;">
+            <div class="feature-icon">
+                <i class="fas fa-file-pdf"></i>
+            </div>
+            <h3>Document Access</h3>
+            <p>View and download all claim-related documents including estimates and settlement reports.</p>
+        </div>
+        
+        <div class="feature-card" style="animation-delay: 0.6s;">
+            <div class="feature-icon">
+                <i class="fas fa-mobile-alt"></i>
+            </div>
+            <h3>Mobile Access</h3>
+            <p>Track your claims on the go with our mobile-optimized dashboard.</p>
+        </div>
+    </div>
+    
+    <!-- Claim Stages -->
+    <div class="timeline-section">
+        <h3 class="fw-bold mb-4 text-center" style="color: var(--navy-dark);">The 5 Stages of Your Claim Journey</h3>
+        
+        <div class="claim-stages">
+            <div class="stage-item">
+                <div class="stage-icon">1</div>
+                <h4>Submitted</h4>
+                <p>Claim received and awaiting initial review</p>
+                <small class="text-muted">Within 24 hours</small>
+            </div>
+            <div class="stage-item">
+                <div class="stage-icon">2</div>
+                <h4>Processing</h4>
+                <p>Documents verified, adjuster assigned</p>
+                <small class="text-muted">24-48 hours</small>
+            </div>
+            <div class="stage-item">
+                <div class="stage-icon">3</div>
+                <h4>Assessment</h4>
+                <p>Vehicle inspection and damage evaluation</p>
+                <small class="text-muted">1-3 days</small>
+            </div>
+            <div class="stage-item">
+                <div class="stage-icon">4</div>
+                <h4>Approval</h4>
+                <p>Claim approved, payment processing</p>
+                <small class="text-muted">24 hours</small>
+            </div>
+            <div class="stage-item">
+                <div class="stage-icon">5</div>
+                <h4>Settled</h4>
+                <p>Payment completed, claim closed</p>
+                <small class="text-muted">Final</small>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <h4><i class="fas fa-info-circle me-2"></i> What You'll See in Your Tracking Dashboard</h4>
+            <ul>
+                <li><i class="fas fa-check-circle"></i> <strong>Current Status:</strong> The exact stage your claim is in</li>
+                <li><i class="fas fa-check-circle"></i> <strong>Assigned Handler:</strong> Name and contact information of your claims specialist</li>
+                <li><i class="fas fa-check-circle"></i> <strong>Estimated Completion:</strong> Expected settlement date based on claim type</li>
+                <li><i class="fas fa-check-circle"></i> <strong>Documents Uploaded:</strong> List of all documents submitted for your claim</li>
+                <li><i class="fas fa-check-circle"></i> <strong>Claim Amount:</strong> Estimated or approved settlement amount</li>
+                <li><i class="fas fa-check-circle"></i> <strong>Activity Timeline:</strong> Chronological history of all claim activities</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- CTA -->
+    <div class="cta-section-track">
+        <h3>Have an Active Claim?</h3>
+        <p class="mb-4">Log in to your dashboard to track your claim status in real-time.</p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="{% url 'core:dashboard' %}" class="btn btn-light btn-lg px-5">
+                Go to Dashboard <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+            <a href="{% url 'core:claims_support' %}" class="btn btn-outline-light btn-lg px-5">
+                Get Claims Support <i class="fas fa-headset ms-2"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

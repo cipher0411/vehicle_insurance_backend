@@ -1,0 +1,161 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Edit Vehicle - {{ vehicle.registration_number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-edit"></i> Edit Vehicle</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Display Messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Current Status:</strong> 
+                        {% if vehicle.is_insured %}
+                            <span class="badge bg-success">Insured</span>
+                        {% else %}
+                            <span class="badge bg-warning">Uninsured</span>
+                        {% endif %}
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" id="editVehicleForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="registration_number" class="form-label">Registration Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="registration_number" name="registration_number" value="{{ vehicle.registration_number }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="vehicle_type" class="form-label">Vehicle Type <span class="text-danger">*</span></label>
+                                <select class="form-control" id="vehicle_type" name="vehicle_type" required>
+                                    <option value="car" {% if vehicle.vehicle_type == 'car' %}selected{% endif %}>Car</option>
+                                    <option value="motorcycle" {% if vehicle.vehicle_type == 'motorcycle' %}selected{% endif %}>Motorcycle</option>
+                                    <option value="truck" {% if vehicle.vehicle_type == 'truck' %}selected{% endif %}>Truck</option>
+                                    <option value="bus" {% if vehicle.vehicle_type == 'bus' %}selected{% endif %}>Bus</option>
+                                    <option value="rickshaw" {% if vehicle.vehicle_type == 'rickshaw' %}selected{% endif %}>Rickshaw</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="make" class="form-label">Make <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="make" name="make" value="{{ vehicle.make }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="model" class="form-label">Model <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="model" name="model" value="{{ vehicle.model }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="year" class="form-label">Year <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="year" name="year" value="{{ vehicle.year }}" min="1900" max="2026" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="color" class="form-label">Color <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="color" name="color" value="{{ vehicle.color }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="fuel_type" class="form-label">Fuel Type <span class="text-danger">*</span></label>
+                                <select class="form-control" id="fuel_type" name="fuel_type" required>
+                                    <option value="petrol" {% if vehicle.fuel_type == 'petrol' %}selected{% endif %}>Petrol</option>
+                                    <option value="diesel" {% if vehicle.fuel_type == 'diesel' %}selected{% endif %}>Diesel</option>
+                                    <option value="cng" {% if vehicle.fuel_type == 'cng' %}selected{% endif %}>CNG</option>
+                                    <option value="electric" {% if vehicle.fuel_type == 'electric' %}selected{% endif %}>Electric</option>
+                                    <option value="hybrid" {% if vehicle.fuel_type == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="engine_number" class="form-label">Engine Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="engine_number" name="engine_number" value="{{ vehicle.engine_number }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="chassis_number" class="form-label">Chassis Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="chassis_number" name="chassis_number" value="{{ vehicle.chassis_number }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="engine_capacity" class="form-label">Engine Capacity (CC) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="engine_capacity" name="engine_capacity" value="{{ vehicle.engine_capacity }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="current_mileage" class="form-label">Current Mileage (km)</label>
+                                <input type="number" class="form-control" id="current_mileage" name="current_mileage" value="{{ vehicle.current_mileage }}" min="0">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="ownership_type" class="form-label">Ownership Type <span class="text-danger">*</span></label>
+                                <select class="form-control" id="ownership_type" name="ownership_type" required>
+                                    <option value="single" {% if vehicle.ownership_type == 'single' %}selected{% endif %}>Single Owner</option>
+                                    <option value="joint" {% if vehicle.ownership_type == 'joint' %}selected{% endif %}>Joint Owner</option>
+                                    <option value="corporate" {% if vehicle.ownership_type == 'corporate' %}selected{% endif %}>Corporate</option>
+                                </select>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="registration_certificate" class="form-label">Registration Certificate</label>
+                                <input type="file" class="form-control" id="registration_certificate" name="registration_certificate" accept=".pdf,.jpg,.jpeg,.png">
+                                {% if vehicle.registration_certificate %}
+                                    <small class="text-muted">
+                                        Current: <a href="{{ vehicle.registration_certificate.url }}" target="_blank">View Document</a>
+                                    </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <a href="{% url 'core:vehicles' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Vehicles
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('editVehicleForm');
+    if (form) {
+        form.addEventListener('submit', function() {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+            submitBtn.disabled = true;
+        });
+    }
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h4 { margin: 0; font-weight: 600; }
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65,105,225,0.25);
+}
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+</style>
+{% endblock %}

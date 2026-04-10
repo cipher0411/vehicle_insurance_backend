@@ -1,0 +1,415 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}My Policies{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-file-contract"></i> My Insurance Policies</h2>
+            <p class="text-muted">View and manage your insurance policies</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:get_quote' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Get New Quote
+            </a>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Policies</h6>
+                            <h3>{{ policies.paginator.count }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Active Policies</h6>
+                            <h3>{{ active_count|default:'0' }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Premium Paid</h6>
+                            <h3>₦{{ total_premium|floatformat:2|default:'0.00' }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Expiring Soon</h6>
+                            <h3>{{ expiring_soon|default:'0' }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-exclamation"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <select class="form-control" id="statusFilter" onchange="filterPolicies()">
+                <option value="">All Policies</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+                <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by policy number or vehicle..." onkeyup="searchPolicies()">
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Clear Filters
+            </button>
+        </div>
+    </div>
+
+    <!-- Policies Grid -->
+    <div class="row" id="policiesContainer">
+        {% for policy in policies %}
+        <div class="col-lg-6 mb-4 policy-card" data-status="{{ policy.status }}" data-search="{{ policy.policy_number }} {{ policy.vehicle.make }} {{ policy.vehicle.model }}">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ policy.policy_number }}</h5>
+                    <span class="badge 
+                        {% if policy.status == 'active' %}bg-success
+                        {% elif policy.status == 'pending' %}bg-warning
+                        {% elif policy.status == 'expired' %}bg-danger
+                        {% else %}bg-secondary{% endif %}">
+                        {{ policy.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong><i class="fas fa-car"></i> Vehicle:</strong></p>
+                            <p class="text-muted">
+                                {{ policy.vehicle.make }} {{ policy.vehicle.model }} ({{ policy.vehicle.year }})<br>
+                                <small>{{ policy.vehicle.registration_number }}</small>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong><i class="fas fa-shield-alt"></i> Coverage:</strong></p>
+                            <p class="text-muted">
+                                {{ policy.get_policy_type_display }}<br>
+                                <small>Coverage: ₦{{ policy.coverage_amount|floatformat:2 }}</small>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong><i class="fas fa-calendar"></i> Period:</strong></p>
+                            <p class="text-muted">
+                                {{ policy.start_date|date:"M d, Y" }} - {{ policy.end_date|date:"M d, Y" }}<br>
+                                <small>
+                                    {% if policy.is_active %}
+                                        <span class="text-success">{{ policy.days_remaining }} days remaining</span>
+                                    {% elif policy.status == 'expired' %}
+                                        <span class="text-danger">Expired</span>
+                                    {% else %}
+                                        <span class="text-warning">Not Active</span>
+                                    {% endif %}
+                                </small>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong><i class="fas fa-money-bill"></i> Premium:</strong></p>
+                            <p class="text-muted">
+                                ₦{{ policy.premium_amount|floatformat:2 }}<br>
+                                <small>Deductible: ₦{{ policy.deductible|floatformat:2 }}</small>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% if policy.additional_benefits %}
+                    <div class="mb-3">
+                        <strong><i class="fas fa-gift"></i> Benefits:</strong>
+                        <div class="mt-1">
+                            {% for benefit in policy.additional_benefits|slice:":3" %}
+                                <span class="badge bg-light text-dark me-1 mb-1">{{ benefit }}</span>
+                            {% endfor %}
+                            {% if policy.additional_benefits|length > 3 %}
+                                <span class="badge bg-light text-dark">+{{ policy.additional_benefits|length|add:"-3" }} more</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'core:policy_detail' policy.id %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                        {% if policy.status == 'active' %}
+                            <a href="{% url 'core:file_claim_policy' policy.id %}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-clipboard-list"></i> File Claim
+                            </a>
+                        {% endif %}
+                        {% if policy.policy_document %}
+                            <a href="{{ policy.policy_document.url }}" class="btn btn-outline-secondary btn-sm" target="_blank">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        {% endif %}
+                        {% if policy.status == 'pending' %}
+                            <a href="{% url 'core:payment' payment_id=policy.payments.first.id %}" class="btn btn-success btn-sm">
+                                <i class="fas fa-credit-card"></i> Complete Payment
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-file-contract fa-4x text-muted mb-3"></i>
+                    <h4>No Policies Found</h4>
+                    <p class="text-muted">You don't have any insurance policies yet.</p>
+                    <a href="{% url 'core:get_quote' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-calculator"></i> Get a Quote
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if policies.has_other_pages %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if policies.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ policies.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+                </li>
+            {% endif %}
+            
+            {% for num in policies.paginator.page_range %}
+                {% if policies.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > policies.number|add:'-3' and num < policies.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if policies.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ policies.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<script>
+let toastInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('notificationToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    }
+});
+
+function showToast(title, message, type = 'info') {
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    toastIcon.className = 'fas me-2';
+    toastIcon.style.color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#4169E1';
+    toastIcon.classList.add(type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+    
+    toastInstance.show();
+}
+
+function filterPolicies() {
+    const status = document.getElementById('statusFilter').value;
+    let url = window.location.pathname;
+    if (status) {
+        url += `?status=${status}`;
+    }
+    window.location.href = url;
+}
+
+function searchPolicies() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase();
+    const cards = document.querySelectorAll('.policy-card');
+    
+    cards.forEach(card => {
+        const searchText = card.dataset.search.toLowerCase();
+        if (searchText.includes(filter)) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function clearFilters() {
+    window.location.href = window.location.pathname;
+}
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    color: #4169E1;
+    opacity: 0.7;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.card-footer {
+    border-top: 1px solid #e9ecef;
+    border-radius: 0 0 12px 12px !important;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #e0a800;
+    color: #000;
+}
+
+.pagination .page-link {
+    color: #4169E1;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #4169E1;
+    border-color: #4169E1;
+    color: white;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.toast {
+    background: white;
+    border-left: 4px solid #4169E1;
+}
+</style>
+{% endblock %}

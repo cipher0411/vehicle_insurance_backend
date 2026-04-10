@@ -1,0 +1,444 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Vehicles - {{ user.get_full_name|default:user.email }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-car"></i> Vehicles Owned by {{ user.get_full_name|default:user.email }}</h2>
+            <p class="text-muted">View all vehicles registered to this user</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_vehicles' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to All Vehicles
+            </a>
+            <a href="{% url 'core:admin_user_detail' user.id %}" class="btn btn-primary">
+                <i class="fas fa-user"></i> View User Profile
+            </a>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <!-- User Summary Card -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-2 text-center">
+                            {% if user.profile_picture %}
+                                <img src="{{ user.profile_picture.url }}" class="rounded-circle" width="80" height="80" style="object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                    <i class="fas fa-user fa-2x text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-7">
+                            <h4>{{ user.get_full_name|default:user.email }}</h4>
+                            <p class="mb-1"><i class="fas fa-envelope me-2 text-muted"></i>{{ user.email }}</p>
+                            <p class="mb-1"><i class="fas fa-phone me-2 text-muted"></i>{{ user.phone_number|default:'N/A' }}</p>
+                            <p class="mb-0">
+                                <span class="badge {% if user.is_verified %}bg-success{% else %}bg-warning{% endif %} me-2">
+                                    {% if user.is_verified %}Verified{% else %}Unverified{% endif %}
+                                </span>
+                                <span class="badge bg-info">{{ user.get_role_display }}</span>
+                            </p>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <h2 class="text-primary">{{ total_vehicles }}</h2>
+                            <p class="text-muted">Total Vehicles</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Insured Vehicles</h6>
+                            <h3 class="text-success">{{ insured_count|default:0 }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-shield-alt text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Uninsured Vehicles</h6>
+                            <h3 class="text-warning">{{ uninsured_count|default:0 }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Active Policies</h6>
+                            <h3 class="text-primary">{{ active_policies|default:0 }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-file-contract text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Claims</h6>
+                            <h3 class="text-info">{{ total_claims|default:0 }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clipboard-list text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicles List -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Vehicles List</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if vehicles %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead style="background-color: #4169E1; color: white;">
+                                <tr>
+                                    <th>Registration #</th>
+                                    <th>Vehicle</th>
+                                    <th>Type</th>
+                                    <th>Year</th>
+                                    <th>Color</th>
+                                    <th>Engine #</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Created By</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vehicle in vehicles %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ vehicle.registration_number }}</strong>
+                                    </td>
+                                    <td>
+                                        {{ vehicle.make }} {{ vehicle.model }}
+                                        <br>
+                                        <small class="text-muted">{{ vehicle.engine_capacity }} CC</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ vehicle.get_vehicle_type_display }}</span>
+                                    </td>
+                                    <td>{{ vehicle.year }}</td>
+                                    <td>{{ vehicle.color }}</td>
+                                    <td>
+                                        <small>{{ vehicle.engine_number|truncatechars:10 }}</small>
+                                    </td>
+                                    <td>
+                                        {% if vehicle.is_insured %}
+                                            <span class="badge bg-success">Insured</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Uninsured</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ vehicle.created_at|date:"M d, Y" }}
+                                    </td>
+                                    <td>
+                                        {% if vehicle.created_by %}
+                                            <small>{{ vehicle.created_by.get_full_name|default:vehicle.created_by.email|truncatechars:15 }}</small>
+                                        {% else %}
+                                            <small class="text-muted">Self</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'core:admin_vehicle_detail' vehicle.id %}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-warning" onclick="toggleInsured('{{ vehicle.id }}')" title="Toggle insurance status">
+                                                <i class="fas fa-shield-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-car fa-3x text-muted mb-3"></i>
+                        <h5>No Vehicles Found</h5>
+                        <p class="text-muted">This user hasn't registered any vehicles yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Details Cards (Alternative Grid View) -->
+    {% if vehicles %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-th-large"></i> Vehicle Details Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for vehicle in vehicles %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card vehicle-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <h6 class="mb-1">{{ vehicle.make }} {{ vehicle.model }}</h6>
+                                            <small class="text-muted">{{ vehicle.registration_number }}</small>
+                                        </div>
+                                        <span class="badge {% if vehicle.is_insured %}bg-success{% else %}bg-warning{% endif %}">
+                                            {% if vehicle.is_insured %}Insured{% else %}Uninsured{% endif %}
+                                        </span>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <p class="mb-1"><strong>Year:</strong> {{ vehicle.year }}</p>
+                                            <p class="mb-1"><strong>Color:</strong> {{ vehicle.color }}</p>
+                                            <p class="mb-1"><strong>Type:</strong> {{ vehicle.get_vehicle_type_display }}</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p class="mb-1"><strong>Fuel:</strong> {{ vehicle.get_fuel_type_display }}</p>
+                                            <p class="mb-1"><strong>Engine:</strong> {{ vehicle.engine_capacity }} CC</p>
+                                            <p class="mb-1"><strong>Mileage:</strong> {{ vehicle.current_mileage }} km</p>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            Added: {{ vehicle.created_at|date:"M d, Y" }}
+                                        </small>
+                                        <a href="{% url 'core:admin_vehicle_detail' vehicle.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> View Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Activity -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activity for User's Vehicles</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for vehicle in vehicles|slice:":5" %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-car text-primary me-2"></i>
+                                    <strong>{{ vehicle.registration_number }}</strong> - {{ vehicle.make }} {{ vehicle.model }}
+                                </div>
+                                <div>
+                                    <span class="badge bg-info me-2">{{ vehicle.get_vehicle_type_display }}</span>
+                                    <small class="text-muted">
+                                        Last updated: {{ vehicle.updated_at|date:"M d, Y H:i" }}
+                                        {% if vehicle.updated_by %}
+                                            by {{ vehicle.updated_by.get_full_name|default:vehicle.updated_by.email }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-center text-muted py-3">
+                            No recent activity
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmModalBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% csrf_token %}
+
+<script>
+let toastInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('notificationToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    }
+});
+
+function showToast(title, message, type = 'info') {
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    toastIcon.className = 'fas me-2';
+    toastIcon.style.color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#4169E1';
+    toastIcon.classList.add(type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+    
+    toastInstance.show();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function toggleInsured(vehicleId) {
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/custom_admin/vehicle/${vehicleId}/toggle_insured/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Success', data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Error', data.message, 'error');
+        }
+    });
+}
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+.table td { vertical-align: middle; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.btn-group .btn { margin: 0 2px; border-radius: 6px !important; }
+.toast { background: white; border-left: 4px solid #4169E1; }
+.vehicle-card {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.vehicle-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.list-group-item { border-left: none; border-right: none; }
+.list-group-item:first-child { border-top: none; }
+.list-group-item:last-child { border-bottom: none; }
+</style>
+{% endblock %}

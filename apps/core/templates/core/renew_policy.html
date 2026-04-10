@@ -1,0 +1,540 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}How Policy Renewal Works | VehicleInsure Nigeria{% endblock %}
+{% block meta_description %}Learn how our simple policy renewal process works. Enjoy loyalty discounts, no-claims bonus, and instant certificate issuance when you renew with VehicleInsure.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .intro-section {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .intro-section h2 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .intro-section p {
+        color: #475569;
+        line-height: 1.8;
+        font-size: 1.1rem;
+    }
+    
+    .process-section {
+        margin-bottom: 50px;
+    }
+    
+    .section-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 40px;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .process-timeline {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 30px;
+        margin-bottom: 50px;
+    }
+    
+    .process-step {
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
+        position: relative;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .process-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 40px;
+        right: -30px;
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, var(--royal-blue) 0%, var(--royal-blue-light) 100%);
+    }
+    
+    .step-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .step-icon i {
+        font-size: 2rem;
+        color: white;
+    }
+    
+    .process-step h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+    }
+    
+    .process-step p {
+        color: #64748b;
+        line-height: 1.6;
+    }
+    
+    .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-top: 40px;
+    }
+    
+    .benefit-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .benefit-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    }
+    
+    .benefit-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    .benefit-icon i {
+        font-size: 1.8rem;
+        color: white;
+    }
+    
+    .benefit-card h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+    }
+    
+    .benefit-card p {
+        color: #64748b;
+        line-height: 1.6;
+        margin-bottom: 0;
+    }
+    
+    .discount-section {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin: 50px 0;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.6s forwards;
+    }
+    
+    .discount-table {
+        margin-top: 30px;
+    }
+    
+    .discount-row {
+        display: flex;
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--gray-border);
+        align-items: center;
+    }
+    
+    .discount-row.header {
+        background: var(--gray-light);
+        border-radius: 12px;
+        font-weight: 700;
+        color: var(--navy-dark);
+        border-bottom: none;
+        margin-bottom: 10px;
+    }
+    
+    .discount-row .years {
+        flex: 1;
+    }
+    
+    .discount-row .discount {
+        flex: 1;
+        color: #10b981;
+        font-weight: 600;
+    }
+    
+    .discount-row .benefit {
+        flex: 2;
+    }
+    
+    .info-box {
+        background: var(--gray-light);
+        border-radius: 20px;
+        padding: 30px;
+        margin-top: 30px;
+    }
+    
+    .info-box h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .info-box ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .info-box li {
+        padding: 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #475569;
+    }
+    
+    .info-box li i {
+        color: var(--royal-blue);
+    }
+    
+    .cta-section-renewal {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        border-radius: 24px;
+        padding: 50px 40px;
+        text-align: center;
+        color: white;
+        margin-top: 50px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.8s forwards;
+    }
+    
+    .cta-section-renewal h3 {
+        font-weight: 700;
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+    }
+    
+    .cta-section-renewal p {
+        opacity: 0.9;
+        margin-bottom: 30px;
+        font-size: 1.1rem;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 992px) {
+        .process-step:not(:last-child)::after {
+            display: none;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .intro-section, .discount-section, .cta-section-renewal {
+            padding: 25px;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+        }
+        
+        .process-timeline {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .process-step {
+            max-width: 300px;
+        }
+        
+        .discount-row {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .discount-row .benefit {
+            flex: 100%;
+            margin-top: 5px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>How Policy Renewal Works</h1>
+        <p>Simple, rewarding, and instant—renew your coverage in minutes</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Renew Policy</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Introduction -->
+    <div class="intro-section">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h2>Renewal Made Effortless</h2>
+                <p class="mb-0">At VehicleInsure, we believe renewing your insurance should be as easy as getting it. We've streamlined the renewal process to take just minutes, with automatic discounts applied and instant certificate delivery. No paperwork, no stress—just continuous protection for your vehicle.</p>
+            </div>
+            <div class="col-lg-4 text-center mt-4 mt-lg-0">
+                <i class="fas fa-sync-alt fa-5x" style="color: var(--royal-blue);"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- How It Works -->
+    <div class="process-section">
+        <h2 class="section-title" style="animation-delay: 0.1s;">Our Simple 3-Step Renewal Process</h2>
+        
+        <div class="process-timeline">
+            <div class="process-step" style="animation-delay: 0.15s;">
+                <div class="step-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3>1. Select Policy</h3>
+                <p>Log in to your dashboard and select the policy you want to renew. We'll show you all policies due for renewal.</p>
+            </div>
+            
+            <div class="process-step" style="animation-delay: 0.25s;">
+                <div class="step-icon">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <h3>2. Review & Update</h3>
+                <p>Review your policy details and make any necessary updates. Your information is pre-filled for convenience.</p>
+            </div>
+            
+            <div class="process-step" style="animation-delay: 0.35s;">
+                <div class="step-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <h3>3. Pay & Get Covered</h3>
+                <p>Make secure payment and receive your new insurance certificate instantly via email and dashboard.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Benefits -->
+    <h2 class="section-title" style="animation-delay: 0.4s;">Benefits of Renewing with VehicleInsure</h2>
+    
+    <div class="benefits-grid">
+        <div class="benefit-card" style="animation-delay: 0.45s;">
+            <div class="benefit-icon">
+                <i class="fas fa-tags"></i>
+            </div>
+            <h3>Loyalty Discounts</h3>
+            <p>Enjoy increasing discounts the longer you stay with us—up to 25% off your premium.</p>
+        </div>
+        
+        <div class="benefit-card" style="animation-delay: 0.5s;">
+            <div class="benefit-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h3>No-Claims Bonus</h3>
+            <p>Drive safely and earn up to 50% discount on your renewal premium for claim-free years.</p>
+        </div>
+        
+        <div class="benefit-card" style="animation-delay: 0.55s;">
+            <div class="benefit-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <h3>No Coverage Gap</h3>
+            <p>Continuous protection with no lapse in coverage when you renew before expiry.</p>
+        </div>
+        
+        <div class="benefit-card" style="animation-delay: 0.6s;">
+            <div class="benefit-icon">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <h3>Instant Certificate</h3>
+            <p>Receive your new insurance certificate immediately after payment—no waiting.</p>
+        </div>
+        
+        <div class="benefit-card" style="animation-delay: 0.65s;">
+            <div class="benefit-icon">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <h3>Pre-filled Information</h3>
+            <p>Your details are automatically populated, making renewal quick and hassle-free.</p>
+        </div>
+        
+        <div class="benefit-card" style="animation-delay: 0.7s;">
+            <div class="benefit-icon">
+                <i class="fas fa-bell"></i>
+            </div>
+            <h3>Renewal Reminders</h3>
+            <p>We'll remind you 30, 14, and 7 days before your policy expires so you never miss renewal.</p>
+        </div>
+    </div>
+    
+    <!-- Discount Structure -->
+    <div class="discount-section">
+        <h3 class="fw-bold mb-4 text-center" style="color: var(--navy-dark);">Our Loyalty Rewards Program</h3>
+        
+        <div class="discount-table">
+            <div class="discount-row header">
+                <div class="years">Years with VehicleInsure</div>
+                <div class="discount">Loyalty Discount</div>
+                <div class="benefit">Additional Benefits</div>
+            </div>
+            <div class="discount-row">
+                <div class="years">1st Renewal (Year 2)</div>
+                <div class="discount">5% OFF</div>
+                <div class="benefit">Priority customer support</div>
+            </div>
+            <div class="discount-row">
+                <div class="years">2nd Renewal (Year 3)</div>
+                <div class="discount">10% OFF</div>
+                <div class="benefit">+ Free roadside assistance</div>
+            </div>
+            <div class="discount-row">
+                <div class="years">3rd Renewal (Year 4)</div>
+                <div class="discount">15% OFF</div>
+                <div class="benefit">+ Dedicated account manager</div>
+            </div>
+            <div class="discount-row">
+                <div class="years">4th Renewal (Year 5+)</div>
+                <div class="discount">20-25% OFF</div>
+                <div class="benefit">+ VIP claims handling & exclusive partner offers</div>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <h4><i class="fas fa-star me-2"></i> No-Claims Bonus (NCB) Explained</h4>
+            <ul>
+                <li><i class="fas fa-check-circle"></i> <strong>1 claim-free year:</strong> 10% discount on renewal</li>
+                <li><i class="fas fa-check-circle"></i> <strong>2 claim-free years:</strong> 20% discount on renewal</li>
+                <li><i class="fas fa-check-circle"></i> <strong>3 claim-free years:</strong> 30% discount on renewal</li>
+                <li><i class="fas fa-check-circle"></i> <strong>4 claim-free years:</strong> 40% discount on renewal</li>
+                <li><i class="fas fa-check-circle"></i> <strong>5+ claim-free years:</strong> 50% discount on renewal</li>
+            </ul>
+            <p class="small text-muted mt-3 mb-0">*NCB is protected and can be transferred when you switch to VehicleInsure. Loyalty discount and NCB can be combined for maximum savings!</p>
+        </div>
+    </div>
+    
+    <!-- Payment Options -->
+    <div class="intro-section" style="margin-top: 0;">
+        <h3 class="fw-bold mb-4">Flexible Payment Options for Renewal</h3>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="text-center p-4 bg-light rounded-4">
+                    <i class="fas fa-credit-card fa-3x mb-3" style="color: var(--royal-blue);"></i>
+                    <h5>Card Payment</h5>
+                    <p class="text-muted mb-0">Visa, Mastercard, Verve</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center p-4 bg-light rounded-4">
+                    <i class="fas fa-university fa-3x mb-3" style="color: var(--royal-blue);"></i>
+                    <h5>Bank Transfer</h5>
+                    <p class="text-muted mb-0">All major Nigerian banks</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center p-4 bg-light rounded-4">
+                    <i class="fas fa-mobile-alt fa-3x mb-3" style="color: var(--royal-blue);"></i>
+                    <h5>USSD Transfer</h5>
+                    <p class="text-muted mb-0">Quick and convenient</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CTA -->
+    <div class="cta-section-renewal">
+        <h3>Ready to Renew Your Policy?</h3>
+        <p>Log in to your dashboard to view policies due for renewal and enjoy your exclusive discounts.</p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="{% url 'core:easy_renewals' %}" class="btn btn-light btn-lg px-5">
+                View Renewals <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+            <a href="{% url 'core:dashboard' %}" class="btn btn-outline-light btn-lg px-5">
+                Go to Dashboard <i class="fas fa-user ms-2"></i>
+            </a>
+        </div>
+        <p class="small opacity-75 mt-4 mb-0">
+            <i class="fas fa-lock me-1"></i>
+            All payments are secured with 256-bit SSL encryption.
+        </p>
+    </div>
+</div>
+{% endblock %}

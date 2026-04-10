@@ -1,0 +1,199 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}Edit Category | VehicleInsure Staff{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-header {
+        background: #4169E1;
+        padding: 30px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 30px;
+    }
+    
+    .staff-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .form-container {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .form-group {
+        margin-bottom: 24px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 8px;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid var(--gray-border);
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        width: 100%;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--royal-blue);
+        box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.1);
+        outline: none;
+    }
+    
+    .help-text {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 5px;
+    }
+    
+    .errorlist {
+        color: #dc2626;
+        list-style: none;
+        padding: 5px 0 0;
+        margin: 0;
+        font-size: 0.85rem;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: space-between;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid var(--gray-border);
+    }
+    
+    .icon-preview {
+        margin-top: 10px;
+        padding: 10px;
+        background: var(--gray-light);
+        border-radius: 8px;
+        display: inline-block;
+    }
+    
+    .icon-preview i {
+        font-size: 1.5rem;
+        color: var(--royal-blue);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Staff Header -->
+<section class="staff-header">
+    <div class="container">
+        <h1><i class="fas fa-edit me-2"></i> Edit Category</h1>
+        <p>Update category: {{ category.name }}</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <div class="form-container">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label class="form-label">Category Name *</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                <ul class="errorlist">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Slug</label>
+                {{ form.slug }}
+                <p class="help-text">URL-friendly version of the name</p>
+                {% if form.slug.errors %}
+                <ul class="errorlist">{% for error in form.slug.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                {{ form.description }}
+                <p class="help-text">Optional brief description</p>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Icon (Font Awesome)</label>
+                {{ form.icon }}
+                <p class="help-text">e.g., "fa-car", "fa-shield", "fa-newspaper"</p>
+                <div class="icon-preview" id="iconPreview">
+                    <i class="fas {% if form.icon.value %}{{ form.icon.value }}{% else %}fa-tag{% endif %}"></i> 
+                    {% if form.icon.value %}{{ form.icon.value }}{% else %}fa-tag{% endif %}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="form-check">
+                    {{ form.is_active }}
+                    <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                        Active (visible on site)
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{% url 'core:blog_categories_manage' %}" class="btn-outline-primary-custom">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Categories
+                </a>
+                <div>
+                    <button type="submit" class="btn-primary-custom">
+                        <i class="fas fa-save me-1"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-generate slug from name
+    const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+    const slugInput = document.getElementById('{{ form.slug.id_for_label }}');
+    
+    if (nameInput && slugInput) {
+        nameInput.addEventListener('input', function() {
+            if (!slugInput.value || slugInput.value === slugify(this.value)) {
+                slugInput.value = slugify(this.value);
+            }
+        });
+    }
+    
+    function slugify(text) {
+        return text
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/--+/g, '-')
+            .trim();
+    }
+    
+    // Icon preview
+    const iconInput = document.getElementById('{{ form.icon.id_for_label }}');
+    const iconPreview = document.getElementById('iconPreview');
+    
+    if (iconInput) {
+        iconInput.addEventListener('input', function() {
+            const iconClass = this.value || 'fa-tag';
+            iconPreview.innerHTML = `<i class="fas ${iconClass}"></i> ${iconClass}`;
+        });
+    }
+</script>
+{% endblock %}

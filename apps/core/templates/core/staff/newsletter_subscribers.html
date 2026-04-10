@@ -1,0 +1,909 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}Newsletter Subscribers | VehicleInsure Staff{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-header {
+        background: #4169E1;
+        padding: 30px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 30px;
+    }
+    
+    .staff-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+    
+    .stat-card h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--royal-blue);
+        margin-bottom: 5px;
+    }
+    
+    .stat-card p {
+        color: #64748b;
+        margin-bottom: 0;
+    }
+    
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .filter-tabs {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-tab {
+        padding: 8px 20px;
+        border-radius: 40px;
+        font-weight: 500;
+        color: #64748b;
+        text-decoration: none;
+        transition: all 0.3s;
+        border: 1px solid transparent;
+    }
+    
+    .filter-tab:hover {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .filter-tab.active {
+        background: var(--royal-blue);
+        color: white;
+    }
+    
+    .search-box {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .search-box input {
+        border: 2px solid var(--gray-border);
+        border-radius: 40px;
+        padding: 10px 20px;
+        min-width: 250px;
+    }
+    
+    .nav-tabs {
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .nav-tabs .nav-link {
+        color: #64748b;
+        border: none;
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: var(--royal-blue);
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: var(--royal-blue);
+        border-bottom: 2px solid var(--royal-blue);
+        background: transparent;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        overflow-x: auto;
+    }
+    
+    .subscribers-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .subscribers-table th {
+        text-align: left;
+        padding: 15px;
+        background: var(--gray-light);
+        font-weight: 600;
+        color: var(--navy-dark);
+        border-bottom: 2px solid var(--gray-border);
+        white-space: nowrap;
+    }
+    
+    .subscribers-table td {
+        padding: 15px;
+        border-bottom: 1px solid var(--gray-border);
+        color: #475569;
+    }
+    
+    .subscribers-table tr:hover {
+        background: var(--gray-light);
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-inactive {
+        background: #e2e8f0;
+        color: #475569;
+    }
+    
+    .status-confirmed {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+    
+    .action-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        text-decoration: none;
+        margin-right: 5px;
+        display: inline-block;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-delete {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .btn-export {
+        background: #10b981;
+        color: white;
+    }
+    
+    .btn-export:hover {
+        background: #059669;
+    }
+    
+    .btn-reactivate {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #64748b;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--gray-border);
+        margin-bottom: 20px;
+    }
+    
+    .pagination {
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .page-link {
+        border: none;
+        padding: 10px 18px;
+        margin: 0 5px;
+        border-radius: 10px;
+        color: #64748b;
+    }
+    
+    .page-link:hover {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .page-item.active .page-link {
+        background: var(--royal-blue);
+        color: white;
+    }
+    
+    .info-card {
+        background: var(--gray-light);
+        border-radius: 16px;
+        padding: 25px;
+        margin-top: 20px;
+    }
+    
+    .info-card h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .info-card p {
+        color: #64748b;
+        margin-bottom: 10px;
+    }
+    
+    .info-card i {
+        color: var(--royal-blue);
+        margin-right: 10px;
+    }
+    
+    /* Modal Styles */
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .modal-backdrop.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .custom-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.9);
+        background: white;
+        border-radius: 24px;
+        padding: 0;
+        width: 90%;
+        max-width: 450px;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    }
+    
+    .custom-modal.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    
+    .modal-header {
+        padding: 25px 30px 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .modal-header h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 0;
+        font-size: 1.3rem;
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #94a3b8;
+        transition: color 0.3s;
+        padding: 5px;
+    }
+    
+    .modal-close:hover {
+        color: #dc2626;
+    }
+    
+    .modal-body {
+        padding: 25px 30px;
+    }
+    
+    .modal-body p {
+        color: #475569;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    
+    .modal-body .subscriber-info {
+        background: var(--gray-light);
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .modal-body .subscriber-info strong {
+        color: var(--navy-dark);
+    }
+    
+    .modal-footer {
+        padding: 15px 30px 25px;
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+        border-top: 1px solid var(--gray-border);
+    }
+    
+    .modal-btn {
+        padding: 10px 24px;
+        border-radius: 40px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .modal-btn-cancel {
+        background: var(--gray-light);
+        color: #64748b;
+    }
+    
+    .modal-btn-cancel:hover {
+        background: #e2e8f0;
+    }
+    
+    .modal-btn-confirm {
+        background: #dc2626;
+        color: white;
+    }
+    
+    .modal-btn-confirm:hover {
+        background: #b91c1c;
+    }
+    
+    .modal-btn-success {
+        background: #10b981;
+        color: white;
+    }
+    
+    .modal-btn-success:hover {
+        background: #059669;
+    }
+    
+    .modal-btn-primary {
+        background: var(--royal-blue);
+        color: white;
+    }
+    
+    .modal-btn-primary:hover {
+        background: var(--royal-blue-dark);
+    }
+    
+    /* Toast Notification */
+    .toast-notification {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: white;
+        border-radius: 16px;
+        padding: 16px 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        z-index: 10000;
+        transform: translateX(400px);
+        opacity: 0;
+        transition: all 0.4s ease;
+        border-left: 4px solid #10b981;
+    }
+    
+    .toast-notification.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    
+    .toast-notification.error {
+        border-left-color: #dc2626;
+    }
+    
+    .toast-icon {
+        width: 40px;
+        height: 40px;
+        background: #d1fae5;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #065f46;
+        font-size: 1.2rem;
+    }
+    
+    .toast-notification.error .toast-icon {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .toast-content h5 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 2px;
+    }
+    
+    .toast-content p {
+        color: #64748b;
+        margin-bottom: 0;
+        font-size: 0.9rem;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 5px;
+        margin-left: 10px;
+    }
+    
+    .toast-close:hover {
+        color: #475569;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Staff Header -->
+<section class="staff-header">
+    <div class="container">
+        <h1><i class="fas fa-envelope-open-text me-2"></i> Newsletter Subscribers</h1>
+        <p>Manage your email newsletter subscribers</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:blog_manage' %}">
+                <i class="fas fa-newspaper me-1"></i> Posts
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:blog_categories_manage' %}">
+                <i class="fas fa-folder me-1"></i> Categories
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:blog_comments_manage' %}">
+                <i class="fas fa-comments me-1"></i> Comments
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="{% url 'core:newsletter_subscribers_manage' %}">
+                <i class="fas fa-envelope me-1"></i> Subscribers
+            </a>
+        </li>
+    </ul>
+    
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ stats.total }}</h3>
+            <p>Total Subscribers</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.active }}</h3>
+            <p>Active</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.inactive }}</h3>
+            <p>Inactive</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.confirmed }}</h3>
+            <p>Confirmed</p>
+        </div>
+    </div>
+    
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-tabs">
+            <a href="?status=all" class="filter-tab {% if filter_status == 'all' %}active{% endif %}">
+                <i class="fas fa-list me-1"></i> All
+            </a>
+            <a href="?status=active" class="filter-tab {% if filter_status == 'active' %}active{% endif %}">
+                <i class="fas fa-check-circle me-1"></i> Active
+                <span class="badge bg-success ms-1">{{ stats.active }}</span>
+            </a>
+            <a href="?status=inactive" class="filter-tab {% if filter_status == 'inactive' %}active{% endif %}">
+                <i class="fas fa-ban me-1"></i> Inactive
+            </a>
+            <a href="?status=confirmed" class="filter-tab {% if filter_status == 'confirmed' %}active{% endif %}">
+                <i class="fas fa-check-double me-1"></i> Confirmed
+            </a>
+        </div>
+        <div class="d-flex gap-2">
+            <form method="get" class="search-box">
+                <input type="hidden" name="status" value="{{ filter_status }}">
+                <input type="text" name="q" placeholder="Search by email or name..." value="{{ search_query }}">
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fas fa-search"></i>
+                </button>
+                {% if search_query %}
+                <a href="?status={{ filter_status }}" class="btn-outline-primary-custom">
+                    <i class="fas fa-times"></i>
+                </a>
+                {% endif %}
+            </form>
+            <button class="btn-export action-btn" onclick="exportSubscribers()">
+                <i class="fas fa-download me-1"></i> Export CSV
+            </button>
+        </div>
+    </div>
+    
+    <!-- Subscribers Table -->
+    <div class="table-container">
+        {% if subscribers %}
+        <table class="subscribers-table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Confirmed</th>
+                    <th>Source</th>
+                    <th>Subscribed Date</th>
+                    <th>IP Address</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for subscriber in subscribers %}
+                <tr id="subscriber-row-{{ subscriber.id }}">
+                    <td>
+                        <strong>{{ subscriber.email }}</strong>
+                    </td>
+                    <td>{{ subscriber.name|default:"—" }}</td>
+                    <td>
+                        <span class="status-badge {% if subscriber.is_active %}status-active{% else %}status-inactive{% endif %}" id="status-badge-{{ subscriber.id }}">
+                            {{ subscriber.is_active|yesno:"Active,Inactive" }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if subscriber.is_confirmed %}
+                        <i class="fas fa-check-circle text-success"></i> Yes
+                        {% else %}
+                        <i class="fas fa-times-circle text-danger"></i> No
+                        {% endif %}
+                    </td>
+                    <td>{{ subscriber.source|default:"Website" }}</td>
+                    <td>{{ subscriber.subscribed_at|date:"M d, Y" }}</td>
+                    <td>{{ subscriber.ip_address|default:"—" }}</td>
+                    <td>
+                        {% if subscriber.is_active %}
+                        <button type="button" class="action-btn btn-delete" onclick="openUnsubscribeModal('{{ subscriber.id }}', '{{ subscriber.email|escapejs }}')">
+                            <i class="fas fa-user-slash"></i> Unsubscribe
+                        </button>
+                        {% else %}
+                        <button type="button" class="action-btn btn-reactivate" onclick="openReactivateModal('{{ subscriber.id }}', '{{ subscriber.email|escapejs }}')">
+                            <i class="fas fa-user-plus"></i> Reactivate
+                        </button>
+                        {% endif %}
+                        <button type="button" class="action-btn btn-delete" onclick="openDeleteModal('{{ subscriber.id }}', '{{ subscriber.email|escapejs }}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-envelope-open-text"></i>
+            <h3>No Subscribers Found</h3>
+            <p>{% if search_query %}No results for "{{ search_query }}". Try a different search.{% else %}No newsletter subscribers yet.{% endif %}</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if subscribers.has_other_pages %}
+    <nav>
+        <ul class="pagination">
+            {% if subscribers.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ subscribers.previous_page_number }}&status={{ filter_status }}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in subscribers.paginator.page_range %}
+                {% if subscribers.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > subscribers.number|add:'-3' and num < subscribers.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}&status={{ filter_status }}{% if search_query %}&q={{ search_query }}{% endif %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if subscribers.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ subscribers.next_page_number }}&status={{ filter_status }}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    <!-- Information Card -->
+    <div class="info-card">
+        <h4><i class="fas fa-info-circle"></i> About Newsletter Subscribers</h4>
+        <p><i class="fas fa-check-circle text-success"></i> Subscribers are added when they sign up via the blog sidebar or dedicated signup forms.</p>
+        <p><i class="fas fa-envelope"></i> Confirmed subscribers have verified their email address and are ready to receive newsletters.</p>
+        <p><i class="fas fa-download"></i> Use the Export CSV button to download your subscriber list for use in email marketing platforms.</p>
+        <p><i class="fas fa-shield-alt"></i> All subscriber data is handled in accordance with our Privacy Policy and NDPR regulations.</p>
+    </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop" id="modalBackdrop"></div>
+
+<!-- Unsubscribe Confirmation Modal -->
+<div class="custom-modal" id="unsubscribeModal">
+    <div class="modal-header">
+        <h3><i class="fas fa-user-slash me-2" style="color: #dc2626;"></i> Confirm Unsubscribe</h3>
+        <button class="modal-close" onclick="closeModal('unsubscribeModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+        <p>Are you sure you want to unsubscribe this email address?</p>
+        <div class="subscriber-info">
+            <strong id="unsubscribeEmail"></strong>
+        </div>
+        <p class="mb-0">This subscriber will no longer receive newsletter emails from VehicleInsure.</p>
+    </div>
+    <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal('unsubscribeModal')">
+            <i class="fas fa-times me-1"></i> Cancel
+        </button>
+        <form method="post" id="unsubscribeForm">
+            {% csrf_token %}
+            <button type="submit" class="modal-btn modal-btn-confirm">
+                <i class="fas fa-user-slash me-1"></i> Unsubscribe
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Reactivate Confirmation Modal -->
+<div class="custom-modal" id="reactivateModal">
+    <div class="modal-header">
+        <h3><i class="fas fa-user-plus me-2" style="color: #10b981;"></i> Confirm Reactivation</h3>
+        <button class="modal-close" onclick="closeModal('reactivateModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+        <p>Are you sure you want to reactivate this subscription?</p>
+        <div class="subscriber-info">
+            <strong id="reactivateEmail"></strong>
+        </div>
+        <p class="mb-0">This subscriber will resume receiving newsletter emails from VehicleInsure.</p>
+    </div>
+    <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal('reactivateModal')">
+            <i class="fas fa-times me-1"></i> Cancel
+        </button>
+        <form method="post" id="reactivateForm">
+            {% csrf_token %}
+            <button type="submit" class="modal-btn modal-btn-success">
+                <i class="fas fa-user-plus me-1"></i> Reactivate
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="custom-modal" id="deleteModal">
+    <div class="modal-header">
+        <h3><i class="fas fa-trash me-2" style="color: #dc2626;"></i> Confirm Deletion</h3>
+        <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+        <p>Are you sure you want to permanently delete this subscriber?</p>
+        <div class="subscriber-info">
+            <strong id="deleteEmail"></strong>
+        </div>
+        <p class="mb-0 text-danger"><i class="fas fa-exclamation-triangle me-1"></i> This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal('deleteModal')">
+            <i class="fas fa-times me-1"></i> Cancel
+        </button>
+        <form method="post" id="deleteForm">
+            {% csrf_token %}
+            <button type="submit" class="modal-btn modal-btn-confirm">
+                <i class="fas fa-trash me-1"></i> Delete Permanently
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-notification" id="toastNotification">
+    <div class="toast-icon" id="toastIcon">
+        <i class="fas fa-check"></i>
+    </div>
+    <div class="toast-content">
+        <h5 id="toastTitle">Success</h5>
+        <p id="toastMessage">Action completed successfully.</p>
+    </div>
+    <button class="toast-close" onclick="hideToast()">&times;</button>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Modal Functions
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.add('show');
+        modalBackdrop.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('show');
+        modalBackdrop.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+    
+    // Close modal when clicking backdrop
+    modalBackdrop.addEventListener('click', function() {
+        document.querySelectorAll('.custom-modal').forEach(modal => {
+            modal.classList.remove('show');
+        });
+        modalBackdrop.classList.remove('show');
+        document.body.style.overflow = '';
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.custom-modal').forEach(modal => {
+                modal.classList.remove('show');
+            });
+            modalBackdrop.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    });
+    
+    // Unsubscribe Modal
+    function openUnsubscribeModal(subscriberId, email) {
+        document.getElementById('unsubscribeEmail').textContent = email;
+        document.getElementById('unsubscribeForm').action = `/staff/newsletter/unsubscribe/${subscriberId}/`;
+        openModal('unsubscribeModal');
+    }
+    
+    // Reactivate Modal
+    function openReactivateModal(subscriberId, email) {
+        document.getElementById('reactivateEmail').textContent = email;
+        document.getElementById('reactivateForm').action = `/staff/newsletter/resubscribe/${subscriberId}/`;
+        openModal('reactivateModal');
+    }
+    
+    // Delete Modal
+    function openDeleteModal(subscriberId, email) {
+        document.getElementById('deleteEmail').textContent = email;
+        document.getElementById('deleteForm').action = `/staff/newsletter/delete/${subscriberId}/`;
+        openModal('deleteModal');
+    }
+    
+    // Toast Notification
+    function showToast(title, message, type = 'success') {
+        const toast = document.getElementById('toastNotification');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastIcon = document.getElementById('toastIcon');
+        
+        toastTitle.textContent = title;
+        toastMessage.textContent = message;
+        
+        if (type === 'error') {
+            toast.classList.add('error');
+            toastIcon.innerHTML = '<i class="fas fa-exclamation"></i>';
+        } else {
+            toast.classList.remove('error');
+            toastIcon.innerHTML = '<i class="fas fa-check"></i>';
+        }
+        
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            hideToast();
+        }, 5000);
+    }
+    
+    function hideToast() {
+        document.getElementById('toastNotification').classList.remove('show');
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    function exportSubscribers() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status') || 'all';
+        const search = urlParams.get('q') || '';
+        
+        let exportUrl = `/staff/newsletter/subscribers/export/?status=${status}`;
+        if (search) {
+            exportUrl += `&q=${encodeURIComponent(search)}`;
+        }
+        
+        window.location.href = exportUrl;
+    }
+    
+    // Check for Django messages on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if messages %}
+            {% for message in messages %}
+                showToast(
+                    '{% if message.tags == "success" %}Success{% elif message.tags == "error" %}Error{% else %}Info{% endif %}',
+                    '{{ message|escapejs }}',
+                    '{% if message.tags == "success" %}success{% elif message.tags == "error" %}error{% else %}success{% endif %}'
+                );
+            {% endfor %}
+        {% endif %}
+    });
+</script>
+{% endblock %}

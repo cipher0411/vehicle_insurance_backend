@@ -1,0 +1,858 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Careers at VehicleInsure Nigeria | Join Our Team{% endblock %}
+{% block meta_description %}Join VehicleInsure Nigeria and help revolutionize vehicle insurance. Explore career opportunities in Lagos, Abuja, and across Nigeria.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        flex: 1;
+    }
+    
+    .filter-select {
+        padding: 10px 20px;
+        border: 1px solid var(--gray-border);
+        border-radius: 40px;
+        background: white;
+        color: #64748b;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+    
+    .search-box {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .search-box input {
+        border: 1px solid var(--gray-border);
+        border-radius: 40px;
+        padding: 10px 20px;
+        min-width: 250px;
+    }
+    
+    .active-filters {
+        margin-bottom: 20px;
+    }
+    
+    .filter-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #eef2ff;
+        color: var(--royal-blue);
+        padding: 5px 15px;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .filter-badge a {
+        color: var(--royal-blue);
+        margin-left: 8px;
+        text-decoration: none;
+    }
+    
+    .filter-badge a:hover {
+        color: #dc2626;
+    }
+    
+    .featured-jobs {
+        margin-bottom: 40px;
+    }
+    
+    .featured-jobs h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 25px;
+    }
+    
+    .featured-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+    }
+    
+    .featured-job-card {
+        background: linear-gradient(135deg, #eef2ff 0%, white 100%);
+        border-radius: 20px;
+        padding: 30px;
+        border: 1px solid var(--royal-blue);
+        transition: all 0.3s;
+    }
+    
+    .featured-job-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    }
+    
+    .featured-job-card .job-category {
+        display: inline-block;
+        background: var(--royal-blue);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-bottom: 15px;
+    }
+    
+    .featured-job-card h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .featured-job-card p {
+        color: #64748b;
+        margin-bottom: 20px;
+    }
+    
+    .jobs-section {
+        margin-bottom: 40px;
+    }
+    
+    .jobs-section h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 25px;
+    }
+    
+    .job-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        transition: all 0.3s;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .job-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.1);
+    }
+    
+    .job-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .job-title h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 5px;
+        font-size: 1.2rem;
+    }
+    
+    .job-title h4 a {
+        color: var(--navy-dark);
+        text-decoration: none;
+    }
+    
+    .job-title h4 a:hover {
+        color: var(--royal-blue);
+    }
+    
+    .job-meta {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .job-meta span {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    .job-meta i {
+        color: var(--royal-blue);
+    }
+    
+    .job-tag {
+        background: #eef2ff;
+        color: var(--royal-blue);
+        padding: 5px 15px;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .job-description {
+        color: #64748b;
+        margin: 20px 0;
+        line-height: 1.6;
+    }
+    
+    .job-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+        padding-top: 20px;
+        border-top: 1px solid var(--gray-border);
+    }
+    
+    .job-salary {
+        font-weight: 600;
+        color: #10b981;
+    }
+    
+    .job-posted {
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+    
+    .btn-apply {
+        background: var(--royal-blue);
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 40px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        text-decoration: none;
+    }
+    
+    .btn-apply:hover {
+        background: var(--royal-blue-dark);
+        transform: translateY(-2px);
+        color: white;
+    }
+    
+    .sidebar {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+    }
+    
+    .sidebar h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .category-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .category-list li {
+        margin-bottom: 12px;
+    }
+    
+    .category-list a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #64748b;
+        text-decoration: none;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--gray-border);
+        transition: all 0.3s;
+    }
+    
+    .category-list a:hover {
+        color: var(--royal-blue);
+        padding-left: 5px;
+    }
+    
+    .category-list a.active {
+        color: var(--royal-blue);
+        font-weight: 600;
+    }
+    
+    .category-list span {
+        background: var(--gray-light);
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+    
+    /* Culture Section - Now at bottom */
+    .culture-section {
+        background: white;
+        border-radius: 24px;
+        padding: 50px 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin: 40px 0;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .culture-section h2 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .values-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 30px;
+        margin-top: 40px;
+    }
+    
+    .value-card {
+        text-align: center;
+        padding: 30px 20px;
+        background: var(--gray-light);
+        border-radius: 20px;
+        transition: all 0.3s;
+    }
+    
+    .value-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+    }
+    
+    .value-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+    
+    .value-icon i {
+        font-size: 2rem;
+        color: white;
+    }
+    
+    .value-card h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .value-card p {
+        color: #64748b;
+        font-size: 0.95rem;
+    }
+    
+    /* Benefits Section */
+    .benefits-section {
+        background: linear-gradient(135deg, var(--gray-light) 0%, white 100%);
+        border-radius: 24px;
+        padding: 50px 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin: 40px 0;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.4s forwards;
+    }
+    
+    .benefits-section h2 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+    }
+    
+    .benefit-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        padding: 20px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+    }
+    
+    .benefit-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .benefit-icon i {
+        font-size: 1.5rem;
+        color: white;
+    }
+    
+    .benefit-content h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 5px;
+    }
+    
+    .benefit-content p {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--gray-border);
+        margin-bottom: 20px;
+    }
+    
+    .pagination {
+        justify-content: center;
+        margin-top: 40px;
+    }
+    
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .filter-bar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .search-box input {
+            min-width: auto;
+            width: 100%;
+        }
+        
+        .culture-section, .benefits-section {
+            padding: 30px 20px;
+        }
+        
+        .job-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .job-footer {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .btn-apply {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Careers at VehicleInsure</h1>
+        <p>Join us in revolutionizing vehicle insurance in Nigeria</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Careers</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <select class="filter-select" onchange="window.location.href=this.value">
+                <option value="?{% if search_query %}q={{ search_query }}&{% endif %}">All Categories</option>
+                {% for category in categories %}
+                <option value="?category={{ category.slug }}{% if search_query %}&q={{ search_query }}{% endif %}" {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
+                    {{ category.name }} ({{ category.job_count }})
+                </option>
+                {% endfor %}
+            </select>
+            
+            <select class="filter-select" onchange="window.location.href=this.value">
+                <option value="?{% if selected_category %}category={{ selected_category.slug }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}">All Locations</option>
+                {% for location in locations %}
+                <option value="?location={{ location.slug }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" {% if selected_location and selected_location.id == location.id %}selected{% endif %}>
+                    {{ location.name }} ({{ location.job_count }})
+                </option>
+                {% endfor %}
+            </select>
+            
+            <select class="filter-select" onchange="window.location.href=this.value">
+                <option value="?{% if selected_category %}category={{ selected_category.slug }}&{% endif %}{% if selected_location %}location={{ selected_location.slug }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}">All Job Types</option>
+                {% for type in job_types %}
+                <option value="?type={{ type.slug }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if selected_location %}&location={{ selected_location.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" {% if selected_type and selected_type.id == type.id %}selected{% endif %}>
+                    {{ type.name }} ({{ type.job_count }})
+                </option>
+                {% endfor %}
+            </select>
+            
+            <a href="?remote=true{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-select" style="text-decoration: none; {% if remote_only %}background: var(--royal-blue); color: white;{% endif %}">
+                <i class="fas fa-laptop-house me-1"></i> Remote Only
+            </a>
+        </div>
+        
+        <form method="get" class="search-box">
+            {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
+            {% if selected_location %}<input type="hidden" name="location" value="{{ selected_location.slug }}">{% endif %}
+            {% if selected_type %}<input type="hidden" name="type" value="{{ selected_type.slug }}">{% endif %}
+            {% if remote_only %}<input type="hidden" name="remote" value="true">{% endif %}
+            <input type="text" name="q" placeholder="Search jobs..." value="{{ search_query }}">
+            <button type="submit" class="btn-primary-custom">Search</button>
+        </form>
+    </div>
+    
+    <!-- Active Filters -->
+    {% if selected_category or selected_location or selected_type or remote_only or search_query %}
+    <div class="active-filters">
+        {% if selected_category %}
+        <span class="filter-badge">
+            Category: {{ selected_category.name }}
+            <a href="?{% if selected_location %}location={{ selected_location.slug }}&{% endif %}{% if selected_type %}type={{ selected_type.slug }}&{% endif %}{% if remote_only %}remote=true&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}"><i class="fas fa-times"></i></a>
+        </span>
+        {% endif %}
+        {% if selected_location %}
+        <span class="filter-badge">
+            Location: {{ selected_location.name }}
+            <a href="?{% if selected_category %}category={{ selected_category.slug }}&{% endif %}{% if selected_type %}type={{ selected_type.slug }}&{% endif %}{% if remote_only %}remote=true&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}"><i class="fas fa-times"></i></a>
+        </span>
+        {% endif %}
+        {% if selected_type %}
+        <span class="filter-badge">
+            Type: {{ selected_type.name }}
+            <a href="?{% if selected_category %}category={{ selected_category.slug }}&{% endif %}{% if selected_location %}location={{ selected_location.slug }}&{% endif %}{% if remote_only %}remote=true&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}"><i class="fas fa-times"></i></a>
+        </span>
+        {% endif %}
+        {% if remote_only %}
+        <span class="filter-badge">
+            Remote Only
+            <a href="?{% if selected_category %}category={{ selected_category.slug }}&{% endif %}{% if selected_location %}location={{ selected_location.slug }}&{% endif %}{% if selected_type %}type={{ selected_type.slug }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}"><i class="fas fa-times"></i></a>
+        </span>
+        {% endif %}
+        {% if search_query %}
+        <span class="filter-badge">
+            Search: "{{ search_query }}"
+            <a href="?{% if selected_category %}category={{ selected_category.slug }}&{% endif %}{% if selected_location %}location={{ selected_location.slug }}&{% endif %}{% if selected_type %}type={{ selected_type.slug }}&{% endif %}{% if remote_only %}remote=true{% endif %}"><i class="fas fa-times"></i></a>
+        </span>
+        {% endif %}
+        <span class="filter-badge">{{ total_jobs }} job{{ total_jobs|pluralize }} found</span>
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Featured Jobs -->
+            {% if featured_jobs and not search_query and not selected_category and not selected_location and not selected_type %}
+            <div class="featured-jobs">
+                <h3><i class="fas fa-star me-2" style="color: #FFD700;"></i> Featured Opportunities</h3>
+                <div class="featured-grid">
+                    {% for job in featured_jobs %}
+                    <div class="featured-job-card">
+                        <span class="job-category">{{ job.category.name }}</span>
+                        <h4><a href="{{ job.get_absolute_url }}" style="color: var(--navy-dark); text-decoration: none;">{{ job.title }}</a></h4>
+                        <p>{{ job.short_description|truncatechars:100 }}</p>
+                        <div class="job-meta">
+                            <span><i class="fas fa-map-marker-alt"></i> {{ job.location.name|default:"Remote" }}</span>
+                            <span><i class="fas fa-briefcase"></i> {{ job.job_type.name }}</span>
+                        </div>
+                        <div class="mt-3">
+                            <a href="{{ job.get_absolute_url }}" class="btn-apply">Apply Now <i class="fas fa-arrow-right ms-2"></i></a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- All Jobs -->
+            <div class="jobs-section">
+                <h3><i class="fas fa-briefcase me-2"></i> Open Positions</h3>
+                
+                {% if jobs %}
+                    {% for job in jobs %}
+                    <div class="job-card" style="animation-delay: {{ forloop.counter|add:10 }}0ms;">
+                        <div class="job-header">
+                            <div class="job-title">
+                                <h4><a href="{{ job.get_absolute_url }}">{{ job.title }}</a></h4>
+                                <div class="job-meta">
+                                    <span><i class="fas fa-map-marker-alt"></i> {{ job.location.name|default:"Remote" }}{% if job.is_remote %} <span class="text-success">(Remote Available)</span>{% endif %}</span>
+                                    <span><i class="fas fa-briefcase"></i> {{ job.job_type.name }}</span>
+                                    <span><i class="fas fa-folder"></i> {{ job.category.name }}</span>
+                                </div>
+                            </div>
+                            <span class="job-tag">{{ job.get_experience_level_display }}</span>
+                        </div>
+                        <p class="job-description">{{ job.short_description }}</p>
+                        <div class="job-footer">
+                            <div>
+                                <span class="job-salary"><i class="fas fa-money-bill-wave me-1"></i> {{ job.salary_display }}</span>
+                            </div>
+                            <div>
+                                <span class="job-posted"><i class="far fa-clock me-1"></i> Posted {{ job.published_at|timesince }} ago</span>
+                                {% if job.expires_at %}
+                                <span class="job-posted ms-3"><i class="far fa-calendar-alt me-1"></i> Apply by {{ job.expires_at|date:"M d, Y" }}</span>
+                                {% endif %}
+                            </div>
+                            <a href="{{ job.get_absolute_url }}" class="btn-apply">Apply Now <i class="fas fa-arrow-right ms-2"></i></a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Pagination -->
+                    {% if jobs.has_other_pages %}
+                    <nav>
+                        <ul class="pagination">
+                            {% if jobs.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ jobs.previous_page_number }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if selected_location %}&location={{ selected_location.slug }}{% endif %}{% if selected_type %}&type={{ selected_type.slug }}{% endif %}{% if remote_only %}&remote=true{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in jobs.paginator.page_range %}
+                                {% if jobs.number == num %}
+                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% elif num > jobs.number|add:'-3' and num < jobs.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if selected_location %}&location={{ selected_location.slug }}{% endif %}{% if selected_type %}&type={{ selected_type.slug }}{% endif %}{% if remote_only %}&remote=true{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if jobs.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ jobs.next_page_number }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if selected_location %}&location={{ selected_location.slug }}{% endif %}{% if selected_type %}&type={{ selected_type.slug }}{% endif %}{% if remote_only %}&remote=true{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-briefcase"></i>
+                        <h3>No open positions found</h3>
+                        <p>{% if search_query %}No jobs match your search criteria.{% else %}Check back later for new opportunities.{% endif %}</p>
+                        {% if search_query or selected_category or selected_location %}
+                        <a href="{% url 'core:careers' %}" class="btn-outline-primary-custom">View All Jobs</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Categories Sidebar -->
+            <div class="sidebar">
+                <h4><i class="fas fa-folder me-2"></i> Categories</h4>
+                <ul class="category-list">
+                    {% for category in categories %}
+                    <li>
+                        <a href="?category={{ category.slug }}{% if search_query %}&q={{ search_query }}{% endif %}" {% if selected_category and selected_category.id == category.id %}class="active"{% endif %}>
+                            <span>{% if category.icon %}<i class="fas {{ category.icon }} me-2"></i>{% endif %}{{ category.name }}</span>
+                            <span>{{ category.job_count }}</span>
+                        </a>
+                    </li>
+                    {% empty %}
+                    <li class="text-muted">No categories yet</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <!-- Locations Sidebar -->
+            {% if locations %}
+            <div class="sidebar">
+                <h4><i class="fas fa-map-marker-alt me-2"></i> Locations</h4>
+                <ul class="category-list">
+                    {% for location in locations %}
+                    <li>
+                        <a href="?location={{ location.slug }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                            <span>{{ location.name }}</span>
+                            <span>{{ location.job_count }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <!-- Job Types Sidebar -->
+            {% if job_types %}
+            <div class="sidebar">
+                <h4><i class="fas fa-clock me-2"></i> Job Types</h4>
+                <ul class="category-list">
+                    {% for type in job_types %}
+                    <li>
+                        <a href="?type={{ type.slug }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if selected_location %}&location={{ selected_location.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                            <span>{{ type.name }}</span>
+                            <span>{{ type.job_count }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Our Culture Section - Moved to Bottom -->
+    <div class="culture-section">
+        <h2>Our Culture</h2>
+        <p class="lead text-center">We're building the future of insurance in Nigeria with technology, innovation, and a passion for customer service.</p>
+        
+        <div class="values-grid">
+            <div class="value-card">
+                <div class="value-icon"><i class="fas fa-bolt"></i></div>
+                <h3>Innovation First</h3>
+                <p>We embrace new ideas and technologies to improve insurance for Nigerians.</p>
+            </div>
+            <div class="value-card">
+                <div class="value-icon"><i class="fas fa-users"></i></div>
+                <h3>Customer Obsessed</h3>
+                <p>Everything we do is focused on delivering exceptional customer experiences.</p>
+            </div>
+            <div class="value-card">
+                <div class="value-icon"><i class="fas fa-handshake"></i></div>
+                <h3>Integrity</h3>
+                <p>We operate with honesty, transparency, and the highest ethical standards.</p>
+            </div>
+            <div class="value-card">
+                <div class="value-icon"><i class="fas fa-globe-africa"></i></div>
+                <h3>Impact Driven</h3>
+                <p>We're committed to making insurance accessible to every Nigerian driver.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Why Work With Us Section -->
+    <div class="benefits-section">
+        <h2>Why Work With Us</h2>
+        <div class="benefits-grid">
+            <div class="benefit-item">
+                <div class="benefit-icon"><i class="fas fa-credit-card"></i></div>
+                <div class="benefit-content">
+                    <h4>Competitive Salary</h4>
+                    <p>We offer competitive compensation packages benchmarked to industry standards.</p>
+                </div>
+            </div>
+            <div class="benefit-item">
+                <div class="benefit-icon"><i class="fas fa-heartbeat"></i></div>
+                <div class="benefit-content">
+                    <h4>Health Insurance</h4>
+                    <p>Comprehensive health coverage for you and your immediate family.</p>
+                </div>
+            </div>
+            <div class="benefit-item">
+                <div class="benefit-icon"><i class="fas fa-laptop-house"></i></div>
+                <div class="benefit-content">
+                    <h4>Flexible Work</h4>
+                    <p>Hybrid work model with remote options and flexible hours.</p>
+                </div>
+            </div>
+            <div class="benefit-item">
+                <div class="benefit-icon"><i class="fas fa-graduation-cap"></i></div>
+                <div class="benefit-content">
+                    <h4>Learning & Development</h4>
+                    <p>Annual learning stipend and opportunities for professional growth.</p>
+                </div>
+            </div>
+            <div class="benefit-item">
+                <div class="benefit-icon"><i class="fas fa-umbrella-beach"></i></div>
+                <div class="benefit-content">
+                    <h4>Generous Time Off</h4>
+                    <p>25 days annual leave plus public holidays and sick leave.</p>
+                </div>
+            </div>
+            <div class="benefit-item">
+                <div class="benefit-icon"><i class="fas fa-users-cog"></i></div>
+                <div class="benefit-content">
+                    <h4>Great Culture</h4>
+                    <p>Collaborative, inclusive environment with regular team events.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Application Note -->
+    <div class="text-center mt-4">
+        <p class="text-muted">Don't see a role that fits? Send your resume to <a href="mailto:careers@vehicleinsure.ng">careers@vehicleinsure.ng</a></p>
+    </div>
+</div>
+{% endblock %}

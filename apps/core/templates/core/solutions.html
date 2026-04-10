@@ -1,0 +1,288 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Insurance Solutions Nigeria | VehicleInsure{% endblock %}
+{% block meta_description %}Comprehensive insurance solutions for individuals and businesses in Nigeria. From personal car insurance to fleet management and commercial coverage.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .solution-category {
+        margin-bottom: 60px;
+    }
+    
+    .category-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 30px;
+        padding-bottom: 10px;
+        border-bottom: 3px solid var(--royal-blue);
+        display: inline-block;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .solutions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+    }
+    
+    .solution-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+        text-decoration: none;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .solution-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    }
+    
+    .solution-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    .solution-icon i {
+        font-size: 1.8rem;
+        color: white;
+    }
+    
+    .solution-card h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .solution-card p {
+        color: #64748b;
+        margin-bottom: 15px;
+        line-height: 1.6;
+    }
+    
+    .solution-link {
+        color: var(--royal-blue);
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .solution-card:hover .solution-link {
+        gap: 12px;
+    }
+    
+    .cta-section-solutions {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        border-radius: 24px;
+        padding: 50px;
+        text-align: center;
+        color: white;
+        margin-top: 40px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.8s forwards;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .category-title {
+            font-size: 1.5rem;
+        }
+        
+        .cta-section-solutions {
+            padding: 30px 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Our Solutions</h1>
+        <p>Comprehensive insurance solutions for every need</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Solutions</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- For Individuals -->
+    <div class="solution-category">
+        <h2 class="category-title">For Individuals</h2>
+        <div class="solutions-grid">
+            <a href="{% url 'core:individual_plans' %}" class="solution-card" style="animation-delay: 0.1s;">
+                <div class="solution-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h3>Individual Plans</h3>
+                <p>Personalized coverage options for private car owners with flexible payment plans.</p>
+                <span class="solution-link">Learn More <i class="fas fa-arrow-right"></i></span>
+            </a>
+            
+            <a href="{% url 'core:instant_quote' %}" class="solution-card" style="animation-delay: 0.15s;">
+                <div class="solution-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <h3>Instant Quotes</h3>
+                <p>Get accurate insurance pricing in seconds with our smart calculator.</p>
+                <span class="solution-link">Get Quote <i class="fas fa-arrow-right"></i></span>
+            </a>
+            
+            <a href="{% url 'core:easy_renewals' %}" class="solution-card" style="animation-delay: 0.2s;">
+                <div class="solution-icon">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <h3>Easy Renewals</h3>
+                <p>Renew your policy in minutes without stress or paperwork.</p>
+                <span class="solution-link">Renew Now <i class="fas fa-arrow-right"></i></span>
+            </a>
+            
+            <a href="{% url 'core:file_claim' %}" class="solution-card" style="animation-delay: 0.25s;">
+                <div class="solution-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <h3>File a Claim</h3>
+                <p>Submit claims easily with our step-by-step guided process.</p>
+                <span class="solution-link">File Claim <i class="fas fa-arrow-right"></i></span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- For Businesses -->
+    <div class="solution-category">
+        <h2 class="category-title">For Businesses</h2>
+        <div class="solutions-grid">
+            <a href="{% url 'core:fleet_insurance' %}" class="solution-card" style="animation-delay: 0.3s;">
+                <div class="solution-icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <h3>Fleet Insurance</h3>
+                <p>Protect multiple vehicles under one comprehensive policy with volume discounts.</p>
+                <span class="solution-link">Learn More <i class="fas fa-arrow-right"></i></span>
+            </a>
+            
+            <a href="{% url 'core:commercial_coverage' %}" class="solution-card" style="animation-delay: 0.35s;">
+                <div class="solution-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <h3>Commercial Coverage</h3>
+                <p>Specialized insurance for taxis, ride-sharing, delivery vehicles, and more.</p>
+                <span class="solution-link">Learn More <i class="fas fa-arrow-right"></i></span>
+            </a>
+            
+            <a href="{% url 'core:claims_management' %}" class="solution-card" style="animation-delay: 0.4s;">
+                <div class="solution-icon">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <h3>Claims Management</h3>
+                <p>Efficient claims processing with dedicated handlers and analytics.</p>
+                <span class="solution-link">Learn More <i class="fas fa-arrow-right"></i></span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Additional Services -->
+    <div class="solution-category">
+        <h2 class="category-title">Additional Services</h2>
+        <div class="solutions-grid">
+            <a href="{% url 'core:secure_payments' %}" class="solution-card" style="animation-delay: 0.45s;">
+                <div class="solution-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3>Secure Payments</h3>
+                <p>Multiple payment options with bank-level security and encryption.</p>
+                <span class="solution-link">Learn More <i class="fas fa-arrow-right"></i></span>
+            </a>
+            
+            <a href="{% url 'core:support' %}" class="solution-card" style="animation-delay: 0.5s;">
+                <div class="solution-icon">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h3>24/7 Support</h3>
+                <p>Round-the-clock assistance for all your insurance needs.</p>
+                <span class="solution-link">Get Support <i class="fas fa-arrow-right"></i></span>
+            </a>
+            
+            <a href="{% url 'core:public_promotions' %}" class="solution-card" style="animation-delay: 0.55s;">
+                <div class="solution-icon">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <h3>Promotions & Discounts</h3>
+                <p>Enjoy exclusive offers and seasonal deals on all policies.</p>
+                <span class="solution-link">View Offers <i class="fas fa-arrow-right"></i></span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- CTA -->
+    <div class="cta-section-solutions">
+        <h2 class="fw-bold mb-3">Not Sure Which Solution Is Right for You?</h2>
+        <p class="mb-4">Our insurance specialists are ready to help you find the perfect coverage.</p>
+        <a href="{% url 'core:contact' %}" class="btn btn-light btn-lg px-5">
+            Contact an Expert <i class="fas fa-arrow-right ms-2"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}

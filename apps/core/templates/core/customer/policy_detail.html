@@ -1,0 +1,374 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Policy Details - {{ policy.policy_number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-file-contract"></i> Policy Details</h2>
+            <p class="text-muted">Policy #{{ policy.policy_number }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:my_policies' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Policies
+            </a>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Policy Status Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Policy Information</h5>
+                        <span class="badge 
+                            {% if policy.status == 'active' %}bg-success
+                            {% elif policy.status == 'pending' %}bg-warning
+                            {% elif policy.status == 'expired' %}bg-danger
+                            {% else %}bg-secondary{% endif %} fs-6">
+                            {{ policy.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Policy Type:</strong> {{ policy.get_policy_type_display }}</p>
+                            <p class="mb-2"><strong>Coverage Amount:</strong> ₦{{ policy.coverage_amount|floatformat:2 }}</p>
+                            <p class="mb-2"><strong>Premium Amount:</strong> ₦{{ policy.premium_amount|floatformat:2 }}</p>
+                            <p class="mb-0"><strong>Deductible:</strong> ₦{{ policy.deductible|floatformat:2 }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Start Date:</strong> {{ policy.start_date|date:"F d, Y" }}</p>
+                            <p class="mb-2"><strong>End Date:</strong> {{ policy.end_date|date:"F d, Y" }}</p>
+                            <p class="mb-2"><strong>Created:</strong> {{ policy.created_at|date:"M d, Y" }}</p>
+                            <p class="mb-0">
+                                <strong>Days Remaining:</strong> 
+                                {% if policy.is_active %}
+                                    <span class="text-success">{{ policy.days_remaining }} days</span>
+                                {% elif policy.status == 'expired' %}
+                                    <span class="text-danger">Expired</span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% if policy.additional_benefits %}
+                    <hr>
+                    <h6>Additional Benefits</h6>
+                    <div class="row">
+                        {% for benefit in policy.additional_benefits %}
+                            <div class="col-md-6">
+                                <i class="fas fa-check-circle text-success me-2"></i>{{ benefit }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Vehicle Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-car"></i> Vehicle Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Vehicle:</strong> {{ policy.vehicle.make }} {{ policy.vehicle.model }}</p>
+                            <p class="mb-2"><strong>Year:</strong> {{ policy.vehicle.year }}</p>
+                            <p class="mb-2"><strong>Registration:</strong> {{ policy.vehicle.registration_number }}</p>
+                            <p class="mb-0"><strong>Color:</strong> {{ policy.vehicle.color }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Engine Number:</strong> {{ policy.vehicle.engine_number }}</p>
+                            <p class="mb-2"><strong>Chassis Number:</strong> {{ policy.vehicle.chassis_number }}</p>
+                            <p class="mb-2"><strong>Vehicle Type:</strong> {{ policy.vehicle.get_vehicle_type_display }}</p>
+                            <p class="mb-0"><strong>Fuel Type:</strong> {{ policy.vehicle.get_fuel_type_display }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Coverage Details Card -->
+            {% if policy.custom_coverage %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Coverage Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for key, value in policy.custom_coverage.items %}
+                            <div class="col-md-6 mb-2">
+                                <i class="fas fa-{% if value %}check-circle text-success{% else %}times-circle text-danger{% endif %} me-2"></i>
+                                {{ key|title }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Actions Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-cog"></i> Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if policy.policy_document %}
+                            <a href="{{ policy.policy_document.url }}" class="btn btn-primary" target="_blank">
+                                <i class="fas fa-download"></i> Download Policy Document
+                            </a>
+                        {% endif %}
+                        
+                        {% if policy.status == 'active' %}
+                            <a href="{% url 'core:file_claim_policy' policy.id %}" class="btn btn-warning">
+                                <i class="fas fa-file-alt"></i> File a Claim
+                            </a>
+                        {% endif %}
+                        
+                        {% if policy.status == 'pending' %}
+                            {% with payment=policy.payments.first %}
+                                {% if payment %}
+                                    <a href="{% url 'core:payment' payment_id=payment.id %}" class="btn btn-success">
+                                        <i class="fas fa-credit-card"></i> Complete Payment
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                        
+                        <a href="{% url 'core:support_tickets' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-headset"></i> Contact Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payments Summary Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Payments</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if payments %}
+                        <div class="list-group list-group-flush">
+                            {% for payment in payments %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>₦{{ payment.amount|floatformat:2 }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ payment.payment_method|title }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge 
+                                                {% if payment.status == 'completed' %}bg-success
+                                                {% elif payment.status == 'pending' %}bg-warning
+                                                {% elif payment.status == 'failed' %}bg-danger
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ payment.get_status_display }}
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">{{ payment.created_at|date:"M d" }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3 text-muted">
+                            <i class="fas fa-credit-card fa-2x mb-2"></i>
+                            <p class="mb-0">No payments recorded</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Claims Summary Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Claims</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if claims %}
+                        <div class="list-group list-group-flush">
+                            {% for claim in claims %}
+                                <a href="{% url 'core:claim_detail' claim.id %}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ claim.claim_number }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ claim.get_claim_type_display }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge 
+                                                {% if claim.status == 'approved' %}bg-success
+                                                {% elif claim.status == 'pending' %}bg-warning
+                                                {% elif claim.status == 'rejected' %}bg-danger
+                                                {% elif claim.status == 'settled' %}bg-info
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ claim.get_status_display }}
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">₦{{ claim.claimed_amount|floatformat:2 }}</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                        <div class="p-3">
+                            <a href="{% url 'core:my_claims' %}" class="btn btn-outline-primary btn-sm w-100">
+                                <i class="fas fa-list"></i> View All Claims
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3 text-muted">
+                            <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                            <p class="mb-0">No claims filed</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let toastInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('notificationToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    }
+});
+
+function showToast(title, message, type = 'info') {
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    if (toastTitle) toastTitle.textContent = title;
+    if (toastMessage) toastMessage.textContent = message;
+    
+    if (toastIcon) {
+        toastIcon.className = 'fas me-2';
+        if (type === 'success') {
+            toastIcon.classList.add('fa-check-circle');
+            toastIcon.style.color = '#28a745';
+        } else if (type === 'error') {
+            toastIcon.classList.add('fa-exclamation-circle');
+            toastIcon.style.color = '#dc3545';
+        } else {
+            toastIcon.classList.add('fa-info-circle');
+            toastIcon.style.color = '#4169E1';
+        }
+    }
+    
+    if (toastInstance) toastInstance.show();
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #e0a800;
+    color: #000;
+}
+
+.btn-outline-primary {
+    color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4169E1;
+    color: white;
+}
+
+.toast {
+    background: white;
+    border-left: 4px solid #4169E1;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+</style>
+{% endblock %}

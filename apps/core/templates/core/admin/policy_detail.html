@@ -1,0 +1,620 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Policy Details - {{ policy.policy_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-file-contract"></i> Policy Details</h2>
+            <p class="text-muted">View and manage policy #{{ policy.policy_number }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_policies' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Policies
+            </a>
+            {% if policy.policy_document %}
+            <a href="{{ policy.policy_document.url }}" class="btn btn-primary" target="_blank">
+                <i class="fas fa-download"></i> Download Policy
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Policy Information -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Policy Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="policyForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Policy Number</label>
+                                <input type="text" class="form-control" value="{{ policy.policy_number }}" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-control" name="status" id="policyStatus">
+                                    <option value="draft" {% if policy.status == 'draft' %}selected{% endif %}>Draft</option>
+                                    <option value="pending" {% if policy.status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="active" {% if policy.status == 'active' %}selected{% endif %}>Active</option>
+                                    <option value="expired" {% if policy.status == 'expired' %}selected{% endif %}>Expired</option>
+                                    <option value="cancelled" {% if policy.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                    <option value="claimed" {% if policy.status == 'claimed' %}selected{% endif %}>Claimed</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Policy Type</label>
+                                <input type="text" class="form-control" value="{{ policy.get_policy_type_display }}" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Coverage Amount (₦)</label>
+                                <input type="text" class="form-control" name="coverage_amount" value="{{ policy.coverage_amount }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Premium Amount (₦)</label>
+                                <input type="text" class="form-control" name="premium_amount" value="{{ policy.premium_amount }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Deductible (₦)</label>
+                                <input type="text" class="form-control" value="{{ policy.deductible }}" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-control" name="start_date" value="{{ policy.start_date|date:'Y-m-d' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">End Date</label>
+                                <input type="date" class="form-control" name="end_date" value="{{ policy.end_date|date:'Y-m-d' }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Created At</label>
+                                <input type="text" class="form-control" value="{{ policy.created_at|date:'M d, Y H:i' }}" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Last Updated</label>
+                                <input type="text" class="form-control" value="{{ policy.updated_at|date:'M d, Y H:i' }}" readonly>
+                            </div>
+                        </div>
+                        
+                        {% if policy.additional_benefits %}
+                        <div class="mb-3">
+                            <label class="form-label">Additional Benefits</label>
+                            <div class="bg-light p-3 rounded">
+                                <ul class="list-unstyled mb-0">
+                                    {% for benefit in policy.additional_benefits %}
+                                        <li><i class="fas fa-check-circle text-success me-2"></i>{{ benefit }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if policy.custom_coverage %}
+                        <div class="mb-3">
+                            <label class="form-label">Coverage Details</label>
+                            <div class="bg-light p-3 rounded">
+                                <ul class="list-unstyled mb-0">
+                                    {% for key, value in policy.custom_coverage.items %}
+                                        <li>
+                                            <i class="fas fa-{% if value %}check-circle text-success{% else %}times-circle text-danger{% endif %} me-2"></i>
+                                            {{ key|title }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="saveBtn">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-warning" onclick="regenerateDocument()">
+                                <i class="fas fa-file-pdf"></i> Regenerate Document
+                            </button>
+                            {% if policy.status == 'pending' %}
+                            <button type="button" class="btn btn-success" onclick="activatePolicy()">
+                                <i class="fas fa-check-circle"></i> Activate Policy
+                            </button>
+                            {% endif %}
+                            {% if policy.status == 'active' %}
+                            <button type="button" class="btn btn-danger" onclick="cancelPolicy()">
+                                <i class="fas fa-ban"></i> Cancel Policy
+                            </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Payments Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Payments</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Transaction ID</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payments %}
+                                <tr>
+                                    <td>{{ payment.transaction_id }}</td>
+                                    <td>₦{{ payment.amount|floatformat:2 }}</td>
+                                    <td>{{ payment.get_payment_method_display }}</td>
+                                    <td>{{ payment.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if payment.status == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% elif payment.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif payment.status == 'pending_verification' %}
+                                            <span class="badge bg-info">Pending Verification</span>
+                                        {% elif payment.status == 'failed' %}
+                                            <span class="badge bg-danger">Failed</span>
+                                        {% elif payment.status == 'refunded' %}
+                                            <span class="badge bg-secondary">Refunded</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'core:admin_payments' %}?search={{ payment.transaction_id }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-3 text-muted">No payments found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Claims Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Claims</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Claim #</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Filed Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for claim in claims %}
+                                <tr>
+                                    <td>{{ claim.claim_number }}</td>
+                                    <td>{{ claim.get_claim_type_display }}</td>
+                                    <td>₦{{ claim.claimed_amount|floatformat:2 }}</td>
+                                    <td>{{ claim.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if claim.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% elif claim.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif claim.status == 'under_review' %}
+                                            <span class="badge bg-info">Under Review</span>
+                                        {% elif claim.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% elif claim.status == 'settled' %}
+                                            <span class="badge bg-primary">Settled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'core:admin_claim_detail' claim.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-3 text-muted">No claims found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Customer Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {% if policy.user.profile_picture %}
+                            <img src="{{ policy.user.profile_picture.url }}" class="rounded-circle" width="80" height="80">
+                        {% else %}
+                            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                <i class="fas fa-user fa-2x text-muted"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <table class="table table-sm table-borderless">
+                        <tr><th>Name:</th><td>{{ policy.user.get_full_name|default:'N/A' }}</td></tr>
+                        <tr><th>Email:</th><td>{{ policy.user.email }}</td></tr>
+                        <tr><th>Phone:</th><td>{{ policy.user.phone_number|default:'N/A' }}</td></tr>
+                        <tr><th>Member Since:</th><td>{{ policy.user.date_joined|date:"M d, Y" }}</td></tr>
+                        <tr><th>Verified:</th>
+                            <td>
+                                {% if policy.user.is_verified %}
+                                    <span class="badge bg-success">Verified</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                    <a href="{% url 'core:admin_user_detail' policy.user.id %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-user"></i> View Full Profile
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Vehicle Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-car"></i> Vehicle Information</h5>
+                </div>
+                <div class="card-body">
+                    {% if policy.vehicle %}
+                    <table class="table table-sm table-borderless">
+                        <tr><th>Make/Model:</th><td>{{ policy.vehicle.make }} {{ policy.vehicle.model }}</td></tr>
+                        <tr><th>Year:</th><td>{{ policy.vehicle.year }}</td></tr>
+                        <tr><th>Registration:</th><td>{{ policy.vehicle.registration_number }}</td></tr>
+                        <tr><th>Engine #:</th><td>{{ policy.vehicle.engine_number }}</td></tr>
+                        <tr><th>Chassis #:</th><td>{{ policy.vehicle.chassis_number }}</td></tr>
+                        <tr><th>Vehicle Type:</th><td>{{ policy.vehicle.get_vehicle_type_display }}</td></tr>
+                        <tr><th>Color:</th><td>{{ policy.vehicle.color }}</td></tr>
+                    </table>
+                    {% else %}
+                    <p class="text-muted">No vehicle information available</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Policy Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-simple"></i> Policy Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h4 class="text-primary">{{ payments.count }}</h4>
+                            <small class="text-muted">Payments</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h4 class="text-warning">{{ claims.count }}</h4>
+                            <small class="text-muted">Claims</small>
+                        </div>
+                        <div class="col-12">
+                            <div class="progress" style="height: 8px;">
+                                {% with days_passed=policy.start_date|timesince:policy.end_date %}
+                                <div class="progress-bar" role="progressbar" style="width: {{ policy.coverage_percentage|default:0 }}%"></div>
+                                {% endwith %}
+                            </div>
+                            <small class="text-muted">
+                                {% if policy.is_active %}
+                                    {{ policy.days_remaining }} days remaining
+                                {% else %}
+                                    Policy {{ policy.status }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalTitle">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmModalBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% csrf_token %}
+
+<script>
+let toastInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('notificationToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    }
+    
+    const form = document.getElementById('policyForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+            saveBtn.disabled = true;
+            
+            fetch(window.location.pathname, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    return response.json();
+                }
+            })
+            .then(data => {
+                if (data && data.success) {
+                    showToast('Success', 'Policy updated successfully', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else if (data && data.error) {
+                    showToast('Error', data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error', 'An error occurred', 'error');
+            })
+            .finally(() => {
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                saveBtn.disabled = false;
+            });
+        });
+    }
+});
+
+function showToast(title, message, type = 'info') {
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    toastIcon.className = 'fas me-2';
+    toastIcon.style.color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#4169E1';
+    toastIcon.classList.add(type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+    
+    toastInstance.show();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showConfirmModal(title, message, onConfirm) {
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalBody').textContent = message;
+    
+    const confirmBtn = document.getElementById('confirmModalBtn');
+    confirmBtn.onclick = function() {
+        onConfirm();
+        bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+    };
+    
+    new bootstrap.Modal(document.getElementById('confirmModal')).show();
+}
+
+function activatePolicy() {
+    showConfirmModal('Activate Policy', 'Are you sure you want to activate this policy?', function() {
+        const csrftoken = getCookie('csrftoken');
+        
+        fetch(`/custom_admin/policy/{{ policy.id }}/activate/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', 'Policy activated successfully', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('Error', data.message || 'Failed to activate policy', 'error');
+            }
+        });
+    });
+}
+
+function cancelPolicy() {
+    showConfirmModal('Cancel Policy', 'Are you sure you want to cancel this policy? This action cannot be undone.', function() {
+        const csrftoken = getCookie('csrftoken');
+        
+        fetch(`/custom_admin/policy/{{ policy.id }}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', 'Policy cancelled successfully', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('Error', data.message || 'Failed to cancel policy', 'error');
+            }
+        });
+    });
+}
+
+function regenerateDocument() {
+    showConfirmModal('Regenerate Document', 'This will replace the existing policy document. Continue?', function() {
+        const csrftoken = getCookie('csrftoken');
+        
+        fetch(`/custom_admin/policy/{{ policy.id }}/regenerate-document/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', 'Policy document regenerated', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('Error', data.message || 'Failed to regenerate document', 'error');
+            }
+        });
+    });
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+
+.btn-outline-primary {
+    color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4169E1;
+    color: white;
+}
+
+.toast {
+    background: white;
+    border-left: 4px solid #4169E1;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.table th {
+    font-weight: 600;
+}
+
+.progress-bar {
+    background-color: #4169E1;
+}
+</style>
+{% endblock %}

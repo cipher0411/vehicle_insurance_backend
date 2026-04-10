@@ -1,0 +1,73 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Payment Status{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-info-circle"></i> Payment Status</h4>
+                </div>
+                <div class="card-body text-center">
+                    {% if payment.status == 'completed' %}
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <h4 class="text-success">Payment Successful!</h4>
+                        <p>Your payment has been confirmed and your policy is now active.</p>
+                        <a href="{% url 'core:policy_detail' payment.policy.id %}" class="btn btn-primary mt-3">
+                            View Policy
+                        </a>
+                    {% elif payment.status == 'pending_verification' %}
+                        <i class="fas fa-clock fa-4x text-warning mb-3"></i>
+                        <h4 class="text-warning">Payment Under Verification</h4>
+                        <p>Your bank transfer has been submitted and is being verified. This usually takes 1-24 hours.</p>
+                        <p class="text-muted">Reference: {{ payment.payment_reference }}</p>
+                        <a href="{% url 'core:dashboard' %}" class="btn btn-primary mt-3">
+                            Go to Dashboard
+                        </a>
+                    {% elif payment.status == 'pending' %}
+                        <i class="fas fa-hourglass-half fa-4x text-info mb-3"></i>
+                        <h4 class="text-info">Payment Pending</h4>
+                        <p>Your payment is pending. Please complete the payment process.</p>
+                        <a href="{% url 'core:process_card_payment' payment.id %}" class="btn btn-primary mt-3">
+                            Complete Payment
+                        </a>
+                    {% elif payment.status == 'failed' %}
+                        <i class="fas fa-times-circle fa-4x text-danger mb-3"></i>
+                        <h4 class="text-danger">Payment Failed</h4>
+                        <p>Your payment was not successful. Please try again.</p>
+                        <a href="{% url 'core:process_card_payment' payment.id %}" class="btn btn-primary mt-3">
+                            Try Again
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+</style>
+{% endblock %}

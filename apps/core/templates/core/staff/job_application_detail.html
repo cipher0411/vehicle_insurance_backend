@@ -1,0 +1,437 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}Application Details | VehicleInsure Staff{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-header {
+        background: #4169E1;
+        padding: 30px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 30px;
+    }
+    
+    .staff-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .detail-container {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+    }
+    
+    .candidate-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 25px;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .candidate-avatar {
+        width: 80px;
+        height: 80px;
+        background: var(--royal-blue);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    
+    .candidate-info h2 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .candidate-info .job-title {
+        color: var(--royal-blue);
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    
+    .candidate-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        color: #64748b;
+    }
+    
+    .candidate-meta i {
+        color: var(--royal-blue);
+        margin-right: 8px;
+        width: 18px;
+    }
+    
+    .status-section {
+        background: var(--gray-light);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .status-section h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .status-selector {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .status-option {
+        padding: 8px 20px;
+        border-radius: 40px;
+        font-weight: 500;
+        color: #64748b;
+        background: white;
+        border: 1px solid var(--gray-border);
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .status-option:hover {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .status-option.active {
+        background: var(--royal-blue);
+        color: white;
+        border-color: var(--royal-blue);
+    }
+    
+    .rating-selector {
+        display: flex;
+        gap: 5px;
+        margin: 15px 0;
+    }
+    
+    .rating-star {
+        font-size: 1.5rem;
+        color: #d1d5db;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    
+    .rating-star:hover,
+    .rating-star.active {
+        color: #FFD700;
+    }
+    
+    .info-section {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .info-section h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+    
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .info-label {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+    
+    .info-value {
+        color: var(--navy-dark);
+        font-weight: 500;
+    }
+    
+    .info-value a {
+        color: var(--royal-blue);
+        text-decoration: none;
+    }
+    
+    .info-value a:hover {
+        text-decoration: underline;
+    }
+    
+    .cover-letter {
+        background: var(--gray-light);
+        border-radius: 16px;
+        padding: 25px;
+        margin-top: 20px;
+    }
+    
+    .cover-letter h5 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .cover-letter p {
+        color: #475569;
+        line-height: 1.7;
+        white-space: pre-line;
+    }
+    
+    .notes-section {
+        margin-top: 30px;
+    }
+    
+    .notes-section label {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .notes-section textarea {
+        width: 100%;
+        border: 2px solid var(--gray-border);
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        resize: vertical;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid var(--gray-border);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="staff-header">
+    <div class="container">
+        <h1><i class="fas fa-user me-2"></i> Application Details</h1>
+        <p>Review candidate information and update status</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <div class="detail-container">
+        <!-- Candidate Header -->
+        <div class="candidate-header">
+            <div class="candidate-avatar">
+                {{ application.full_name|slice:":1"|upper }}
+            </div>
+            <div class="candidate-info">
+                <h2>{{ application.full_name }}</h2>
+                <div class="job-title">
+                    <i class="fas fa-briefcase me-2"></i> Applied for: {{ application.job.title }}
+                </div>
+                <div class="candidate-meta">
+                    <span><i class="fas fa-envelope"></i> {{ application.email }}</span>
+                    <span><i class="fas fa-phone"></i> {{ application.phone }}</span>
+                    {% if application.location %}
+                    <span><i class="fas fa-map-marker-alt"></i> {{ application.location }}</span>
+                    {% endif %}
+                    <span><i class="far fa-calendar"></i> Applied: {{ application.created_at|date:"F d, Y" }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Update Section -->
+        <div class="status-section">
+            <h4><i class="fas fa-tasks me-2"></i> Application Status</h4>
+            
+            <form method="post" id="statusForm">
+                {% csrf_token %}
+                
+                <div class="status-selector">
+                    <input type="radio" name="status" value="pending" id="status-pending" {% if application.status == 'pending' %}checked{% endif %} hidden>
+                    <label for="status-pending" class="status-option {% if application.status == 'pending' %}active{% endif %}">Pending</label>
+                    
+                    <input type="radio" name="status" value="reviewed" id="status-reviewed" {% if application.status == 'reviewed' %}checked{% endif %} hidden>
+                    <label for="status-reviewed" class="status-option {% if application.status == 'reviewed' %}active{% endif %}">Reviewed</label>
+                    
+                    <input type="radio" name="status" value="shortlisted" id="status-shortlisted" {% if application.status == 'shortlisted' %}checked{% endif %} hidden>
+                    <label for="status-shortlisted" class="status-option {% if application.status == 'shortlisted' %}active{% endif %}">Shortlisted</label>
+                    
+                    <input type="radio" name="status" value="interviewed" id="status-interviewed" {% if application.status == 'interviewed' %}checked{% endif %} hidden>
+                    <label for="status-interviewed" class="status-option {% if application.status == 'interviewed' %}active{% endif %}">Interviewed</label>
+                    
+                    <input type="radio" name="status" value="offered" id="status-offered" {% if application.status == 'offered' %}checked{% endif %} hidden>
+                    <label for="status-offered" class="status-option {% if application.status == 'offered' %}active{% endif %}">Offered</label>
+                    
+                    <input type="radio" name="status" value="hired" id="status-hired" {% if application.status == 'hired' %}checked{% endif %} hidden>
+                    <label for="status-hired" class="status-option {% if application.status == 'hired' %}active{% endif %}">Hired</label>
+                    
+                    <input type="radio" name="status" value="rejected" id="status-rejected" {% if application.status == 'rejected' %}checked{% endif %} hidden>
+                    <label for="status-rejected" class="status-option {% if application.status == 'rejected' %}active{% endif %}">Rejected</label>
+                </div>
+                
+                <div class="rating-selector">
+                    <span class="me-3">Rating:</span>
+                    {% for i in "12345" %}
+                    <input type="radio" name="rating" value="{{ forloop.counter }}" id="rating-{{ forloop.counter }}" {% if application.rating == forloop.counter %}checked{% endif %} hidden>
+                    <label for="rating-{{ forloop.counter }}" class="rating-star" onclick="setRating({{ forloop.counter }})">
+                        <i class="fas fa-star"></i>
+                    </label>
+                    {% endfor %}
+                </div>
+                
+                <div class="notes-section">
+                    <label>Internal Notes</label>
+                    <textarea name="notes" rows="4" placeholder="Add notes about this candidate...">{{ application.notes }}</textarea>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Candidate Details -->
+        <div class="info-section">
+            <h4><i class="fas fa-user-circle me-2"></i> Candidate Information</h4>
+            <div class="info-grid">
+                {% if application.current_company %}
+                <div class="info-item">
+                    <span class="info-label">Current Company</span>
+                    <span class="info-value">{{ application.current_company }}</span>
+                </div>
+                {% endif %}
+                {% if application.current_role %}
+                <div class="info-item">
+                    <span class="info-label">Current Role</span>
+                    <span class="info-value">{{ application.current_role }}</span>
+                </div>
+                {% endif %}
+                {% if application.years_experience %}
+                <div class="info-item">
+                    <span class="info-label">Years of Experience</span>
+                    <span class="info-value">{{ application.years_experience }} year{{ application.years_experience|pluralize }}</span>
+                </div>
+                {% endif %}
+                {% if application.expected_salary %}
+                <div class="info-item">
+                    <span class="info-label">Expected Salary</span>
+                    <span class="info-value">₦{{ application.expected_salary|floatformat:0 }}</span>
+                </div>
+                {% endif %}
+                {% if application.available_from %}
+                <div class="info-item">
+                    <span class="info-label">Available From</span>
+                    <span class="info-value">{{ application.available_from|date:"F d, Y" }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Links -->
+        <div class="info-section">
+            <h4><i class="fas fa-link me-2"></i> Links & Documents</h4>
+            <div class="info-grid">
+                {% if application.resume %}
+                <div class="info-item">
+                    <span class="info-label">Resume</span>
+                    <span class="info-value">
+                        <a href="{{ application.resume.url }}" target="_blank">
+                            <i class="fas fa-download me-1"></i> Download Resume
+                        </a>
+                    </span>
+                </div>
+                {% endif %}
+                {% if application.portfolio_url %}
+                <div class="info-item">
+                    <span class="info-label">Portfolio</span>
+                    <span class="info-value">
+                        <a href="{{ application.portfolio_url }}" target="_blank">{{ application.portfolio_url }}</a>
+                    </span>
+                </div>
+                {% endif %}
+                {% if application.linkedin_url %}
+                <div class="info-item">
+                    <span class="info-label">LinkedIn</span>
+                    <span class="info-value">
+                        <a href="{{ application.linkedin_url }}" target="_blank">{{ application.linkedin_url }}</a>
+                    </span>
+                </div>
+                {% endif %}
+                {% if application.github_url %}
+                <div class="info-item">
+                    <span class="info-label">GitHub</span>
+                    <span class="info-value">
+                        <a href="{{ application.github_url }}" target="_blank">{{ application.github_url }}</a>
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Cover Letter -->
+        {% if application.cover_letter %}
+        <div class="cover-letter">
+            <h5><i class="fas fa-envelope-open-text me-2"></i> Cover Letter</h5>
+            <p>{{ application.cover_letter }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="{% url 'core:job_applications_manage' %}" class="btn-outline-primary-custom">
+                <i class="fas fa-arrow-left me-1"></i> Back to Applications
+            </a>
+            <button type="submit" form="statusForm" class="btn-primary-custom">
+                <i class="fas fa-save me-1"></i> Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function setRating(rating) {
+        const stars = document.querySelectorAll('.rating-star');
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.classList.add('active');
+            } else {
+                star.classList.remove('active');
+            }
+        });
+        document.getElementById(`rating-${rating}`).checked = true;
+    }
+    
+    // Initialize stars based on current rating
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentRating = {{ application.rating|default:0 }};
+        if (currentRating > 0) {
+            setRating(currentRating);
+        }
+        
+        // Handle status option clicks
+        document.querySelectorAll('.status-option').forEach(label => {
+            label.addEventListener('click', function() {
+                document.querySelectorAll('.status-option').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(this.getAttribute('for')).checked = true;
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,702 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Frequently Asked Questions | VehicleInsure Nigeria{% endblock %}
+{% block meta_description %}Find answers to common questions about vehicle insurance in Nigeria. Learn about coverage, claims, payments, and more.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .faq-search {
+        background: white;
+        border-radius: 60px;
+        padding: 5px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        max-width: 600px;
+        margin: 0 auto 40px;
+        display: flex;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .faq-search input {
+        flex: 1;
+        border: none;
+        padding: 15px 25px;
+        font-size: 1rem;
+        border-radius: 60px;
+        outline: none;
+    }
+    
+    .faq-search button {
+        background: var(--royal-blue);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 60px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .faq-search button:hover {
+        background: var(--royal-blue-dark);
+    }
+    
+    .faq-categories {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 40px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.3s forwards;
+    }
+    
+    .category-btn {
+        padding: 10px 25px;
+        border-radius: 40px;
+        font-weight: 500;
+        color: #64748b;
+        background: white;
+        border: 1px solid var(--gray-border);
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .category-btn:hover {
+        background: #eef2ff;
+        color: var(--royal-blue);
+        border-color: var(--royal-blue);
+    }
+    
+    .category-btn.active {
+        background: var(--royal-blue);
+        color: white;
+        border-color: var(--royal-blue);
+    }
+    
+    .faq-section {
+        margin-bottom: 50px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 25px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--royal-blue);
+        display: inline-block;
+    }
+    
+    .faq-item {
+        background: white;
+        border-radius: 16px;
+        margin-bottom: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+        border: 1px solid var(--gray-border);
+        transition: all 0.3s;
+    }
+    
+    .faq-item:hover {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    
+    .faq-question {
+        padding: 20px 25px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 600;
+        color: var(--navy-dark);
+        transition: all 0.3s;
+    }
+    
+    .faq-question:hover {
+        background: var(--gray-light);
+    }
+    
+    .faq-question i {
+        color: var(--royal-blue);
+        transition: transform 0.3s;
+    }
+    
+    .faq-item.active .faq-question {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .faq-item.active .faq-question i {
+        transform: rotate(180deg);
+    }
+    
+    .faq-answer {
+        padding: 0 25px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, padding 0.3s ease;
+        color: #64748b;
+        line-height: 1.7;
+    }
+    
+    .faq-item.active .faq-answer {
+        padding: 0 25px 20px 25px;
+        max-height: 500px;
+    }
+    
+    .faq-answer a {
+        color: var(--royal-blue);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .faq-answer a:hover {
+        text-decoration: underline;
+    }
+    
+    .contact-cta {
+        background: linear-gradient(135deg, var(--gray-light) 0%, white 100%);
+        border-radius: 24px;
+        padding: 50px 40px;
+        text-align: center;
+        margin-top: 60px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.6s forwards;
+    }
+    
+    .contact-cta h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .contact-cta p {
+        color: #64748b;
+        margin-bottom: 30px;
+        font-size: 1.1rem;
+    }
+    
+    .contact-options {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .contact-option {
+        background: white;
+        padding: 20px 35px;
+        border-radius: 60px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        text-decoration: none;
+        color: var(--navy-dark);
+        font-weight: 500;
+        transition: all 0.3s;
+        border: 1px solid var(--gray-border);
+    }
+    
+    .contact-option:hover {
+        background: var(--royal-blue);
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(65, 105, 225, 0.2);
+    }
+    
+    .contact-option i {
+        margin-right: 10px;
+        color: var(--royal-blue);
+    }
+    
+    .contact-option:hover i {
+        color: white;
+    }
+    
+    .highlight {
+        background: #fef3c7;
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: #92400e;
+        font-weight: 500;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .faq-search {
+            flex-direction: column;
+            background: transparent;
+            box-shadow: none;
+            gap: 10px;
+        }
+        
+        .faq-search input {
+            background: white;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .contact-cta {
+            padding: 30px 20px;
+        }
+        
+        .contact-option {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Frequently Asked Questions</h1>
+        <p>Find answers to common questions about vehicle insurance in Nigeria</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">FAQs</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Search Bar -->
+    <div class="faq-search">
+        <input type="text" placeholder="Search for answers..." id="faqSearchInput">
+        <button onclick="searchFAQs()"><i class="fas fa-search me-2"></i> Search</button>
+    </div>
+    
+    <!-- Categories -->
+    <div class="faq-categories">
+        <button class="category-btn active" data-category="all">All Questions</button>
+        <button class="category-btn" data-category="general">General</button>
+        <button class="category-btn" data-category="coverage">Coverage</button>
+        <button class="category-btn" data-category="claims">Claims</button>
+        <button class="category-btn" data-category="payments">Payments</button>
+        <button class="category-btn" data-category="policy">Policy Management</button>
+    </div>
+    
+    <!-- General Questions -->
+    <div class="faq-section" data-category="general" style="animation-delay: 0.1s;">
+        <h3 class="section-title"><i class="fas fa-circle me-2" style="color: var(--royal-blue); font-size: 0.8rem;"></i> General Questions</h3>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>Is motor insurance mandatory in Nigeria?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Yes, third-party motor insurance is <strong>mandatory</strong> for all vehicles on Nigerian roads as stipulated by the Insurance Act of 2003. Driving without valid insurance is an offense punishable by law with fines up to ₦250,000 or imprisonment. VehicleInsure makes it easy to get compliant coverage starting from just ₦5,000 per year.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>How quickly can I get my insurance certificate?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>With VehicleInsure, you receive your <strong>digital insurance certificate immediately</strong> after successful payment. The certificate is valid for all legal purposes including vehicle registration and FRSC checks. Physical documents can be delivered to your address within 3-5 working days at no extra cost.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>What documents do I need to get insured?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>For a quick and easy process, you'll need:</p>
+                <ul class="mt-2">
+                    <li>Valid means of identification (National ID, Driver's License, or International Passport)</li>
+                    <li>Vehicle particulars (registration number, make, model, year)</li>
+                    <li>Proof of address (utility bill or bank statement)</li>
+                    <li>For comprehensive cover, vehicle inspection photos may be requested</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>Is VehicleInsure licensed by NAICOM?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Yes! VehicleInsure is fully licensed and regulated by the <strong>National Insurance Commission (NAICOM)</strong>, the apex regulatory body for insurance in Nigeria. Our license number is RIC-2020-089. We operate in partnership with leading underwriting firms to ensure your policy is backed by solid financial strength.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Coverage Questions -->
+    <div class="faq-section" data-category="coverage" style="animation-delay: 0.2s;">
+        <h3 class="section-title"><i class="fas fa-circle me-2" style="color: var(--royal-blue); font-size: 0.8rem;"></i> Coverage & Plans</h3>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>What's the difference between Third-Party and Comprehensive insurance?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p><strong>Third-Party Insurance:</strong> Covers damage to other people's property and injuries to third parties only. It does NOT cover damage to your own vehicle. This is the minimum legal requirement.</p>
+                <p><strong>Comprehensive Insurance:</strong> Covers third-party liability PLUS damage to your own vehicle from accidents, theft, fire, flood, and vandalism. It provides complete protection for your investment.</p>
+                <p><a href="{% url 'core:motor_insurance' %}">Compare all plans →</a></p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>Does comprehensive insurance cover flood damage?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Yes! Our comprehensive and premium plus policies include <strong>flood and natural disaster coverage</strong>. This is particularly important for Nigerian drivers, especially in flood-prone areas like Lagos, Port Harcourt, and parts of the Niger Delta. Claims for flood damage are processed quickly with proper documentation.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>Is my car covered if someone else is driving it?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Yes, our comprehensive policies cover <strong>any authorized driver</strong> operating your vehicle with your permission. However, the driver must hold a valid Nigerian driver's license. For regular additional drivers (like a spouse or family member), we recommend adding them as named drivers on your policy for full coverage certainty.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>Do you offer coverage for commercial vehicles?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Absolutely! We offer specialized coverage for commercial vehicles including taxis, Uber/Bolt vehicles, delivery vans, and trucks. Our <a href="{% url 'core:commercial_coverage' %}">commercial coverage</a> includes passenger liability, goods-in-transit, and fleet discounts for multiple vehicles.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Claims Questions -->
+    <div class="faq-section" data-category="claims" style="animation-delay: 0.3s;">
+        <h3 class="section-title"><i class="fas fa-circle me-2" style="color: var(--royal-blue); font-size: 0.8rem;"></i> Claims Process</h3>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>How do I file a claim?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Filing a claim is easy and can be done entirely online:</p>
+                <ol class="mt-2">
+                    <li>Log in to your dashboard and click "File a Claim"</li>
+                    <li>Select the policy and describe the incident</li>
+                    <li>Upload photos of the damage and any relevant documents</li>
+                    <li>Submit your claim</li>
+                </ol>
+                <p>You can also call our 24/7 claims hotline at <span class="highlight">0800-CLAIM-HELP</span> for immediate assistance.</p>
+                <p><a href="{% url 'core:file_claim' %}">File a claim now →</a></p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>How long does claims processing take?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>We pride ourselves on fast claims settlement. Average processing times:</p>
+                <ul class="mt-2">
+                    <li><strong>Minor claims (under ₦200,000):</strong> 24-48 hours</li>
+                    <li><strong>Standard claims:</strong> 3-5 business days</li>
+                    <li><strong>Major claims (theft/total loss):</strong> 7-14 business days</li>
+                </ul>
+                <p>Delays typically only occur if documentation is incomplete or further investigation is required.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>What should I do immediately after an accident?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Follow these steps for a smooth claims process:</p>
+                <ol class="mt-2">
+                    <li>Ensure everyone is safe and seek medical attention if needed</li>
+                    <li>Do NOT admit fault or make agreements with third parties</li>
+                    <li>Take clear photos of the accident scene and all vehicle damage</li>
+                    <li>Exchange information with other involved parties</li>
+                    <li>Report to the nearest police station if required (especially for serious accidents)</li>
+                    <li>Call our 24/7 claims hotline or file online immediately</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payments Questions -->
+    <div class="faq-section" data-category="payments" style="animation-delay: 0.4s;">
+        <h3 class="section-title"><i class="fas fa-circle me-2" style="color: var(--royal-blue); font-size: 0.8rem;"></i> Payments & Billing</h3>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>What payment methods do you accept?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>We accept multiple payment methods for your convenience:</p>
+                <ul class="mt-2">
+                    <li>Debit/Credit Cards (Visa, Mastercard, Verve)</li>
+                    <li>Bank Transfer (all major Nigerian banks)</li>
+                    <li>USSD transfers</li>
+                    <li>Paystack and Flutterwave</li>
+                    <li>Direct bank deposit</li>
+                </ul>
+                <p>All payments are processed securely with 256-bit encryption.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>Can I pay my premium in installments?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Yes! We offer flexible payment plans:</p>
+                <ul class="mt-2">
+                    <li><strong>Monthly installments:</strong> Available for comprehensive policies over ₦100,000 (3% processing fee)</li>
+                    <li><strong>Quarterly payments:</strong> Split your premium into 4 payments (2% processing fee)</li>
+                    <li><strong>Annual payment:</strong> Best value with no additional fees</li>
+                </ul>
+                <p>Select your preferred payment option during checkout.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Policy Management Questions -->
+    <div class="faq-section" data-category="policy" style="animation-delay: 0.5s;">
+        <h3 class="section-title"><i class="fas fa-circle me-2" style="color: var(--royal-blue); font-size: 0.8rem;"></i> Policy Management</h3>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>How do I renew my policy?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Renewing is quick and easy:</p>
+                <ol class="mt-2">
+                    <li>Log in to your dashboard 30 days before expiry</li>
+                    <li>Click "Renew Policy" on the policy you want to renew</li>
+                    <li>Review your details and update if necessary</li>
+                    <li>Make payment to activate your renewed policy</li>
+                </ol>
+                <p>We'll send you email and SMS reminders before your policy expires. Early renewal qualifies for discounts!</p>
+                <p><a href="{% url 'core:renew_policy' %}">Renew now →</a></p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>Can I change my coverage mid-policy?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Yes, you can upgrade your coverage at any time. For example, you can switch from Third-Party to Comprehensive coverage mid-policy. You'll only pay the prorated difference in premium. Downgrading coverage is generally only possible at renewal. Contact our support team to make changes.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>How do I download my insurance documents?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>All your documents are available 24/7 in your dashboard:</p>
+                <ol class="mt-2">
+                    <li>Log in to your account</li>
+                    <li>Go to "My Policies" or "Digital Documents"</li>
+                    <li>Click the download icon next to the document you need</li>
+                </ol>
+                <p>Documents available include: Insurance Certificate, Policy Schedule, Receipts, and Claims Reports.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contact CTA -->
+    <div class="contact-cta">
+        <h3>Still have questions?</h3>
+        <p>Our customer support team is ready to help you with any inquiries.</p>
+        <div class="contact-options">
+            <a href="{% url 'core:contact' %}" class="contact-option">
+                <i class="fas fa-envelope"></i> Contact Us
+            </a>
+            <a href="tel:+2348002255467" class="contact-option">
+                <i class="fas fa-phone-alt"></i> 0800-CLAIM-HELP
+            </a>
+            <a href="#" class="contact-option" onclick="openLiveChat()">
+                <i class="fas fa-comment-dots"></i> Live Chat
+            </a>
+        </div>
+        <p class="small text-muted mt-4">Available 24/7 for emergency claims support</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // FAQ Accordion
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const faqItem = question.closest('.faq-item');
+                const isActive = faqItem.classList.contains('active');
+                
+                // Close other FAQs in the same section
+                const parentSection = faqItem.closest('.faq-section');
+                parentSection.querySelectorAll('.faq-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Toggle current FAQ
+                if (!isActive) {
+                    faqItem.classList.add('active');
+                }
+            });
+        });
+        
+        // Category filtering
+        const categoryBtns = document.querySelectorAll('.category-btn');
+        const faqSections = document.querySelectorAll('.faq-section');
+        
+        categoryBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                categoryBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const category = this.dataset.category;
+                
+                faqSections.forEach(section => {
+                    if (category === 'all' || section.dataset.category === category) {
+                        section.style.display = 'block';
+                    } else {
+                        section.style.display = 'none';
+                    }
+                });
+            });
+        });
+        
+        // Search functionality
+        window.searchFAQs = function() {
+            const searchTerm = document.getElementById('faqSearchInput').value.toLowerCase();
+            
+            if (searchTerm === '') {
+                faqSections.forEach(section => section.style.display = 'block');
+                return;
+            }
+            
+            faqSections.forEach(section => {
+                let hasVisibleItems = false;
+                
+                section.querySelectorAll('.faq-item').forEach(item => {
+                    const question = item.querySelector('.faq-question span').textContent.toLowerCase();
+                    const answer = item.querySelector('.faq-answer').textContent.toLowerCase();
+                    
+                    if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+                        item.style.display = 'block';
+                        hasVisibleItems = true;
+                        
+                        // Auto-expand matching items
+                        item.classList.add('active');
+                    } else {
+                        item.style.display = 'none';
+                        item.classList.remove('active');
+                    }
+                });
+                
+                section.style.display = hasVisibleItems ? 'block' : 'none';
+            });
+            
+            // Show all categories
+            categoryBtns.forEach(b => b.classList.remove('active'));
+            document.querySelector('[data-category="all"]').classList.add('active');
+        };
+        
+        // Allow Enter key to search
+        document.getElementById('faqSearchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchFAQs();
+            }
+        });
+        
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+        
+        document.querySelectorAll('[data-animate]').forEach(el => {
+            observer.observe(el);
+        });
+    });
+    
+    function openLiveChat() {
+        alert('Live chat is available Monday-Friday 8AM-8PM WAT. For immediate claims assistance, please call 0800-CLAIM-HELP.');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; }
+        .inquiry-box { background: white; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .badge-urgent { background: #fee2e2; color: #dc2626; }
+        .badge-high { background: #fef3c7; color: #92400e; }
+        .badge-suspicious { background: #fef3c7; color: #92400e; }
+        .btn { display: inline-block; background: #4169E1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        .footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>New Contact Inquiry Received</h2>
+        </div>
+        <div class="content">
+            <p>A new inquiry has been submitted through the contact form.</p>
+            
+            <div class="inquiry-box">
+                <h3>Inquiry #{{ inquiry.inquiry_number }}</h3>
+                
+                {% if inquiry.is_suspicious %}
+                <p><span class="badge badge-suspicious">⚠️ Suspicious Activity Detected</span></p>
+                {% endif %}
+                
+                <p><strong>From:</strong> {{ inquiry.full_name }} ({{ inquiry.email }})</p>
+                <p><strong>Phone:</strong> {{ inquiry.phone }}</p>
+                <p><strong>Type:</strong> {{ inquiry.get_inquiry_type_display }}</p>
+                {% if inquiry.policy_number %}
+                <p><strong>Policy Number:</strong> {{ inquiry.policy_number }}</p>
+                {% endif %}
+                <p><strong>Subject:</strong> {{ inquiry.subject }}</p>
+                <p><strong>Message:</strong></p>
+                <p style="background: #f1f5f9; padding: 15px; border-radius: 5px;">{{ inquiry.message|linebreaks }}</p>
+                <p><strong>IP Address:</strong> {{ inquiry.ip_address }}</p>
+                <p><strong>Submitted:</strong> {{ inquiry.created_at|date:"F d, Y H:i" }}</p>
+            </div>
+            
+            <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'core:inquiry_detail' inquiry.id %}" class="btn">View in Admin Panel</a>
+        </div>
+        <div class="footer">
+            <p>VehicleInsure Nigeria - Staff Notification</p>
+        </div>
+    </div>
+</body>
+</html>

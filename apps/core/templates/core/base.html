@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Vehicle Insurance System - {% block title %}{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'images/logo.jpeg' %}">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <style>
+        :root {
+            --royal-blue: #4169E1;
+            --royal-blue-dark: #3155b0;
+            --royal-blue-light: #6b8eeb;
+            --navy-dark: #0f1a2e;
+            --gray-light: #f8fafc;
+            --gray-border: #e2e8f0;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.16);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-top: 120px;
+        }
+        
+        /* Sticky Header Wrapper */
+        .sticky-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1050;
+            background: white;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        /* Top Bar */
+        .top-bar {
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(65, 105, 225, 0.1);
+            font-size: 0.9rem;
+        }
+        
+        .top-bar .container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .top-bar-left {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #334155;
+            white-space: nowrap;
+        }
+        
+        .contact-item i {
+            color: var(--royal-blue);
+            width: 16px;
+            font-size: 0.9rem;
+        }
+        
+        .top-bar-right {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .top-bar-link {
+            color: #1e293b;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        
+        .top-bar-link i {
+            color: var(--royal-blue);
+        }
+        
+        .top-bar-link:hover {
+            color: var(--royal-blue);
+        }
+        
+        /* Main Navbar */
+        .navbar-custom {
+            background: white;
+            padding: 0;
+            border-bottom: 3px solid var(--royal-blue);
+            position: relative;
+        }
+        
+        .navbar-custom .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+            position: relative;
+        }
+        
+        .navbar-brand-custom {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        
+        .brand-icon {
+            background: var(--royal-blue);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.4rem;
+        }
+        
+        .brand-text {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #0f1a2e;
+        }
+        
+        .brand-text span {
+            color: var(--royal-blue);
+        }
+        
+        /* Desktop Navigation */
+        .nav-menu-desktop {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-links-desktop {
+            display: flex;
+            list-style: none;
+            gap: 5px;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .nav-links-desktop > li {
+            position: static;
+        }
+        
+        .nav-links-desktop > li > a {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 40px;
+            font-weight: 500;
+            color: #1e293b;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        
+        .nav-links-desktop > li > a i {
+            color: var(--royal-blue);
+            font-size: 1rem;
+        }
+        
+        .nav-links-desktop > li > a:hover {
+            background: #eef2ff;
+            color: var(--royal-blue);
+        }
+        
+        .nav-links-desktop > li > a.active {
+            background: var(--royal-blue);
+            color: white;
+        }
+        
+        .nav-links-desktop > li > a.active i {
+            color: white;
+        }
+        
+        /* Mega Dropdown Container - Full Width Background */
+        .mega-dropdown-wrapper {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            box-shadow: var(--shadow-md);
+            border-top: 2px solid var(--royal-blue);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .mega-dropdown-wrapper.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .mega-dropdown-container {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            width: 100%;
+        }
+        
+        .mega-dropdown-header {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--gray-border);
+        }
+        
+        .mega-link-item {
+            display: block;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.25s;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+        
+        .mega-link-item:hover {
+            background: var(--gray-light);
+            border-color: var(--gray-border);
+            transform: translateX(6px);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .mega-link-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: var(--navy-dark);
+            margin-bottom: 6px;
+            font-size: 1rem;
+        }
+        
+        .mega-link-title i {
+            color: var(--royal-blue);
+            width: 20px;
+            font-size: 1.1rem;
+        }
+        
+        .mega-link-desc {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-left: 30px;
+            line-height: 1.5;
+        }
+        
+        .mega-feature-card {
+            background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+            border-radius: 20px;
+            padding: 32px 28px;
+            height: 100%;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .mega-feature-card h5 {
+            font-weight: 700;
+            margin-bottom: 16px;
+            font-size: 1.4rem;
+        }
+        
+        .mega-feature-card p {
+            opacity: 0.95;
+            margin-bottom: 24px;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        .mega-feature-card .btn {
+            background: white;
+            color: var(--royal-blue);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            align-self: flex-start;
+            transition: all 0.3s;
+        }
+        
+        .mega-feature-card .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.2);
+            background: white;
+            color: var(--royal-blue-dark);
+        }
+        
+        .mega-divider {
+            border-top: 1px solid var(--gray-border);
+            margin: 32px 0 24px;
+        }
+        
+        .mega-bottom-cta {
+            background: var(--gray-light);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-top: 20px;
+        }
+        
+        /* Nav Auth Desktop */
+        .nav-auth-desktop {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: 12px;
+            flex-shrink: 0;
+        }
+        
+        .btn-outline-primary-custom {
+            border: 2px solid var(--royal-blue);
+            background: transparent;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            color: var(--royal-blue);
+            text-decoration: none;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+        
+        .btn-outline-primary-custom:hover {
+            background: var(--royal-blue);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary-custom {
+            background: var(--royal-blue);
+            border: 2px solid var(--royal-blue);
+            padding: 10px 22px;
+            border-radius: 50px;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 12px rgba(65, 105, 225, 0.25);
+            white-space: nowrap;
+        }
+        
+        .btn-primary-custom:hover {
+            background: var(--royal-blue-dark);
+            border-color: var(--royal-blue-dark);
+            transform: translateY(-2px);
+            color: white;
+            box-shadow: 0 6px 16px rgba(65, 105, 225, 0.35);
+        }
+        
+        /* Mega Dropdown Backdrop */
+        .mega-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(3px);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .mega-backdrop.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* Hamburger Button */
+        .hamburger-btn {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 30px;
+            height: 24px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+        
+        .hamburger-btn span {
+            width: 100%;
+            height: 3px;
+            background: #1e293b;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Mobile Side Menu */
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 340px;
+            max-width: 85%;
+            height: 100vh;
+            background: white;
+            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.15);
+            z-index: 1100;
+            transform: translateX(-100%);
+            transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.4, 1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+        
+        .mobile-menu-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+        }
+        
+        .mobile-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: #0f1a2e;
+        }
+        
+        .mobile-close-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #64748b;
+            padding: 4px 10px;
+            border-radius: 8px;
+            transition: background 0.2s;
+            line-height: 1;
+        }
+        
+        .mobile-close-btn:hover {
+            background: #f1f5f9;
+        }
+        
+        .mobile-nav-section {
+            padding: 20px;
+            border-bottom: 1px solid var(--gray-border);
+        }
+        
+        .mobile-section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 16px;
+        }
+        
+        .mobile-nav-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mobile-nav-links li {
+            margin: 4px 0;
+        }
+        
+        .mobile-nav-links li a {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-weight: 500;
+            color: #1e293b;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .mobile-nav-links li a i {
+            width: 24px;
+            color: var(--royal-blue);
+            font-size: 1.2rem;
+        }
+        
+        .mobile-nav-links li a:hover {
+            background: #eef2ff;
+        }
+        
+        .mobile-nav-links li a.active {
+            background: var(--royal-blue);
+            color: white;
+        }
+        
+        .mobile-nav-links li a.active i {
+            color: white;
+        }
+        
+        .mobile-auth-section {
+            padding: 24px 20px;
+            margin-top: auto;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .mobile-designer-credit {
+            padding: 16px 20px 24px;
+            text-align: center;
+        }
+        
+        .mobile-designer-credit a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .mobile-designer-credit a:hover {
+            color: var(--royal-blue);
+        }
+        
+        /* Menu Backdrop */
+        .menu-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(3px);
+            z-index: 1090;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .menu-backdrop.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 24px;
+            min-height: calc(100vh - 120px);
+        }
+        
+        /* Cookie Banner */
+        .cookie-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1080;
+            transform: translateY(100%);
+            transition: transform 0.4s ease;
+            border-top: 3px solid var(--royal-blue);
+        }
+        
+        .cookie-banner.show {
+            transform: translateY(0);
+        }
+        
+        .cookie-content {
+            padding: 20px 0;
+        }
+        
+        .cookie-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--navy-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .cookie-title i {
+            color: var(--royal-blue);
+            font-size: 1.3rem;
+        }
+        
+        .cookie-text {
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+        
+        .cookie-text a {
+            color: var(--royal-blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .cookie-text a:hover {
+            text-decoration: underline;
+        }
+        
+        .cookie-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        
+        .cookie-btn {
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .cookie-btn-accept {
+            background: var(--royal-blue);
+            color: white;
+        }
+        
+        .cookie-btn-accept:hover {
+            background: var(--royal-blue-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(65, 105, 225, 0.3);
+        }
+        
+        .cookie-btn-settings {
+            background: transparent;
+            color: #64748b;
+            border: 1px solid var(--gray-border);
+        }
+        
+        .cookie-btn-settings:hover {
+            background: var(--gray-light);
+            color: var(--navy-dark);
+        }
+        
+        .cookie-btn-decline {
+            background: transparent;
+            color: #64748b;
+        }
+        
+        .cookie-btn-decline:hover {
+            color: var(--navy-dark);
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: #1e293b;
+            color: white;
+            padding: 50px 0 20px;
+            margin-top: auto;
+        }
+        
+        .footer a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .footer a:hover {
+            color: white;
+        }
+        
+        .footer h5, .footer h6 {
+            color: white;
+            font-weight: 600;
+        }
+        
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 24px;
+            margin-top: 40px;
+        }
+        
+        .footer-designer {
+            text-align: right;
+        }
+        
+        .footer-designer a {
+            color: #64748b;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        
+        .footer-designer a:hover {
+            color: var(--royal-blue-light);
+        }
+        
+        .designer-credit-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Alert Styles */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        /* Responsive Design */
+        @media screen and (max-width: 1200px) {
+            .mega-dropdown-container {
+                padding: 30px 16px;
+            }
+        }
+        
+        @media screen and (max-width: 992px) {
+            .nav-links-desktop,
+            .nav-auth-desktop {
+                display: none !important;
+            }
+            
+            .hamburger-btn {
+                display: flex;
+            }
+            
+            .mega-dropdown-wrapper {
+                display: none !important;
+            }
+            
+            .mega-backdrop {
+                display: none !important;
+            }
+            
+            .cookie-buttons {
+                margin-top: 16px;
+                justify-content: flex-start;
+            }
+        }
+        
+        @media screen and (max-width: 768px) {
+            body {
+                padding-top: 130px;
+            }
+            
+            .top-bar .container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .top-bar-left,
+            .top-bar-right {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .navbar-custom .container {
+                height: 60px;
+            }
+            
+            .brand-text {
+                font-size: 1.2rem;
+            }
+            
+            .main-content {
+                padding: 16px;
+            }
+            
+            .footer-designer {
+                text-align: center;
+                margin-top: 16px;
+            }
+            
+            .mega-dropdown-container {
+                padding: 20px 12px;
+            }
+            
+            .cookie-buttons {
+                flex-wrap: wrap;
+            }
+            
+            .cookie-btn {
+                flex: 1;
+                min-width: 120px;
+            }
+        }
+        
+        @media screen and (max-width: 576px) {
+            .contact-item {
+                font-size: 0.75rem;
+            }
+            
+            .top-bar-link {
+                font-size: 0.75rem;
+            }
+        }
+        
+        /* Dropdown Arrow Animation */
+        .nav-links-desktop .dropdown-toggle::after {
+            display: inline-block;
+            margin-left: 0.3em;
+            vertical-align: 0.2em;
+            content: "";
+            border-top: 0.35em solid;
+            border-right: 0.35em solid transparent;
+            border-bottom: 0;
+            border-left: 0.35em solid transparent;
+            transition: transform 0.3s;
+        }
+        
+        .nav-links-desktop li:hover .dropdown-toggle::after {
+            transform: rotate(180deg);
+        }
+        
+        /* Smooth scrolling for mega dropdown */
+        .mega-dropdown-wrapper {
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--royal-blue) var(--gray-light);
+        }
+        
+        .mega-dropdown-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .mega-dropdown-wrapper::-webkit-scrollbar-track {
+            background: var(--gray-light);
+        }
+        
+        .mega-dropdown-wrapper::-webkit-scrollbar-thumb {
+            background: var(--royal-blue);
+            border-radius: 10px;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Mega Dropdown Backdrop -->
+    <div class="mega-backdrop" id="megaBackdrop"></div>
+
+    <!-- Sticky Header -->
+    <div class="sticky-header">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="container">
+                <div class="top-bar-left">
+                    <div class="contact-item">
+                        <i class="fas fa-phone-alt"></i>
+                        <span>+1 234 567 8900</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <span>support@vehicleinsurance.com</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-clock"></i>
+                        <span>24/7 Support</span>
+                    </div>
+                </div>
+                <div class="top-bar-right">
+                    <a href="{% url 'core:support' %}" class="top-bar-link">
+                        <i class="fas fa-headset"></i> Help Center
+                    </a>
+                    <span class="contact-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secure & Trusted</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Navbar -->
+        <nav class="navbar-custom">
+            <div class="container">
+                <!-- Logo -->
+                <a href="{% url 'core:home' %}" class="navbar-brand-custom">
+                    <div class="brand-icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="brand-text">
+                        Vehicle<span>Insure</span>
+                    </div>
+                </a>
+                
+                <!-- Desktop Navigation -->
+                <div class="nav-menu-desktop">
+                    <ul class="nav-links-desktop">
+                        <li><a href="{% url 'core:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                            <i class="fas fa-home"></i> Home
+                        </a></li>
+                        
+                        <!-- Features Trigger -->
+                        <li id="featuresTrigger">
+                            <a href="#" class="dropdown-toggle">
+                                <i class="fas fa-star"></i> Features
+                            </a>
+                        </li>
+                        
+                        <!-- Solutions Trigger -->
+                        <li id="solutionsTrigger">
+                            <a href="#" class="dropdown-toggle">
+                                <i class="fas fa-cubes"></i> Solutions
+                            </a>
+                        </li>
+                        
+                        <li><a href="{% url 'core:public_promotions' %}" class="{% if request.resolver_match.url_name == 'public_promotions' %}active{% endif %}">
+                            <i class="fas fa-gift"></i> Promotions
+                        </a></li>
+                        <li><a href="{% url 'core:about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">
+                            <i class="fas fa-info-circle"></i> About
+                        </a></li>
+                        <li><a href="{% url 'core:blog' %}" class="{% if request.resolver_match.url_name == 'blog' %}active{% endif %}">
+                            <i class="fas fa-info"></i> Blog
+                        </a></li>
+                    </ul>
+                    
+                    <!-- Auth Buttons Desktop -->
+                    <div class="nav-auth-desktop">
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'core:dashboard' %}" class="btn-outline-primary-custom">
+                                <i class="fas fa-user"></i> Dashboard
+                            </a>
+                            <a href="{% url 'core:logout' %}" class="btn-primary-custom">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        {% else %}
+                            <a href="{% url 'core:login' %}" class="btn-outline-primary-custom">
+                                <i class="fas fa-sign-in-alt"></i> Sign In
+                            </a>
+                            <a href="{% url 'core:register' %}" class="btn-primary-custom">
+                                <i class="fas fa-user-plus"></i> Register
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Hamburger Button -->
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            
+            <!-- Features Mega Dropdown -->
+            <div class="mega-dropdown-wrapper" id="featuresMega">
+                <div class="mega-dropdown-container">
+                    <div class="row g-4">
+                        <!-- Column 1: Insurance Services -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="mega-dropdown-header">Insurance Services</div>
+                            <a href="{% url 'core:motor_insurance' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-car-side"></i> Motor Insurance
+                                </div>
+                                <div class="mega-link-desc">Comprehensive, third-party & theft coverage for your vehicle</div>
+                            </a>
+                            <a href="{% url 'core:instant_quote' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-calculator"></i> Instant Quotes
+                                </div>
+                                <div class="mega-link-desc">Get accurate insurance pricing in seconds with our smart calculator</div>
+                            </a>
+                            <a href="{% url 'core:policies' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-file-contract"></i> Policy Purchase
+                                </div>
+                                <div class="mega-link-desc">Buy your insurance quickly and securely online 24/7</div>
+                            </a>
+                        </div>
+                        
+                        <!-- Column 2: Policy Management -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="mega-dropdown-header">Policy Management</div>
+                            <a href="{% url 'core:policies' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-folder-open"></i> Policies
+                                </div>
+                                <div class="mega-link-desc">View and manage all your active and expired policies in one place</div>
+                            </a>
+                            <a href="{% url 'core:digital_documents' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-file-pdf"></i> Digital Documents
+                                </div>
+                                <div class="mega-link-desc">Download certificates, receipts, and policy documents instantly</div>
+                            </a>
+                            <a href="{% url 'core:renew_policy' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-sync-alt"></i> Renew Policy
+                                </div>
+                                <div class="mega-link-desc">Renew your insurance before it expires with automated reminders</div>
+                            </a>
+                        </div>
+                        
+                        <!-- Column 3: Claims & Payments -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="mega-dropdown-header">Claims & Payments</div>
+                            <a href="{% url 'core:file_claim' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-clipboard-list"></i> File a Claim
+                                </div>
+                                <div class="mega-link-desc">Submit claims easily with our step-by-step guided process</div>
+                            </a>
+                            <a href="{% url 'core:track_claims' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-chart-line"></i> Track Claims
+                                </div>
+                                <div class="mega-link-desc">Monitor your claim status in real-time with instant updates</div>
+                            </a>
+                            <a href="{% url 'core:secure_payments' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-lock"></i> Secure Payments
+                                </div>
+                                <div class="mega-link-desc">Pay premiums using safe and encrypted payment methods</div>
+                            </a>
+                        </div>
+                        
+                        <!-- Column 4: Feature Card -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="mega-feature-card">
+                                <h5>🚗 Press & Media</h5>
+                                <p>Stay updated with the latest news, announcements, and media coverage about our vehicle insurance platform. Explore press releases, company updates, and resources for journalists and partners.</p>
+                                <a href="{% url 'core:press' %}" class="btn">Stay Updated →</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Solutions Mega Dropdown -->
+            <div class="mega-dropdown-wrapper" id="solutionsMega">
+                <div class="mega-dropdown-container">
+                    <div class="row g-4">
+                        <!-- Column 1: For Individuals -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="mega-dropdown-header">For Individuals</div>
+                            <a href="{% url 'core:individual_plans' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-shield-alt"></i> Vehicle Insurance Plans
+                                </div>
+                                <div class="mega-link-desc">Flexible insurance coverage tailored for private car owners</div>
+                            </a>
+                            <a href="{% url 'core:premium_calculator' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-chart-pie"></i> Premium Calculator
+                                </div>
+                                <div class="mega-link-desc">Quickly estimate your insurance cost with real-time pricing</div>
+                            </a>
+                            <a href="{% url 'core:easy_renewals' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-redo-alt"></i> Easy Renewals
+                                </div>
+                                <div class="mega-link-desc">Renew your policy in minutes without stress or paperwork</div>
+                            </a>
+                        </div>
+                        
+                        <!-- Column 2: For Businesses -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="mega-dropdown-header">For Businesses</div>
+                            <a href="{% url 'core:fleet_insurance' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-truck"></i> Fleet Insurance
+                                </div>
+                                <div class="mega-link-desc">Protect multiple vehicles under one comprehensive policy</div>
+                            </a>
+                            <a href="{% url 'core:commercial_coverage' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-building"></i> Commercial Coverage
+                                </div>
+                                <div class="mega-link-desc">Insurance solutions for logistics, transport, and corporate fleets</div>
+                            </a>
+                            <a href="{% url 'core:claims_management' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-tasks"></i> Claims Management
+                                </div>
+                                <div class="mega-link-desc">Efficient claims processing for business vehicles and drivers</div>
+                            </a>
+                        </div>
+                        
+                        <!-- Column 3: Claims & Assistance -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="mega-dropdown-header">Claims & Assistance</div>
+                            <a href="{% url 'core:careers' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-file-signature"></i> Careers
+                                </div>
+                                <div class="mega-link-desc">Join our team and grow your career in insurance</div>
+                            </a>
+                            <a href="{% url 'core:support' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-headset"></i> Customer Support
+                                </div>
+                                <div class="mega-link-desc">24/7 assistance for all your insurance needs and questions</div>
+                            </a>
+                        </div>
+                        
+                        <!-- Column 4: Payments & Benefits -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="mega-dropdown-header">Payments & Benefits</div>
+                            <a href="{% url 'core:secure_payments' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-credit-card"></i> Secure Payments
+                                </div>
+                                <div class="mega-link-desc">Pay premiums safely using trusted and verified payment channels</div>
+                            </a>
+                            <a href="{% url 'core:public_promotions' %}" class="mega-link-item">
+                                <div class="mega-link-title">
+                                    <i class="fas fa-tags"></i> Discounts & Offers
+                                </div>
+                                <div class="mega-link-desc">Enjoy promo codes and seasonal deals on all policies</div>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Bottom CTA Section -->
+                    <div class="mega-bottom-cta">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div style="background: var(--royal-blue); width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-lightbulb" style="color: white; font-size: 1.5rem;"></i>
+                                    </div>
+                                    <div>
+                                        <h6 style="font-weight: 700; margin-bottom: 6px; color: var(--navy-dark);">Smart Insurance Solutions</h6>
+                                        <p style="color: #64748b; margin: 0; font-size: 0.95rem;">Whether you're an individual or a business, our platform delivers reliable, fast, and digital-first insurance services designed for modern mobility.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                                <a href="{% url 'core:solutions' %}" class="btn-primary-custom">Explore Solutions <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Mobile Side Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-header">
+            <div class="mobile-brand">
+                <i class="fas fa-car" style="color: var(--royal-blue);"></i>
+                <span>VehicleInsure</span>
+            </div>
+            <button class="mobile-close-btn" id="closeMobileMenu" aria-label="Close menu">×</button>
+        </div>
+        
+        <!-- Main Navigation -->
+        <div class="mobile-nav-section">
+            <ul class="mobile-nav-links">
+                <li><a href="{% url 'core:home' %}">
+                    <i class="fas fa-home"></i> Home
+                </a></li>
+            </ul>
+        </div>
+        
+        <!-- Features Section -->
+        <div class="mobile-nav-section">
+            <div class="mobile-section-title">Features</div>
+            <ul class="mobile-nav-links">
+                <li><a href="{% url 'core:motor_insurance' %}"><i class="fas fa-car-side"></i> Motor Insurance</a></li>
+                <li><a href="{% url 'core:instant_quote' %}"><i class="fas fa-calculator"></i> Instant Quotes</a></li>
+                <li><a href="{% url 'core:policies' %}"><i class="fas fa-folder-open"></i> Policies</a></li>
+                <li><a href="{% url 'core:file_claim' %}"><i class="fas fa-clipboard-list"></i> File a Claim</a></li>
+                <li><a href="{% url 'core:renew_policy' %}"><i class="fas fa-sync-alt"></i> Renew Policy</a></li>
+            </ul>
+        </div>
+        
+        <!-- Solutions Section -->
+        <div class="mobile-nav-section">
+            <div class="mobile-section-title">Solutions</div>
+            <ul class="mobile-nav-links">
+                <li><a href="{% url 'core:individual_plans' %}"><i class="fas fa-user"></i> For Individuals</a></li>
+                <li><a href="{% url 'core:fleet_insurance' %}"><i class="fas fa-building"></i> For Businesses</a></li>
+                <li><a href="{% url 'core:fleet_insurance' %}"><i class="fas fa-truck"></i> Fleet Insurance</a></li>
+                <li><a href="{% url 'core:support' %}"><i class="fas fa-headset"></i> Customer Support</a></li>
+            </ul>
+        </div>
+        
+        <!-- Quick Links -->
+        <div class="mobile-nav-section">
+            <ul class="mobile-nav-links">
+                <li><a href="{% url 'core:public_promotions' %}">
+                    <i class="fas fa-gift"></i> Promotions
+                </a></li>
+                <li><a href="{% url 'core:about' %}">
+                    <i class="fas fa-info-circle"></i> About
+                </a></li>
+                <li><a href="{% url 'core:blog' %}">
+                    <i class="fas fa-info"></i> Blog
+                </a></li>
+                <li><a href="{% url 'core:support' %}">
+                    <i class="fas fa-headset"></i> Help Center
+                </a></li>
+            </ul>
+        </div>
+        
+        <!-- Designer Credit -->
+        <div class="mobile-designer-credit">
+            <a href="https://www.edgway.co.uk/" target="_blank" rel="noopener noreferrer">
+                <i class="fas fa-paint-brush"></i> Design by Edgway
+            </a>
+        </div>
+        
+        <!-- Auth Section -->
+        <div class="mobile-auth-section">
+            {% if user.is_authenticated %}
+                <a href="{% url 'core:dashboard' %}" class="btn-outline-primary-custom">
+                    <i class="fas fa-user"></i> Dashboard
+                </a>
+                <a href="{% url 'core:logout' %}" class="btn-primary-custom">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            {% else %}
+                <a href="{% url 'core:login' %}" class="btn-outline-primary-custom">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </a>
+                <a href="{% url 'core:register' %}" class="btn-primary-custom">
+                    <i class="fas fa-user-plus"></i> Register
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Backdrop for Mobile Menu -->
+    <div class="menu-backdrop" id="menuBackdrop"></div>
+
+    <!-- Messages Section -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Cookie Consent Banner -->
+    <div class="cookie-banner" id="cookieBanner">
+        <div class="container">
+            <div class="cookie-content">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <div class="cookie-title">
+                            <i class="fas fa-cookie-bite"></i>
+                            We Value Your Privacy
+                        </div>
+                        <p class="cookie-text">
+                            We use cookies to enhance your browsing experience, serve personalized ads or content, and analyze our traffic. 
+                            By clicking "Accept All", you consent to our use of cookies. Read our 
+                            <a href="{% url 'core:cookie_policy' %}">Cookie Policy</a> and 
+                            <a href="{% url 'core:privacy_policy' %}">Privacy Policy</a> to learn more.
+                        </p>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="cookie-buttons">
+                            <button class="cookie-btn cookie-btn-accept" id="acceptCookiesBtn">
+                                <i class="fas fa-check me-1"></i> Accept All
+                            </button>
+                            <button class="cookie-btn cookie-btn-settings" id="cookieSettingsBtn">
+                                <i class="fas fa-sliders-h me-1"></i> Customize
+                            </button>
+                            <button class="cookie-btn cookie-btn-decline" id="declineCookiesBtn">
+                                <i class="fas fa-times me-1"></i> Decline
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <h5><i class="fas fa-car me-2"></i> Vehicle Insurance</h5>
+                    <p class="text-muted mt-3">Protecting your vehicle with comprehensive insurance solutions. Trusted by thousands of drivers nationwide.</p>
+                    <div class="mt-4">
+                        <a href="#" class="me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="me-3"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4">
+                    <h6>Quick Links</h6>
+                    <ul class="list-unstyled mt-3">
+                        <li class="mb-2"><a href="{% url 'core:about' %}">About Us</a></li>
+                        <li class="mb-2"><a href="{% url 'core:careers' %}">Careers</a></li>
+                        <li class="mb-2"><a href="{% url 'core:blog' %}">Blog</a></li>
+                        <li class="mb-2"><a href="{% url 'core:press' %}">Press</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4">
+                    <h6>Support</h6>
+                    <ul class="list-unstyled mt-3">
+                        <li class="mb-2"><a href="{% url 'core:support' %}">Help Center</a></li>
+                        <li class="mb-2"><a href="{% url 'core:faqs' %}">FAQs</a></li>
+                        <li class="mb-2"><a href="{% url 'core:contact' %}">Contact Us</a></li>
+                        <li class="mb-2"><a href="{% url 'core:claims_support' %}">Claims Support</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4">
+                    <h6>Legal</h6>
+                    <ul class="list-unstyled mt-3">
+                        <li class="mb-2"><a href="{% url 'core:terms' %}">Terms & Conditions</a></li>
+                        <li class="mb-2"><a href="{% url 'core:privacy_policy' %}">Privacy Policy</a></li>
+                        <li class="mb-2"><a href="{% url 'core:cookie_policy' %}">Cookie Policy</a></li>
+                        <li class="mb-2"><a href="{% url 'core:licenses' %}">Licenses</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 mb-4">
+                    <h6>Contact</h6>
+                    <ul class="list-unstyled text-muted mt-3">
+                        <li class="mb-2"><i class="fas fa-phone me-2"></i> +1 234 567 8900</li>
+                        <li class="mb-2"><i class="fas fa-envelope me-2"></i> support@vehicleinsurance.com</li>
+                        <li class="mb-2"><i class="fas fa-map-marker-alt me-2"></i> 123 Insurance Ave, NY</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <p class="text-muted mb-0">&copy; {% now "Y" %} Vehicle Insurance System. All rights reserved.</p>
+                    </div>
+                    <div class="col-md-6 footer-designer">
+                        <a href="https://www.edgway.co.uk/" target="_blank" rel="noopener noreferrer" class="designer-credit-inline">
+                            <i class="fas fa-paint-brush"></i> Design by Edgway
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Mega Dropdown Elements
+            const featuresTrigger = $('#featuresTrigger');
+            const solutionsTrigger = $('#solutionsTrigger');
+            const featuresMega = $('#featuresMega');
+            const solutionsMega = $('#solutionsMega');
+            const megaBackdrop = $('#megaBackdrop');
+            
+            let activeMega = null;
+            let closeTimer = null;
+            
+            // Function to open mega dropdown
+            function openMega(megaElement) {
+                // Clear any pending close timer
+                if (closeTimer) {
+                    clearTimeout(closeTimer);
+                    closeTimer = null;
+                }
+                
+                // Close any currently open mega
+                if (activeMega && activeMega !== megaElement) {
+                    activeMega.removeClass('show');
+                }
+                
+                // Open the requested mega
+                megaElement.addClass('show');
+                megaBackdrop.addClass('show');
+                activeMega = megaElement;
+                
+                // Prevent body scroll when mega is open
+                $('body').css('overflow', 'hidden');
+            }
+            
+            // Function to close all mega dropdowns
+            function closeAllMega() {
+                featuresMega.removeClass('show');
+                solutionsMega.removeClass('show');
+                megaBackdrop.removeClass('show');
+                activeMega = null;
+                
+                // Restore body scroll if mobile menu is not open
+                if (!$('#mobileMenu').hasClass('open')) {
+                    $('body').css('overflow', '');
+                }
+            }
+            
+            // Function to schedule closing
+            function scheduleClose() {
+                if (closeTimer) {
+                    clearTimeout(closeTimer);
+                }
+                closeTimer = setTimeout(function() {
+                    closeAllMega();
+                    closeTimer = null;
+                }, 300);
+            }
+            
+            // Features trigger hover
+            featuresTrigger.on('mouseenter', function() {
+                openMega(featuresMega);
+            });
+            
+            featuresMega.on('mouseenter', function() {
+                if (closeTimer) {
+                    clearTimeout(closeTimer);
+                    closeTimer = null;
+                }
+            });
+            
+            featuresTrigger.on('mouseleave', scheduleClose);
+            featuresMega.on('mouseleave', scheduleClose);
+            
+            // Solutions trigger hover
+            solutionsTrigger.on('mouseenter', function() {
+                openMega(solutionsMega);
+            });
+            
+            solutionsMega.on('mouseenter', function() {
+                if (closeTimer) {
+                    clearTimeout(closeTimer);
+                    closeTimer = null;
+                }
+            });
+            
+            solutionsTrigger.on('mouseleave', scheduleClose);
+            solutionsMega.on('mouseleave', scheduleClose);
+            
+            // Close mega when clicking backdrop
+            megaBackdrop.on('click', function() {
+                closeAllMega();
+            });
+            
+            // Close mega with Escape key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' && activeMega) {
+                    closeAllMega();
+                }
+            });
+            
+            // Prevent default on dropdown toggle clicks
+            $('.nav-links-desktop .dropdown-toggle').on('click', function(e) {
+                e.preventDefault();
+            });
+            
+            // Mobile Menu Functionality
+            const mobileMenu = $('#mobileMenu');
+            const backdrop = $('#menuBackdrop');
+            const hamburger = $('#hamburgerBtn');
+            const closeBtn = $('#closeMobileMenu');
+            
+            function openMenu() {
+                mobileMenu.addClass('open');
+                backdrop.addClass('show');
+                $('body').css('overflow', 'hidden');
+            }
+            
+            function closeMenu() {
+                mobileMenu.removeClass('open');
+                backdrop.removeClass('show');
+                $('body').css('overflow', '');
+            }
+            
+            hamburger.on('click', openMenu);
+            closeBtn.on('click', closeMenu);
+            backdrop.on('click', closeMenu);
+            
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' && mobileMenu.hasClass('open')) {
+                    closeMenu();
+                }
+            });
+            
+            $(window).on('resize', function() {
+                if ($(window).width() > 992) {
+                    if (mobileMenu.hasClass('open')) {
+                        closeMenu();
+                    }
+                } else {
+                    // Close mega dropdowns on mobile
+                    closeAllMega();
+                }
+            });
+            
+            // Cookie Banner Functionality
+            const cookieBanner = $('#cookieBanner');
+            const acceptBtn = $('#acceptCookiesBtn');
+            const declineBtn = $('#declineCookiesBtn');
+            const settingsBtn = $('#cookieSettingsBtn');
+            
+            // Check if user has already made a cookie choice
+            const cookieConsent = localStorage.getItem('cookieConsent');
+            
+            if (!cookieConsent) {
+                // Show banner after a short delay
+                setTimeout(function() {
+                    cookieBanner.addClass('show');
+                }, 500);
+            }
+            
+            // Accept cookies
+            acceptBtn.on('click', function() {
+                localStorage.setItem('cookieConsent', 'accepted');
+                localStorage.setItem('cookiePreferences', JSON.stringify({
+                    necessary: true,
+                    analytics: true,
+                    marketing: true,
+                    functional: true
+                }));
+                cookieBanner.removeClass('show');
+                
+                // You can add analytics initialization here
+                console.log('Cookies accepted');
+            });
+            
+            // Decline cookies (only necessary cookies)
+            declineBtn.on('click', function() {
+                localStorage.setItem('cookieConsent', 'declined');
+                localStorage.setItem('cookiePreferences', JSON.stringify({
+                    necessary: true,
+                    analytics: false,
+                    marketing: false,
+                    functional: false
+                }));
+                cookieBanner.removeClass('show');
+                
+                console.log('Cookies declined - only necessary cookies enabled');
+            });
+            
+            // Cookie settings
+            settingsBtn.on('click', function() {
+                // Redirect to cookie settings page
+                window.location.href = "{% url 'core:cookie_settings' %}";
+            });
+            
+            // Auto-hide alerts
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 5000);
+            
+            // Form loading state
+            $('form').on('submit', function() {
+                const submitBtn = $(this).find('button[type="submit"]');
+                if (submitBtn.length) {
+                    const originalText = submitBtn.html();
+                    submitBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...').prop('disabled', true);
+                }
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,385 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Purchase Insurance Policy{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-shopping-cart"></i> Purchase Insurance Policy</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Display Messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    {% if quote %}
+                    <!-- Quote Summary -->
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-check-circle"></i> Quote Summary</h5>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Vehicle:</strong> {{ quote.vehicle.make }} {{ quote.vehicle.model }} ({{ quote.vehicle.year }})</p>
+                                <p><strong>Registration:</strong> {{ quote.vehicle.registration_number }}</p>
+                                <p><strong>Coverage Type:</strong> {{ quote.get_coverage_type_display }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Coverage Amount:</strong> ₦{{ quote.coverage_amount|floatformat:2 }}</p>
+                                <p><strong>Base Premium:</strong> ₦{{ quote.base_premium|floatformat:2 }}</p>
+                                <p><strong>Total Premium:</strong> <span class="fw-bold text-primary">₦{{ quote.total_premium|floatformat:2 }}</span></p>
+                                <p><strong>Deductible:</strong> ₦{{ quote.deductible|floatformat:2 }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if quote.add_ons %}
+                        <div class="mt-3">
+                            <strong>Add-ons Included:</strong>
+                            <ul class="list-inline">
+                                {% for addon in quote.add_ons %}
+                                    <li class="list-inline-item">
+                                        <span class="badge bg-primary">{{ addon }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        Please review your policy details and complete the payment to activate your coverage.
+                    </div>
+                    
+                    <form method="post" id="purchaseForm">
+                        {% csrf_token %}
+                        
+                        {% if not quote %}
+                        <!-- Only show these fields if not coming from a quote -->
+                        <div class="mb-3">
+                            <label for="vehicle_id" class="form-label">Select Vehicle <span class="text-danger">*</span></label>
+                            <select class="form-control" id="vehicle_id" name="vehicle_id" required>
+                                <option value="">-- Select Vehicle --</option>
+                                {% for vehicle in vehicles %}
+                                    <option value="{{ vehicle.id }}" {% if form.vehicle_id.value == vehicle.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ vehicle.make }} {{ vehicle.model }} ({{ vehicle.year }}) - {{ vehicle.registration_number }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="coverage_type" class="form-label">Coverage Type <span class="text-danger">*</span></label>
+                            <select class="form-control" id="coverage_type" name="coverage_type" required>
+                                <option value="">-- Select Coverage Type --</option>
+                                <option value="comprehensive" {% if form.coverage_type.value == 'comprehensive' %}selected{% endif %}>Comprehensive (Full Coverage)</option>
+                                <option value="third_party" {% if form.coverage_type.value == 'third_party' %}selected{% endif %}>Third Party Only</option>
+                                <option value="standalone" {% if form.coverage_type.value == 'standalone' %}selected{% endif %}>Standalone Own Damage</option>
+                                <option value="personal_accident" {% if form.coverage_type.value == 'personal_accident' %}selected{% endif %}>Personal Accident</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="coverage_amount" class="form-label">Coverage Amount (₦) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                <input type="number" class="form-control" id="coverage_amount" name="coverage_amount" 
+                                       value="{{ form.coverage_amount.value|default:'' }}" 
+                                       placeholder="e.g., 5000000" min="500000" step="100000" required>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="promo_code" class="form-label">Promo Code (Optional)</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="promo_code" name="promo_code" 
+                                       value="{{ form.promo_code.value|default:'' }}" placeholder="Enter promo code">
+                                <button class="btn btn-outline-primary" type="button" id="applyPromoBtn" onclick="applyPromoCode()">
+                                    Apply
+                                </button>
+                            </div>
+                            <div id="promoMessage" class="mt-1"></div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h5 class="mb-3">Payment Summary</h5>
+                        <table class="table">
+                            <tr>
+                                <td>Base Premium:</td>
+                                <td class="text-end" id="summaryBasePremium">
+                                    ₦{{ quote.base_premium|floatformat:2|default:"0.00" }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Add-ons:</td>
+                                <td class="text-end" id="summaryAddons">
+                                    ₦{{ addons_cost|floatformat:2|default:"0.00" }}
+                                </td>
+                            </tr>
+                            <tr id="summaryDiscountRow" style="display: none;">
+                                <td>Discount:</td>
+                                <td class="text-end text-success" id="summaryDiscount">-₦0.00</td>
+                            </tr>
+                            <tr class="fw-bold">
+                                <td>Total Amount:</td>
+                                <td class="text-end text-primary" id="summaryTotal">
+                                    ₦{{ final_premium|floatformat:2|default:quote.total_premium|floatformat:2 }}
+                                </td>
+                            </tr>
+                        </table>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Payment Method <span class="text-danger">*</span></label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_method" id="payment_card" value="card" checked>
+                                <label class="form-check-label" for="payment_card">
+                                    <i class="fas fa-credit-card"></i> Credit/Debit Card (Flutterwave)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_method" id="payment_bank" value="bank_transfer">
+                                <label class="form-check-label" for="payment_bank">
+                                    <i class="fas fa-university"></i> Bank Transfer
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="terms_accepted" name="terms_accepted" required>
+                                <label class="form-check-label" for="terms_accepted">
+                                    I have read and agree to the 
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="purchaseBtn">
+                                <i class="fas fa-lock"></i> Complete Purchase
+                            </button>
+                            <a href="{% if quote %}{% url 'core:get_quote' %}{% else %}{% url 'core:dashboard' %}{% endif %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms Modal (simplified) -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #4169E1; color: white;">
+                <h5 class="modal-title">Terms and Conditions</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>By purchasing this policy, you agree to the terms and conditions of the insurance contract.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTotalPremium = {{ quote.total_premium|default:0 }};
+let appliedPromoCode = null;
+let discountAmount = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('purchaseForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const termsAccepted = document.getElementById('terms_accepted');
+            if (termsAccepted && !termsAccepted.checked) {
+                e.preventDefault();
+                alert('Please accept the terms and conditions');
+                return false;
+            }
+            
+            const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+            if (!paymentMethod) {
+                e.preventDefault();
+                alert('Please select a payment method');
+                return false;
+            }
+            
+            const purchaseBtn = document.getElementById('purchaseBtn');
+            purchaseBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+            purchaseBtn.disabled = true;
+        });
+    }
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function formatNaira(amount) {
+    return '₦' + parseFloat(amount).toLocaleString('en-NG', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function applyPromoCode() {
+    const promoCode = document.getElementById('promo_code').value.trim();
+    const promoMessage = document.getElementById('promoMessage');
+    
+    if (!promoCode) {
+        promoMessage.innerHTML = '<span class="text-danger">Please enter a promo code</span>';
+        return;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    promoMessage.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin"></i> Validating...</span>';
+    
+    fetch('/validate-promo/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ promo_code: promoCode })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.valid) {
+            appliedPromoCode = data;
+            promoMessage.innerHTML = `<span class="text-success"><i class="fas fa-check-circle"></i> ${data.message}</span>`;
+            
+            if (data.discount_type === 'percentage') {
+                discountAmount = currentTotalPremium * (data.discount_value / 100);
+            } else {
+                discountAmount = parseFloat(data.discount_value);
+            }
+            
+            updatePaymentSummary();
+        } else {
+            appliedPromoCode = null;
+            discountAmount = 0;
+            promoMessage.innerHTML = `<span class="text-danger"><i class="fas fa-times-circle"></i> ${data.message}</span>`;
+            updatePaymentSummary();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        promoMessage.innerHTML = '<span class="text-danger">Error validating promo code</span>';
+    });
+}
+
+function updatePaymentSummary() {
+    const finalPremium = Math.max(currentTotalPremium - discountAmount, 0);
+    
+    document.getElementById('summaryTotal').textContent = formatNaira(finalPremium);
+    
+    if (discountAmount > 0) {
+        document.getElementById('summaryDiscountRow').style.display = '';
+        document.getElementById('summaryDiscount').textContent = '-' + formatNaira(discountAmount);
+    } else {
+        document.getElementById('summaryDiscountRow').style.display = 'none';
+    }
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h4 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+
+.btn-outline-primary {
+    color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4169E1;
+    color: white;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-info {
+    background-color: #eef2ff;
+    border-color: #4169E1;
+    color: #1e293b;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.form-check-input:checked {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,374 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}Job Applications | VehicleInsure Staff{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-header {
+        background: #4169E1;
+        padding: 30px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 30px;
+    }
+    
+    .staff-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+    
+    .stat-card h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--royal-blue);
+        margin-bottom: 5px;
+    }
+    
+    .stat-card p {
+        color: #64748b;
+        margin-bottom: 0;
+    }
+    
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .nav-tabs {
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .nav-tabs .nav-link {
+        color: #64748b;
+        border: none;
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: var(--royal-blue);
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: var(--royal-blue);
+        border-bottom: 2px solid var(--royal-blue);
+        background: transparent;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        overflow-x: auto;
+    }
+    
+    .applications-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .applications-table th {
+        text-align: left;
+        padding: 15px;
+        background: var(--gray-light);
+        font-weight: 600;
+        color: var(--navy-dark);
+        border-bottom: 2px solid var(--gray-border);
+    }
+    
+    .applications-table td {
+        padding: 15px;
+        border-bottom: 1px solid var(--gray-border);
+        color: #475569;
+    }
+    
+    .applications-table tr:hover {
+        background: var(--gray-light);
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-reviewed { background: #dbeafe; color: #1e40af; }
+    .status-shortlisted { background: #e0e7ff; color: #3730a3; }
+    .status-interviewed { background: #d1fae5; color: #065f46; }
+    .status-offered { background: #c7d2fe; color: #3730a3; }
+    .status-hired { background: #10b981; color: white; }
+    .status-rejected { background: #fee2e2; color: #dc2626; }
+    
+    .action-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        text-decoration: none;
+        margin-right: 5px;
+        display: inline-block;
+    }
+    
+    .btn-view {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .btn-download {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .pagination {
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #64748b;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--gray-border);
+        margin-bottom: 20px;
+    }
+    
+    .filter-select {
+        padding: 10px 20px;
+        border: 1px solid var(--gray-border);
+        border-radius: 40px;
+        background: white;
+        color: #64748b;
+        font-size: 0.9rem;
+        min-width: 200px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="staff-header">
+    <div class="container">
+        <h1><i class="fas fa-users me-2"></i> Job Applications</h1>
+        <p>Review and manage candidate applications</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:jobs_manage' %}">
+                <i class="fas fa-list me-1"></i> All Jobs
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:job_create' %}">
+                <i class="fas fa-plus me-1"></i> New Job
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:job_categories_manage' %}">
+                <i class="fas fa-folder me-1"></i> Categories
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:job_locations_manage' %}">
+                <i class="fas fa-map-marker-alt me-1"></i> Locations
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:job_types_manage' %}">
+                <i class="fas fa-clock me-1"></i> Job Types
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="{% url 'core:job_applications_manage' %}">
+                <i class="fas fa-users me-1"></i> Applications
+            </a>
+        </li>
+    </ul>
+    
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ stats.total }}</h3>
+            <p>Total Applications</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.pending }}</h3>
+            <p>Pending</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.shortlisted }}</h3>
+            <p>Shortlisted</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.hired }}</h3>
+            <p>Hired</p>
+        </div>
+    </div>
+    
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="d-flex gap-3 flex-wrap">
+            <select class="filter-select" onchange="window.location.href=this.value">
+                <option value="?">All Jobs</option>
+                {% for job in jobs %}
+                <option value="?job={{ job.id }}" {% if selected_job and selected_job.id == job.id %}selected{% endif %}>
+                    {{ job.title }}
+                </option>
+                {% endfor %}
+            </select>
+            
+            <select class="filter-select" onchange="window.location.href=this.value">
+                <option value="?{% if selected_job %}job={{ selected_job.id }}&{% endif %}">All Status</option>
+                <option value="?status=pending{% if selected_job %}&job={{ selected_job.id }}{% endif %}" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="?status=reviewed{% if selected_job %}&job={{ selected_job.id }}{% endif %}" {% if status_filter == 'reviewed' %}selected{% endif %}>Reviewed</option>
+                <option value="?status=shortlisted{% if selected_job %}&job={{ selected_job.id }}{% endif %}" {% if status_filter == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
+                <option value="?status=interviewed{% if selected_job %}&job={{ selected_job.id }}{% endif %}" {% if status_filter == 'interviewed' %}selected{% endif %}>Interviewed</option>
+                <option value="?status=hired{% if selected_job %}&job={{ selected_job.id }}{% endif %}" {% if status_filter == 'hired' %}selected{% endif %}>Hired</option>
+                <option value="?status=rejected{% if selected_job %}&job={{ selected_job.id }}{% endif %}" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+        </div>
+        
+        <form method="get" class="search-box d-flex gap-2">
+            {% if selected_job %}<input type="hidden" name="job" value="{{ selected_job.id }}">{% endif %}
+            {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+            <input type="text" name="q" class="form-control" placeholder="Search by name or email..." value="{{ search_query }}">
+            <button type="submit" class="btn-primary-custom">Search</button>
+            {% if search_query %}
+            <a href="?{% if selected_job %}job={{ selected_job.id }}&{% endif %}{% if status_filter %}status={{ status_filter }}{% endif %}" class="btn-outline-primary-custom">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+    
+    <!-- Applications Table -->
+    <div class="table-container">
+        {% if applications %}
+        <table class="applications-table">
+            <thead>
+                <tr>
+                    <th>Candidate</th>
+                    <th>Job Position</th>
+                    <th>Experience</th>
+                    <th>Applied</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <tr>
+                    <td>
+                        <strong>{{ app.full_name }}</strong><br>
+                        <small class="text-muted">{{ app.email }}</small><br>
+                        <small class="text-muted">{{ app.phone }}</small>
+                    </td>
+                    <td>{{ app.job.title|truncatechars:30 }}</td>
+                    <td>
+                        {% if app.years_experience %}
+                        {{ app.years_experience }} year{{ app.years_experience|pluralize }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ app.created_at|date:"M d, Y" }}</td>
+                    <td>
+                        <span class="status-badge status-{{ app.status }}">
+                            {{ app.get_status_display }}
+                        </span>
+                        {% if app.rating %}
+                        <div class="mt-1">
+                            {% for i in "12345" %}
+                            <i class="fas fa-star{% if forloop.counter <= app.rating %}" style="color: #FFD700;{% else %} text-muted{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'core:job_application_detail' app.id %}" class="action-btn btn-view">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        {% if app.resume %}
+                        <a href="{{ app.resume.url }}" class="action-btn btn-download" target="_blank">
+                            <i class="fas fa-download"></i> Resume
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <h3>No Applications Found</h3>
+            <p>{% if search_query %}No results for "{{ search_query }}".{% else %}No applications received yet.{% endif %}</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if applications.has_other_pages %}
+    <nav>
+        <ul class="pagination">
+            {% if applications.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ applications.previous_page_number }}{% if selected_job %}&job={{ selected_job.id }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in applications.paginator.page_range %}
+                {% if applications.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > applications.number|add:'-3' and num < applications.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if selected_job %}&job={{ selected_job.id }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if applications.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ applications.next_page_number }}{% if selected_job %}&job={{ selected_job.id }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

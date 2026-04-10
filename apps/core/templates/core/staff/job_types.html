@@ -1,0 +1,344 @@
+{% extends 'core/logon_base.html' %}
+{% load static %}
+
+{% block title %}Job Types | VehicleInsure Staff{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-header {
+        background: #4169E1;
+        padding: 30px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 30px;
+    }
+    
+    .staff-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .nav-tabs {
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .nav-tabs .nav-link {
+        color: #64748b;
+        border: none;
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: var(--royal-blue);
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: var(--royal-blue);
+        border-bottom: 2px solid var(--royal-blue);
+        background: transparent;
+    }
+    
+    .page-container {
+        background: white;
+        border-radius: 24px;
+        padding: 30px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .section-header h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 0;
+    }
+    
+    .types-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .types-table th {
+        text-align: left;
+        padding: 15px;
+        background: var(--gray-light);
+        font-weight: 600;
+        color: var(--navy-dark);
+        border-bottom: 2px solid var(--gray-border);
+    }
+    
+    .types-table td {
+        padding: 15px;
+        border-bottom: 1px solid var(--gray-border);
+        color: #475569;
+    }
+    
+    .types-table tr:hover {
+        background: var(--gray-light);
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-inactive {
+        background: #e2e8f0;
+        color: #475569;
+    }
+    
+    .action-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        text-decoration: none;
+        margin-right: 5px;
+        display: inline-block;
+    }
+    
+    .btn-edit {
+        background: #eef2ff;
+        color: var(--royal-blue);
+    }
+    
+    .btn-delete {
+        background: #fee2e2;
+        color: #dc2626;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .add-form {
+        background: var(--gray-light);
+        border-radius: 16px;
+        padding: 25px;
+        margin-top: 30px;
+    }
+    
+    .add-form h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 8px;
+    }
+    
+    .form-control {
+        border: 2px solid var(--gray-border);
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 1rem;
+        background: white;
+        width: 100%;
+    }
+    
+    .form-control:focus {
+        border-color: var(--royal-blue);
+        box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.1);
+        outline: none;
+    }
+    
+    .help-text {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 5px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #64748b;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: var(--gray-border);
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="staff-header">
+    <div class="container">
+        <h1><i class="fas fa-clock me-2"></i> Job Types</h1>
+        <p>Manage employment types for job postings</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:jobs_manage' %}">
+                <i class="fas fa-list me-1"></i> All Jobs
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:job_create' %}">
+                <i class="fas fa-plus me-1"></i> New Job
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:job_categories_manage' %}">
+                <i class="fas fa-folder me-1"></i> Categories
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:job_locations_manage' %}">
+                <i class="fas fa-map-marker-alt me-1"></i> Locations
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="{% url 'core:job_types_manage' %}">
+                <i class="fas fa-clock me-1"></i> Job Types
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:job_applications_manage' %}">
+                <i class="fas fa-users me-1"></i> Applications
+            </a>
+        </li>
+    </ul>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="page-container">
+                <div class="section-header">
+                    <h3><i class="fas fa-list me-2"></i> All Job Types</h3>
+                    <span class="badge bg-primary">{{ job_types.count }} Total</span>
+                </div>
+                
+                {% if job_types %}
+                <div class="table-responsive">
+                    <table class="types-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Slug</th>
+                                <th>Description</th>
+                                <th>Jobs</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for type in job_types %}
+                            <tr>
+                                <td><strong>{{ type.name }}</strong></td>
+                                <td><code>{{ type.slug }}</code></td>
+                                <td>{{ type.description|truncatechars:40|default:"—" }}</td>
+                                <td>{{ type.job_count }}</td>
+                                <td>
+                                    <span class="status-badge {% if type.is_active %}status-active{% else %}status-inactive{% endif %}">
+                                        {{ type.is_active|yesno:"Active,Inactive" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'core:job_type_edit' type.id %}" class="action-btn btn-edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'core:job_type_delete' type.id %}" style="display: inline;" onsubmit="return confirm('Delete this job type?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="action-btn btn-delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-clock"></i>
+                    <h4>No Job Types Yet</h4>
+                    <p>Create your first job type using the form.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="page-container">
+                <div class="section-header">
+                    <h3><i class="fas fa-plus-circle me-2"></i> Add Job Type</h3>
+                </div>
+                
+                <form method="post" class="add-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label class="form-label">Type Name *</label>
+                        {{ form.name }}
+                        <p class="help-text">e.g., "Full-time", "Part-time", "Contract"</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Slug</label>
+                        {{ form.slug }}
+                        <p class="help-text">Leave blank to auto-generate</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label">Active</label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary-custom w-100">
+                        <i class="fas fa-plus me-1"></i> Create Job Type
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+    const slugInput = document.getElementById('{{ form.slug.id_for_label }}');
+    
+    if (nameInput && slugInput) {
+        nameInput.addEventListener('input', function() {
+            if (!slugInput.value) {
+                slugInput.value = this.value.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/--+/g, '-').trim();
+            }
+        });
+    }
+</script>
+{% endblock %}

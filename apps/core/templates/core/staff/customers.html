@@ -1,0 +1,112 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Customers{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-users"></i> Customers</h2>
+            <p class="text-muted">View and manage customer accounts</p>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by name or email..." onkeyup="searchCustomers()">
+        </div>
+    </div>
+
+    <!-- Customers Table -->
+    <div class="table-responsive">
+        <table class="table table-hover" id="customersTable">
+            <thead style="background-color: #4169E1; color: white;">
+                <tr>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Verified</th>
+                    <th>Policies</th>
+                    <th>Claims</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in customers %}
+                <tr>
+                    <td>
+                        {% if customer.profile_picture %}
+                            <img src="{{ customer.profile_picture.url }}" width="40" height="40" class="rounded-circle me-2">
+                        {% else %}
+                            <i class="fas fa-user-circle fa-2x me-2"></i>
+                        {% endif %}
+                        {{ customer.get_full_name|default:"N/A" }}
+                    </td>
+                    <td>{{ customer.email }}</td>
+                    <td>{{ customer.phone_number|default:"N/A" }}</td>
+                    <td>
+                        {% if customer.is_verified %}
+                            <span class="badge bg-success">Yes</span>
+                        {% else %}
+                            <span class="badge bg-warning">No</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ customer.policies.count }}</td>
+                    <td>{{ customer.claims.count }}</td>
+                    <td>{{ customer.date_joined|date:"Y-m-d" }}</td>
+                    <td>
+                        <a href="{% url 'core:staff_customer_detail' customer.id %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">No customers found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if customers.has_other_pages %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if customers.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ customers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                </li>
+            {% endif %}
+            
+            {% for num in customers.paginator.page_range %}
+                {% if customers.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if customers.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ customers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<script>
+function searchCustomers() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase();
+    window.location.href = `?search=${filter}`;
+}
+</script>
+{% endblock %}

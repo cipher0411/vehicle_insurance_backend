@@ -1,0 +1,522 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Our Policy Promise | VehicleInsure Nigeria{% endblock %}
+{% block meta_description %}Discover how VehicleInsure manages your insurance policy with transparency, speed, and care. Learn about the benefits you receive when you insure with us.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .intro-section {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .intro-section h2 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .intro-section p {
+        color: #475569;
+        line-height: 1.8;
+        font-size: 1.1rem;
+    }
+    
+    .process-section {
+        margin-bottom: 50px;
+    }
+    
+    .section-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 40px;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .process-timeline {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 30px;
+        margin-bottom: 50px;
+    }
+    
+    .process-step {
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
+        position: relative;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .process-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 40px;
+        right: -30px;
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, var(--royal-blue) 0%, var(--royal-blue-light) 100%);
+    }
+    
+    .step-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .step-icon i {
+        font-size: 2rem;
+        color: white;
+    }
+    
+    .process-step h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+    }
+    
+    .process-step p {
+        color: #64748b;
+        line-height: 1.6;
+    }
+    
+    .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-top: 40px;
+    }
+    
+    .benefit-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .benefit-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    }
+    
+    .benefit-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    .benefit-icon i {
+        font-size: 1.8rem;
+        color: white;
+    }
+    
+    .benefit-card h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+    }
+    
+    .benefit-card p {
+        color: #64748b;
+        line-height: 1.6;
+        margin-bottom: 0;
+    }
+    
+    .policy-management-section {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin: 50px 0;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.6s forwards;
+    }
+    
+    .management-feature {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+        padding: 20px 0;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .management-feature:last-child {
+        border-bottom: none;
+    }
+    
+    .management-icon {
+        width: 50px;
+        height: 50px;
+        background: #eef2ff;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .management-icon i {
+        font-size: 1.5rem;
+        color: var(--royal-blue);
+    }
+    
+    .management-content h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 8px;
+    }
+    
+    .management-content p {
+        color: #64748b;
+        margin-bottom: 0;
+        line-height: 1.6;
+    }
+    
+    .commitment-section {
+        background: linear-gradient(135deg, var(--gray-light) 0%, white 100%);
+        border-radius: 24px;
+        padding: 50px 40px;
+        text-align: center;
+        margin-top: 50px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.8s forwards;
+    }
+    
+    .commitment-section h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+    }
+    
+    .commitment-section p {
+        color: #475569;
+        max-width: 800px;
+        margin: 0 auto 30px;
+        line-height: 1.8;
+        font-size: 1.1rem;
+    }
+    
+    .cta-buttons {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 992px) {
+        .process-step:not(:last-child)::after {
+            display: none;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .intro-section, .policy-management-section, .commitment-section {
+            padding: 25px;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+        }
+        
+        .process-timeline {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .process-step {
+            max-width: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Our Policy Promise</h1>
+        <p>How we handle your insurance and the benefits you receive</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Our Policy Promise</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Introduction -->
+    <div class="intro-section">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h2>Insurance Made Simple, Transparent, and Reliable</h2>
+                <p class="mb-0">At VehicleInsure, we believe that insurance should be straightforward and stress-free. When you purchase a policy with us, you're not just buying coverage—you're gaining a partner committed to protecting what matters most to you. Here's exactly how we handle your policy and the exclusive benefits you'll enjoy.</p>
+            </div>
+            <div class="col-lg-4 text-center mt-4 mt-lg-0">
+                <i class="fas fa-handshake fa-5x" style="color: var(--royal-blue);"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- How We Handle Your Policy -->
+    <div class="process-section">
+        <h2 class="section-title" style="animation-delay: 0.1s;">How We Handle Your Policy</h2>
+        
+        <div class="process-timeline">
+            <div class="process-step" style="animation-delay: 0.15s;">
+                <div class="step-icon">
+                    <i class="fas fa-file-signature"></i>
+                </div>
+                <h3>1. Instant Issuance</h3>
+                <p>Your policy is issued immediately after payment. No waiting, no paperwork—just instant coverage with a digital certificate delivered to your dashboard and email.</p>
+            </div>
+            
+            <div class="process-step" style="animation-delay: 0.25s;">
+                <div class="step-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>2. Active Protection</h3>
+                <p>From the moment your policy activates, you're fully protected. We monitor your coverage 24/7 and send reminders before renewal to ensure continuous protection.</p>
+            </div>
+            
+            <div class="process-step" style="animation-delay: 0.35s;">
+                <div class="step-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <h3>3. Proactive Management</h3>
+                <p>We keep you informed with timely notifications about your policy status, upcoming renewals, and exclusive offers tailored to your coverage needs.</p>
+            </div>
+            
+            <div class="process-step" style="animation-delay: 0.45s;">
+                <div class="step-icon">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <h3>4. Seamless Renewal</h3>
+                <p>Renewing is effortless. We pre-fill your information, apply loyalty discounts automatically, and send your new certificate instantly upon payment.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Benefits You Receive -->
+    <h2 class="section-title" style="animation-delay: 0.5s;">Benefits You Receive When You Insure With Us</h2>
+    
+    <div class="benefits-grid">
+        <div class="benefit-card" style="animation-delay: 0.55s;">
+            <div class="benefit-icon">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <h3>Instant Digital Certificate</h3>
+            <p>Receive your insurance certificate immediately after payment. Valid for all legal purposes including vehicle registration and FRSC checks.</p>
+        </div>
+        
+        <div class="benefit-card" style="animation-delay: 0.6s;">
+            <div class="benefit-icon">
+                <i class="fas fa-tags"></i>
+            </div>
+            <h3>Loyalty Discounts</h3>
+            <p>Enjoy up to 25% off when you renew with us. The longer you stay, the more you save with our loyalty program.</p>
+        </div>
+        
+        <div class="benefit-card" style="animation-delay: 0.65s;">
+            <div class="benefit-icon">
+                <i class="fas fa-star"></i>
+            </div>
+            <h3>No-Claims Bonus</h3>
+            <p>Drive safely and earn discounts up to 50% on your premium. Each claim-free year increases your savings.</p>
+        </div>
+        
+        <div class="benefit-card" style="animation-delay: 0.7s;">
+            <div class="benefit-icon">
+                <i class="fas fa-headset"></i>
+            </div>
+            <h3>24/7 Priority Support</h3>
+            <p>Access dedicated customer support round-the-clock. Our team is always ready to assist with claims, questions, or policy changes.</p>
+        </div>
+        
+        <div class="benefit-card" style="animation-delay: 0.75s;">
+            <div class="benefit-icon">
+                <i class="fas fa-file-pdf"></i>
+            </div>
+            <h3>Digital Document Vault</h3>
+            <p>All your policy documents—certificates, schedules, receipts—stored securely in one place. Download anytime, anywhere.</p>
+        </div>
+        
+        <div class="benefit-card" style="animation-delay: 0.8s;">
+            <div class="benefit-icon">
+                <i class="fas fa-gift"></i>
+            </div>
+            <h3>Exclusive Partner Offers</h3>
+            <p>Unlock special discounts from our partner network including car servicing, tracking devices, and more.</p>
+        </div>
+    </div>
+    
+    <!-- Policy Management Features -->
+    <div class="policy-management-section">
+        <h3 class="fw-bold mb-4" style="color: var(--navy-dark);">Complete Policy Control at Your Fingertips</h3>
+        
+        <div class="management-feature">
+            <div class="management-icon">
+                <i class="fas fa-mobile-alt"></i>
+            </div>
+            <div class="management-content">
+                <h4>Online Dashboard Access</h4>
+                <p>Manage every aspect of your policy through your secure online dashboard—view coverage details, download documents, and update information in real-time.</p>
+            </div>
+        </div>
+        
+        <div class="management-feature">
+            <div class="management-icon">
+                <i class="fas fa-credit-card"></i>
+            </div>
+            <div class="management-content">
+                <h4>Flexible Payment Options</h4>
+                <p>Choose to pay annually, quarterly, or monthly. We offer multiple payment methods including cards, bank transfers, and USSD for your convenience.</p>
+            </div>
+        </div>
+        
+        <div class="management-feature">
+            <div class="management-icon">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+            <div class="management-content">
+                <h4>Easy Policy Changes</h4>
+                <p>Need to update your vehicle information or add a driver? Make changes easily through your dashboard with pro-rated premium adjustments.</p>
+            </div>
+        </div>
+        
+        <div class="management-feature">
+            <div class="management-icon">
+                <i class="fas fa-history"></i>
+            </div>
+            <div class="management-content">
+                <h4>Complete Policy History</h4>
+                <p>Access your entire insurance history with us—past policies, claims, payments, and documents—all organized and available when you need them.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Our Commitment -->
+    <div class="commitment-section">
+        <h3>Our Commitment to You</h3>
+        <p>When you choose VehicleInsure, you're choosing a partner dedicated to protecting your vehicle and your peace of mind. We handle every policy with the care and attention it deserves—because your trust matters to us.</p>
+        
+        <div class="cta-buttons">
+            <a href="{% url 'core:instant_quote' %}" class="btn-primary-custom btn-lg">
+                Get a Quote <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+            <a href="{% url 'core:contact' %}" class="btn-outline-primary-custom btn-lg">
+                Speak to an Advisor <i class="fas fa-phone-alt ms-2"></i>
+            </a>
+        </div>
+        
+        <p class="small text-muted mt-4 mb-0">
+            <i class="fas fa-shield-alt me-1"></i>
+            All policies are underwritten by NAICOM-licensed insurance companies and fully compliant with Nigerian insurance regulations.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+        
+        document.querySelectorAll('[data-animate]').forEach(el => {
+            observer.observe(el);
+        });
+    });
+</script>
+{% endblock %}

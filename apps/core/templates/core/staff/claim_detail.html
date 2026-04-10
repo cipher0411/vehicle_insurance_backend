@@ -1,0 +1,121 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Claim #{{ claim.claim_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-clipboard-list"></i> Claim #{{ claim.claim_number }}</h2>
+            <p class="text-muted">Review and process claim</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:staff_claims' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Claims
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Claim Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Claim Information</h5>
+                        <span class="badge 
+                            {% if claim.status == 'approved' %}bg-success
+                            {% elif claim.status == 'pending' %}bg-warning
+                            {% elif claim.status == 'under_review' %}bg-info
+                            {% elif claim.status == 'rejected' %}bg-danger
+                            {% elif claim.status == 'settled' %}bg-primary
+                            {% else %}bg-secondary{% endif %}">
+                            {{ claim.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Claim Type:</strong> {{ claim.get_claim_type_display }}</p>
+                            <p><strong>Claimed Amount:</strong> ₦{{ claim.claimed_amount|floatformat:2 }}</p>
+                            <p><strong>Policy:</strong> {{ claim.policy.policy_number }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Incident Date:</strong> {{ claim.incident_date|date:"F d, Y H:i" }}</p>
+                            <p><strong>Location:</strong> {{ claim.incident_location }}</p>
+                            <p><strong>Filed On:</strong> {{ claim.created_at|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <strong>Description:</strong>
+                        <div class="p-3 bg-light rounded">{{ claim.incident_description|linebreaks }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-edit"></i> Process Claim</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Surveyor Notes</label>
+                            {{ form.surveyor_notes }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Approved Amount (₦)</label>
+                                {{ form.approved_amount }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Rejection Reason</label>
+                                {{ form.rejection_reason }}
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            {% if claim.status == 'pending' %}
+                                <button type="submit" name="action" value="review" class="btn btn-info">
+                                    <i class="fas fa-search"></i> Mark Under Review
+                                </button>
+                            {% endif %}
+                            {% if claim.status in 'pending,under_review' %}
+                                <button type="submit" name="action" value="approve" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                                <button type="submit" name="action" value="reject" class="btn btn-danger">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Customer</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ claim.user.get_full_name|default:'N/A' }}</p>
+                    <p><strong>Email:</strong> {{ claim.user.email }}</p>
+                    <p><strong>Phone:</strong> {{ claim.user.phone_number|default:'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 20px; }
+.card-header { background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%); color: white; border-radius: 12px 12px 0 0 !important; padding: 15px 20px; }
+.card-header h5 { margin: 0; font-weight: 600; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.form-control:focus { border-color: #4169E1; box-shadow: 0 0 0 0.2rem rgba(65,105,225,0.25); }
+</style>
+{% endblock %}

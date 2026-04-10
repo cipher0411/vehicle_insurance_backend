@@ -1,0 +1,311 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Secure Insurance Payments Nigeria | Safe Online Payment | VehicleInsure{% endblock %}
+{% block meta_description %}Make secure insurance payments online in Nigeria. PCI DSS compliant, multiple payment options including cards, bank transfer, and USSD.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .security-badge {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .security-icons {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        flex-wrap: wrap;
+        margin: 30px 0;
+    }
+    
+    .security-icon-item {
+        text-align: center;
+    }
+    
+    .security-icon-item i {
+        font-size: 3rem;
+        color: var(--royal-blue);
+        margin-bottom: 10px;
+    }
+    
+    .payment-methods {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.4s forwards;
+    }
+    
+    .payment-methods h2 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .methods-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 25px;
+    }
+    
+    .method-item {
+        text-align: center;
+        padding: 25px 15px;
+        background: var(--gray-light);
+        border-radius: 16px;
+        transition: all 0.3s;
+    }
+    
+    .method-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    
+    .method-item i {
+        font-size: 2.5rem;
+        color: var(--royal-blue);
+        margin-bottom: 15px;
+    }
+    
+    .method-item h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 5px;
+    }
+    
+    .security-features {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.6s forwards;
+    }
+    
+    .feature-item-payment {
+        display: flex;
+        gap: 20px;
+        padding: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .feature-item-payment:last-child {
+        border-bottom: none;
+    }
+    
+    .feature-item-payment i {
+        color: #10b981;
+        font-size: 1.5rem;
+        margin-top: 3px;
+    }
+    
+    .feature-content h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 5px;
+    }
+    
+    .feature-content p {
+        color: #64748b;
+        margin-bottom: 0;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .security-badge, .payment-methods, .security-features {
+            padding: 25px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Secure Payments</h1>
+        <p>Your transactions are protected with industry-leading security</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Secure Payments</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Security Badge -->
+    <div class="security-badge">
+        <i class="fas fa-shield-alt fa-4x mb-3" style="color: var(--royal-blue);"></i>
+        <h2 class="fw-bold mb-3" style="color: var(--navy-dark);">Bank-Level Security</h2>
+        <p class="lead mb-4">All payments are processed with 256-bit SSL encryption and are PCI DSS Level 1 compliant.</p>
+        
+        <div class="security-icons">
+            <div class="security-icon-item">
+                <i class="fas fa-lock"></i>
+                <p>256-bit SSL Encryption</p>
+            </div>
+            <div class="security-icon-item">
+                <i class="fas fa-credit-card"></i>
+                <p>PCI DSS Compliant</p>
+            </div>
+            <div class="security-icon-item">
+                <i class="fas fa-shield-virus"></i>
+                <p>Fraud Protection</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment Methods -->
+    <div class="payment-methods">
+        <h2>Payment Methods We Accept</h2>
+        <div class="methods-grid">
+            <div class="method-item">
+                <i class="fab fa-cc-visa"></i>
+                <h4>Visa</h4>
+                <p class="small text-muted">Credit & Debit</p>
+            </div>
+            <div class="method-item">
+                <i class="fab fa-cc-mastercard"></i>
+                <h4>Mastercard</h4>
+                <p class="small text-muted">Credit & Debit</p>
+            </div>
+            <div class="method-item">
+                <i class="fas fa-credit-card"></i>
+                <h4>Verve</h4>
+                <p class="small text-muted">Nigerian Cards</p>
+            </div>
+            <div class="method-item">
+                <i class="fas fa-university"></i>
+                <h4>Bank Transfer</h4>
+                <p class="small text-muted">All Major Banks</p>
+            </div>
+            <div class="method-item">
+                <i class="fas fa-mobile-alt"></i>
+                <h4>USSD</h4>
+                <p class="small text-muted">Quick Transfer</p>
+            </div>
+            <div class="method-item">
+                <i class="fas fa-qrcode"></i>
+                <h4>QR Code</h4>
+                <p class="small text-muted">Scan to Pay</p>
+            </div>
+        </div>
+        
+        <p class="text-center mt-4 mb-0">
+            Powered by <strong>Paystack</strong> and <strong>Flutterwave</strong> for secure payment processing.
+        </p>
+    </div>
+    
+    <!-- Security Features -->
+    <div class="security-features">
+        <h3 class="fw-bold mb-4 text-center" style="color: var(--navy-dark);">Our Security Features</h3>
+        
+        <div class="feature-item-payment">
+            <i class="fas fa-check-circle"></i>
+            <div class="feature-content">
+                <h4>End-to-End Encryption</h4>
+                <p>All payment data is encrypted from your device to our servers.</p>
+            </div>
+        </div>
+        
+        <div class="feature-item-payment">
+            <i class="fas fa-check-circle"></i>
+            <div class="feature-content">
+                <h4>Tokenization</h4>
+                <p>Your card details are never stored on our servers. We use secure tokens for recurring payments.</p>
+            </div>
+        </div>
+        
+        <div class="feature-item-payment">
+            <i class="fas fa-check-circle"></i>
+            <div class="feature-content">
+                <h4>3D Secure Authentication</h4>
+                <p>Additional verification layer for card transactions to prevent unauthorized use.</p>
+            </div>
+        </div>
+        
+        <div class="feature-item-payment">
+            <i class="fas fa-check-circle"></i>
+            <div class="feature-content">
+                <h4>Fraud Monitoring</h4>
+                <p>24/7 automated fraud detection and prevention systems.</p>
+            </div>
+        </div>
+        
+        <div class="feature-item-payment">
+            <i class="fas fa-check-circle"></i>
+            <div class="feature-content">
+                <h4>Secure Receipts</h4>
+                <p>Digital receipts with masked card numbers for your protection.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Trust Note -->
+    <div class="text-center mt-5">
+        <p class="text-muted">
+            <i class="fas fa-lock me-1"></i>
+            Your security is our priority. If you have any concerns about payments, please contact our support team.
+        </p>
+        <a href="{% url 'core:contact' %}" class="btn-outline-primary-custom">
+            Contact Support <i class="fas fa-arrow-right ms-2"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}

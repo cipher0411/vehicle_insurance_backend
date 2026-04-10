@@ -1,0 +1,421 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Claims Support Nigeria | 24/7 Insurance Claims Assistance | VehicleInsure{% endblock %}
+{% block meta_description %}Get expert claims support in Nigeria. 24/7 emergency assistance, step-by-step claims guidance, and dedicated claims handlers to help you through the process.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .emergency-banner {
+        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        border-radius: 20px;
+        padding: 30px 40px;
+        color: white;
+        margin-bottom: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 20px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .emergency-banner h2 {
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .emergency-phone {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #FFD700;
+    }
+    
+    .support-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-bottom: 50px;
+    }
+    
+    .support-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out forwards;
+    }
+    
+    .support-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    }
+    
+    .support-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    .support-icon i {
+        font-size: 1.8rem;
+        color: white;
+    }
+    
+    .support-card h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .support-card p {
+        color: #64748b;
+        margin-bottom: 20px;
+    }
+    
+    .steps-section {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 50px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.6s forwards;
+    }
+    
+    .steps-section h2 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .steps-timeline {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        gap: 30px;
+    }
+    
+    .step-item-support {
+        text-align: center;
+        max-width: 200px;
+    }
+    
+    .step-number-support {
+        width: 50px;
+        height: 50px;
+        background: var(--royal-blue);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 auto 20px;
+    }
+    
+    .step-item-support h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .step-item-support p {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    .faq-section-support-page {
+        background: var(--gray-light);
+        border-radius: 24px;
+        padding: 40px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.8s forwards;
+    }
+    
+    .faq-item-support-page {
+        background: white;
+        border-radius: 16px;
+        margin-bottom: 15px;
+        overflow: hidden;
+    }
+    
+    .faq-question-support-page {
+        padding: 20px 25px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 600;
+        color: var(--navy-dark);
+    }
+    
+    .faq-question-support-page i {
+        color: var(--royal-blue);
+        transition: transform 0.3s;
+    }
+    
+    .faq-item-support-page.active .faq-question-support-page i {
+        transform: rotate(180deg);
+    }
+    
+    .faq-answer-support-page {
+        padding: 0 25px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, padding 0.3s ease;
+        color: #64748b;
+    }
+    
+    .faq-item-support-page.active .faq-answer-support-page {
+        padding: 0 25px 20px 25px;
+        max-height: 300px;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .emergency-banner {
+            text-align: center;
+            flex-direction: column;
+        }
+        
+        .emergency-phone {
+            font-size: 2rem;
+        }
+        
+        .steps-section, .faq-section-support-page {
+            padding: 25px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Claims Support</h1>
+        <p>We're here to help you through every step of your claim</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Claims Support</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Emergency Banner -->
+    <div class="emergency-banner">
+        <div>
+            <h2><i class="fas fa-phone-alt me-2"></i> Emergency Claims Hotline</h2>
+            <p class="mb-0">Available 24/7 for urgent claims assistance</p>
+        </div>
+        <div class="emergency-phone">0800-CLAIM-HELP</div>
+    </div>
+    
+    <!-- Support Options -->
+    <div class="support-options">
+        <div class="support-card" style="animation-delay: 0.1s;">
+            <div class="support-icon">
+                <i class="fas fa-phone-alt"></i>
+            </div>
+            <h3>Phone Support</h3>
+            <p>Speak directly with a claims specialist for immediate assistance.</p>
+            <p class="fw-bold text-primary">+234 123 456 7890</p>
+            <small class="text-muted">Mon-Fri: 8AM - 8PM | Sat: 9AM - 5PM</small>
+        </div>
+        
+        <div class="support-card" style="animation-delay: 0.2s;">
+            <div class="support-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <h3>Email Support</h3>
+            <p>Send us your claim details and we'll respond within 2 hours.</p>
+            <p class="fw-bold text-primary">claims@vehicleinsure.ng</p>
+            <a href="mailto:claims@vehicleinsure.ng" class="btn-outline-primary-custom btn-sm">Send Email</a>
+        </div>
+        
+        <div class="support-card" style="animation-delay: 0.3s;">
+            <div class="support-icon">
+                <i class="fab fa-whatsapp"></i>
+            </div>
+            <h3>WhatsApp Support</h3>
+            <p>Chat with us on WhatsApp for quick claims assistance.</p>
+            <p class="fw-bold text-primary">+234 801 234 5678</p>
+            <a href="https://wa.me/2348012345678" target="_blank" class="btn-outline-primary-custom btn-sm">Start Chat</a>
+        </div>
+    </div>
+    
+    <!-- Steps Section -->
+    <div class="steps-section">
+        <h2>How Our Claims Support Works</h2>
+        <div class="steps-timeline">
+            <div class="step-item-support">
+                <div class="step-number-support">1</div>
+                <h4>Contact Us</h4>
+                <p>Call, email, or file online - we're available 24/7</p>
+            </div>
+            <div class="step-item-support">
+                <div class="step-number-support">2</div>
+                <h4>Get Assigned</h4>
+                <p>A dedicated claims handler will be assigned to you</p>
+            </div>
+            <div class="step-item-support">
+                <div class="step-number-support">3</div>
+                <h4>Submit Documents</h4>
+                <p>We'll guide you on what documents are needed</p>
+            </div>
+            <div class="step-item-support">
+                <div class="step-number-support">4</div>
+                <h4>Track Progress</h4>
+                <p>Monitor your claim status online or via updates</p>
+            </div>
+            <div class="step-item-support">
+                <div class="step-number-support">5</div>
+                <h4>Get Settled</h4>
+                <p>Receive your settlement quickly once approved</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- FAQ Section -->
+    <div class="faq-section-support-page">
+        <h3 class="fw-bold mb-4 text-center" style="color: var(--navy-dark);">Common Claims Questions</h3>
+        
+        <div class="faq-item-support-page">
+            <div class="faq-question-support-page">
+                <span>What should I do immediately after an accident?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer-support-page">
+                <p>1. Ensure everyone is safe and call emergency services if needed.<br>
+                2. Take photos of the accident scene and vehicle damage.<br>
+                3. Exchange information with other parties involved.<br>
+                4. Call our 24/7 claims hotline immediately.<br>
+                5. File a police report if required.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item-support-page">
+            <div class="faq-question-support-page">
+                <span>How long does the claims process take?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer-support-page">
+                <p>Most claims are settled within 48 hours of receiving complete documentation. Complex claims may take 5-7 business days. We keep you updated throughout the process.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item-support-page">
+            <div class="faq-question-support-page">
+                <span>What documents do I need to file a claim?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer-support-page">
+                <p>- Completed claim form<br>
+                - Police report (for theft or major accidents)<br>
+                - Photos of damage<br>
+                - Driver's license<br>
+                - Vehicle registration documents<br>
+                - Repair estimates (2 quotes recommended)</p>
+            </div>
+        </div>
+        
+        <div class="faq-item-support-page">
+            <div class="faq-question-support-page">
+                <span>Will filing a claim affect my premium?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer-support-page">
+                <p>Your No-Claims Bonus may be affected depending on the nature and frequency of claims. However, we offer claim protection add-ons that preserve your NCB even after a claim.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CTA -->
+    <div class="text-center mt-5">
+        <p class="text-muted mb-3">Ready to file a claim?</p>
+        <a href="{% url 'core:file_claim' %}" class="btn-primary-custom btn-lg">
+            File a Claim Now <i class="fas fa-arrow-right ms-2"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.faq-question-support-page').forEach(question => {
+            question.addEventListener('click', () => {
+                const faqItem = question.closest('.faq-item-support-page');
+                const isActive = faqItem.classList.contains('active');
+                
+                document.querySelectorAll('.faq-item-support-page').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                if (!isActive) {
+                    faqItem.classList.add('active');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

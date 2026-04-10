@@ -1,0 +1,372 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Privacy Policy | VehicleInsure Nigeria{% endblock %}
+{% block meta_description %}Learn how VehicleInsure collects, uses, and protects your personal information. Our commitment to data privacy and security.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 50px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        animation: slideUp 0.6s ease-out;
+    }
+    
+    .policy-container {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 50px;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.6s ease-out 0.2s forwards;
+    }
+    
+    .last-updated {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .policy-section {
+        margin-bottom: 35px;
+    }
+    
+    .policy-section h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .policy-section h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin: 20px 0 15px;
+    }
+    
+    .policy-section p {
+        color: #475569;
+        line-height: 1.8;
+        margin-bottom: 15px;
+    }
+    
+    .policy-section ul, .policy-section ol {
+        margin-bottom: 20px;
+        padding-left: 20px;
+    }
+    
+    .policy-section li {
+        color: #475569;
+        line-height: 1.8;
+        margin-bottom: 8px;
+    }
+    
+    .policy-section a {
+        color: var(--royal-blue);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .policy-section a:hover {
+        text-decoration: underline;
+    }
+    
+    .highlight-box {
+        background: var(--gray-light);
+        border-radius: 16px;
+        padding: 25px;
+        margin: 25px 0;
+        border-left: 4px solid var(--royal-blue);
+    }
+    
+    .highlight-box h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .table-of-contents {
+        background: var(--gray-light);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .table-of-contents h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .table-of-contents ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 30px;
+    }
+    
+    .table-of-contents li {
+        margin-bottom: 5px;
+    }
+    
+    .table-of-contents a {
+        color: #64748b;
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+    
+    .table-of-contents a:hover {
+        color: var(--royal-blue);
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .policy-container {
+            padding: 25px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Privacy Policy</h1>
+        <p>How we collect, use, and protect your information</p>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">Privacy Policy</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <div class="policy-container">
+        <div class="last-updated">
+            <i class="fas fa-calendar-alt me-2"></i> Last Updated: January 1, 2024
+        </div>
+        
+        <div class="table-of-contents">
+            <h4><i class="fas fa-list me-2"></i> Table of Contents</h4>
+            <ul>
+                <li><a href="#introduction">1. Introduction</a></li>
+                <li><a href="#information-we-collect">2. Information We Collect</a></li>
+                <li><a href="#how-we-use">3. How We Use Your Information</a></li>
+                <li><a href="#information-sharing">4. Information Sharing</a></li>
+                <li><a href="#data-security">5. Data Security</a></li>
+                <li><a href="#data-retention">6. Data Retention</a></li>
+                <li><a href="#your-rights">7. Your Rights (NDPR)</a></li>
+                <li><a href="#cookies">8. Cookies Policy</a></li>
+                <li><a href="#children">9. Children's Privacy</a></li>
+                <li><a href="#changes">10. Changes to This Policy</a></li>
+                <li><a href="#contact-us">11. Contact Us</a></li>
+            </ul>
+        </div>
+        
+        <div class="policy-section" id="introduction">
+            <h2>1. Introduction</h2>
+            <p>VehicleInsure ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your personal information when you use our website, mobile application, and insurance services.</p>
+            <p>This policy complies with the <strong>Nigeria Data Protection Regulation (NDPR) 2019</strong> and other applicable data protection laws in Nigeria. By using our services, you consent to the practices described in this policy.</p>
+            
+            <div class="highlight-box">
+                <h4><i class="fas fa-shield-alt me-2"></i> Our Commitment</h4>
+                <p class="mb-0">We are dedicated to maintaining the confidentiality, integrity, and security of your personal data. We will never sell your personal information to third parties for marketing purposes.</p>
+            </div>
+        </div>
+        
+        <div class="policy-section" id="information-we-collect">
+            <h2>2. Information We Collect</h2>
+            <p>We collect information you provide directly to us and information automatically collected through your use of our services.</p>
+            
+            <h3>2.1 Personal Information You Provide</h3>
+            <ul>
+                <li><strong>Identity Information:</strong> Full name, date of birth, gender, national identification number, driver's license details</li>
+                <li><strong>Contact Information:</strong> Email address, phone number, residential address, state of residence</li>
+                <li><strong>Vehicle Information:</strong> Vehicle registration number, make, model, year, chassis number, engine number, vehicle value</li>
+                <li><strong>Financial Information:</strong> Payment card details, bank account information, transaction history</li>
+                <li><strong>Insurance Information:</strong> Policy details, claims history, driving history, vehicle inspection photos</li>
+            </ul>
+            
+            <h3>2.2 Information Automatically Collected</h3>
+            <ul>
+                <li><strong>Device Information:</strong> IP address, browser type, operating system, device identifiers</li>
+                <li><strong>Usage Data:</strong> Pages visited, time spent, links clicked, search queries</li>
+                <li><strong>Location Data:</strong> Approximate location based on IP address (with your permission, precise GPS location)</li>
+                <li><strong>Cookies and Similar Technologies:</strong> See our <a href="#cookies">Cookies Policy</a></li>
+            </ul>
+        </div>
+        
+        <div class="policy-section" id="how-we-use">
+            <h2>3. How We Use Your Information</h2>
+            <p>We use your personal information for the following purposes:</p>
+            <ul>
+                <li><strong>Providing Insurance Services:</strong> Processing applications, issuing policies, managing claims, calculating premiums</li>
+                <li><strong>Customer Support:</strong> Responding to inquiries, providing assistance, sending service updates</li>
+                <li><strong>Verification & Compliance:</strong> Verifying identity, conducting fraud checks, complying with NAICOM and legal requirements</li>
+                <li><strong>Improving Services:</strong> Analyzing usage patterns, personalizing experience, developing new features</li>
+                <li><strong>Marketing Communications:</strong> Sending promotional offers and newsletters (with your consent)</li>
+                <li><strong>Legal Obligations:</strong> Complying with court orders, regulatory requirements, and legal processes</li>
+            </ul>
+        </div>
+        
+        <div class="policy-section" id="information-sharing">
+            <h2>4. Information Sharing</h2>
+            <p>We may share your information with:</p>
+            <ul>
+                <li><strong>Insurance Partners:</strong> Underwriting companies, reinsurers, and loss adjusters necessary for policy administration</li>
+                <li><strong>Service Providers:</strong> Payment processors, IT service providers, cloud storage providers, delivery services</li>
+                <li><strong>Regulatory Authorities:</strong> NAICOM, FRSC, Nigeria Police Force, and other government agencies as required by law</li>
+                <li><strong>Business Transfers:</strong> In connection with merger, acquisition, or sale of company assets</li>
+                <li><strong>With Your Consent:</strong> Other parties when you have given explicit permission</li>
+            </ul>
+            <p>All third parties are contractually obligated to protect your information and use it only for specified purposes.</p>
+        </div>
+        
+        <div class="policy-section" id="data-security">
+            <h2>5. Data Security</h2>
+            <p>We implement industry-standard security measures to protect your personal information:</p>
+            <ul>
+                <li><strong>Encryption:</strong> 256-bit SSL/TLS encryption for data transmission</li>
+                <li><strong>Access Controls:</strong> Strict role-based access to personal data</li>
+                <li><strong>Regular Audits:</strong> Periodic security assessments and vulnerability testing</li>
+                <li><strong>Data Minimization:</strong> Collecting only necessary information</li>
+                <li><strong>Secure Storage:</strong> Data stored on secure servers with physical and digital protection</li>
+            </ul>
+            <p>While we strive to protect your data, no method of transmission over the internet is 100% secure. We encourage you to use strong passwords and protect your account credentials.</p>
+        </div>
+        
+        <div class="policy-section" id="data-retention">
+            <h2>6. Data Retention</h2>
+            <p>We retain your personal information for as long as necessary to:</p>
+            <ul>
+                <li>Provide our services and fulfill contractual obligations</li>
+                <li>Comply with legal and regulatory requirements (typically 7 years for insurance records in Nigeria)</li>
+                <li>Resolve disputes and enforce our agreements</li>
+            </ul>
+            <p>When data is no longer needed, we securely delete or anonymize it.</p>
+        </div>
+        
+        <div class="policy-section" id="your-rights">
+            <h2>7. Your Rights (NDPR)</h2>
+            <p>Under the Nigeria Data Protection Regulation, you have the following rights:</p>
+            <ul>
+                <li><strong>Right to Access:</strong> Request a copy of your personal data</li>
+                <li><strong>Right to Rectification:</strong> Correct inaccurate or incomplete information</li>
+                <li><strong>Right to Erasure:</strong> Request deletion of your data (subject to legal retention requirements)</li>
+                <li><strong>Right to Restrict Processing:</strong> Limit how we use your data</li>
+                <li><strong>Right to Data Portability:</strong> Receive your data in a structured format</li>
+                <li><strong>Right to Object:</strong> Object to processing for direct marketing</li>
+                <li><strong>Right to Withdraw Consent:</strong> Withdraw previously given consent</li>
+            </ul>
+            <p>To exercise these rights, contact us at <a href="mailto:privacy@vehicleinsure.ng">privacy@vehicleinsure.ng</a>. We will respond within 30 days.</p>
+        </div>
+        
+        <div class="policy-section" id="cookies">
+            <h2>8. Cookies Policy</h2>
+            <p>We use cookies and similar technologies to enhance your browsing experience. Cookies are small text files stored on your device.</p>
+            
+            <h3>8.1 Types of Cookies We Use</h3>
+            <ul>
+                <li><strong>Essential Cookies:</strong> Necessary for website functionality (cannot be disabled)</li>
+                <li><strong>Analytics Cookies:</strong> Help us understand how visitors interact with our site</li>
+                <li><strong>Marketing Cookies:</strong> Used to deliver relevant advertisements</li>
+                <li><strong>Functional Cookies:</strong> Remember your preferences and settings</li>
+            </ul>
+            
+            <h3>8.2 Managing Cookies</h3>
+            <p>You can control cookies through your browser settings. You can also manage your cookie preferences on our <a href="{% url 'core:cookie_settings' %}">Cookie Settings</a> page.</p>
+        </div>
+        
+        <div class="policy-section" id="children">
+            <h2>9. Children's Privacy</h2>
+            <p>Our services are not intended for individuals under 18 years of age. We do not knowingly collect personal information from children. If you believe we have inadvertently collected such information, please contact us immediately for removal.</p>
+        </div>
+        
+        <div class="policy-section" id="changes">
+            <h2>10. Changes to This Policy</h2>
+            <p>We may update this Privacy Policy periodically. We will notify you of significant changes via email or prominent notice on our website. The "Last Updated" date at the top indicates the most recent revision.</p>
+        </div>
+        
+        <div class="policy-section" id="contact-us">
+            <h2>11. Contact Us</h2>
+            <p>If you have questions or concerns about this Privacy Policy or our data practices, please contact our Data Protection Officer:</p>
+            <ul style="list-style: none; padding-left: 0;">
+                <li><i class="fas fa-envelope me-2" style="color: var(--royal-blue);"></i> <strong>Email:</strong> <a href="mailto:privacy@vehicleinsure.ng">privacy@vehicleinsure.ng</a></li>
+                <li class="mt-2"><i class="fas fa-phone me-2" style="color: var(--royal-blue);"></i> <strong>Phone:</strong> +234 123 456 7890</li>
+                <li class="mt-2"><i class="fas fa-map-marker-alt me-2" style="color: var(--royal-blue);"></i> <strong>Address:</strong> Data Protection Officer, VehicleInsure, 15B Admiralty Way, Victoria Island, Lagos, Nigeria</li>
+            </ul>
+            
+            <div class="highlight-box mt-4">
+                <h4><i class="fas fa-gavel me-2"></i> NDPR Compliance</h4>
+                <p class="mb-0">VehicleInsure is registered with the National Information Technology Development Agency (NITDA) as a Data Controller. Registration Number: NITDA/DPR/2020/089. You have the right to lodge a complaint with NITDA if you believe your data rights have been violated.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Smooth scroll for table of contents links
+        document.querySelectorAll('.table-of-contents a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

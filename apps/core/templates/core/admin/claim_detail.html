@@ -1,0 +1,706 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Claim Details - {{ claim.claim_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-clipboard-list"></i> Claim #{{ claim.claim_number }}</h2>
+            <p class="text-muted">Review and process claim</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_claims' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Claims
+            </a>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Claim Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Claim Information</h5>
+                        <span class="badge fs-6
+                            {% if claim.status == 'approved' %}bg-success
+                            {% elif claim.status == 'pending' %}bg-warning
+                            {% elif claim.status == 'under_review' %}bg-info
+                            {% elif claim.status == 'rejected' %}bg-danger
+                            {% elif claim.status == 'settled' %}bg-primary
+                            {% else %}bg-secondary{% endif %}">
+                            {{ claim.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Claim Number:</strong> {{ claim.claim_number }}</p>
+                            <p><strong>Claim Type:</strong> {{ claim.get_claim_type_display }}</p>
+                            <p><strong>Claimed Amount:</strong> <span class="text-warning fw-bold">₦{{ claim.claimed_amount|floatformat:2 }}</span></p>
+                            {% if claim.approved_amount %}
+                                <p><strong>Approved Amount:</strong> <span class="text-success fw-bold">₦{{ claim.approved_amount|floatformat:2 }}</span></p>
+                            {% endif %}
+                            <p><strong>Filed On:</strong> {{ claim.created_at|date:"F d, Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Policy Number:</strong> 
+                                <a href="{% url 'core:admin_policy_detail' claim.policy.id %}">
+                                    {{ claim.policy.policy_number }}
+                                </a>
+                            </p>
+                            <p><strong>Policy Type:</strong> {{ claim.policy.get_policy_type_display }}</p>
+                            <p><strong>Coverage Amount:</strong> ₦{{ claim.policy.coverage_amount|floatformat:2 }}</p>
+                            <p><strong>Policy Status:</strong> {{ claim.policy.get_status_display }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Incident Details Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Incident Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Incident Date & Time:</strong> {{ claim.incident_date|date:"F d, Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Location:</strong> {{ claim.incident_location }}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <strong>Description:</strong>
+                        <div class="p-3 bg-light rounded mt-2">
+                            {{ claim.incident_description|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Photos Section -->
+            {% if photos %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-images"></i> Incident Photos ({{ photos|length }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for photo in photos %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <img src="{{ photo.url }}" class="card-img-top" alt="Claim Photo" style="height: 200px; object-fit: cover; cursor: pointer;" onclick="window.open('{{ photo.url }}', '_blank')">
+                                <div class="card-body p-2">
+                                    <small class="text-muted">{{ photo.name }}</small>
+                                    <a href="{{ photo.url }}" class="btn btn-sm btn-outline-primary w-100 mt-2" target="_blank">
+                                        <i class="fas fa-search-plus"></i> View Full Size
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Documents Section -->
+            {% if documents %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-alt"></i> Supporting Documents ({{ documents|length }})</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for doc in documents %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-file-pdf text-danger me-2"></i>
+                                <strong>{{ doc.name }}</strong>
+                            </div>
+                            <div>
+                                <a href="{{ doc.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                                <a href="{{ doc.url }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Existing Reports -->
+            {% if claim.surveyor_report or claim.police_report %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-signature"></i> Reports</h5>
+                </div>
+                <div class="card-body">
+                    {% if claim.surveyor_report %}
+                    <p>
+                        <strong>Surveyor Report:</strong>
+                        <a href="{{ claim.surveyor_report.url }}" class="btn btn-sm btn-outline-primary ms-2" target="_blank">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </p>
+                    {% endif %}
+                    {% if claim.police_report %}
+                    <p>
+                        <strong>Police Report:</strong>
+                        <a href="{{ claim.police_report.url }}" class="btn btn-sm btn-outline-primary ms-2" target="_blank">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Review Form -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-edit"></i> Process Claim</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="claimForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Surveyor Notes</label>
+                            {{ form.surveyor_notes }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Approved Amount (₦)</label>
+                                {{ form.approved_amount }}
+                                <small class="text-muted">Amount to approve (cannot exceed claimed amount)</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Rejection Reason</label>
+                                {{ form.rejection_reason }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Upload Surveyor Report (PDF)</label>
+                                <input type="file" class="form-control" name="surveyor_report" accept=".pdf">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Upload Police Report (if any)</label>
+                                <input type="file" class="form-control" name="police_report" accept=".pdf">
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if claim.status == 'pending' %}
+                                <button type="button" class="btn btn-info" onclick="submitReviewAction()">
+                                    <i class="fas fa-search"></i> Mark Under Review
+                                </button>
+                            {% endif %}
+                            
+                            {% if claim.status == 'pending' or claim.status == 'under_review' %}
+                                <button type="button" class="btn btn-success" onclick="showApproveModal()">
+                                    <i class="fas fa-check-circle"></i> Approve Claim
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="showRejectModal()">
+                                    <i class="fas fa-times-circle"></i> Reject Claim
+                                </button>
+                            {% endif %}
+                            
+                            {% if claim.status == 'approved' %}
+                                <button type="button" class="btn btn-primary" onclick="showSettleModal()">
+                                    <i class="fas fa-money-bill-wave"></i> Mark as Settled
+                                </button>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Hidden action input -->
+                        <input type="hidden" name="action" id="formAction" value="">
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Customer Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {% if claim.user.profile_picture %}
+                            <img src="{{ claim.user.profile_picture.url }}" class="rounded-circle" width="80" height="80">
+                        {% else %}
+                            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                <i class="fas fa-user fa-2x text-muted"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <p><strong>Name:</strong> {{ claim.user.get_full_name|default:'N/A' }}</p>
+                    <p><strong>Email:</strong> {{ claim.user.email }}</p>
+                    <p><strong>Phone:</strong> {{ claim.user.phone_number|default:'N/A' }}</p>
+                    <p><strong>Member Since:</strong> {{ claim.user.date_joined|date:"M d, Y" }}</p>
+                    <p><strong>Verification:</strong> 
+                        {% if claim.user.is_verified %}
+                            <span class="badge bg-success">Verified</span>
+                        {% else %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'core:admin_user_detail' claim.user.id %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-user"></i> View Full Profile
+                    </a>
+                </div>
+            </div>
+
+            <!-- Vehicle Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-car"></i> Vehicle Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Vehicle:</strong> {{ claim.policy.vehicle.make }} {{ claim.policy.vehicle.model }}</p>
+                    <p><strong>Year:</strong> {{ claim.policy.vehicle.year }}</p>
+                    <p><strong>Registration:</strong> {{ claim.policy.vehicle.registration_number }}</p>
+                    <p><strong>Engine #:</strong> {{ claim.policy.vehicle.engine_number }}</p>
+                    <p><strong>Color:</strong> {{ claim.policy.vehicle.color }}</p>
+                </div>
+            </div>
+
+            <!-- Claim Timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Claim Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <div class="d-flex">
+                                <div class="timeline-icon bg-primary">
+                                    <i class="fas fa-plus"></i>
+                                </div>
+                                <div class="ms-3">
+                                    <strong>Claim Filed</strong>
+                                    <br>
+                                    <small class="text-muted">{{ claim.created_at|date:"M d, Y H:i" }}</small>
+                                </div>
+                            </div>
+                        </li>
+                        {% if claim.approval_date %}
+                        <li class="mb-3">
+                            <div class="d-flex">
+                                <div class="timeline-icon bg-success">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="ms-3">
+                                    <strong>Claim Approved</strong>
+                                    <br>
+                                    <small class="text-muted">{{ claim.approval_date|date:"M d, Y H:i" }}</small>
+                                    <br><small>by {{ claim.approved_by.get_full_name|default:claim.approved_by.email }}</small>
+                                </div>
+                            </div>
+                        </li>
+                        {% endif %}
+                        {% if claim.settlement_date %}
+                        <li class="mb-3">
+                            <div class="d-flex">
+                                <div class="timeline-icon bg-primary">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                                <div class="ms-3">
+                                    <strong>Claim Settled</strong>
+                                    <br>
+                                    <small class="text-muted">{{ claim.settlement_date|date:"M d, Y H:i" }}</small>
+                                </div>
+                            </div>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Claim Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Approve Claim</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-clipboard-check fa-3x text-success"></i>
+                </div>
+                <p>You are about to approve this claim for:</p>
+                <h4 class="text-center text-success" id="approveAmountDisplay">₦0.00</h4>
+                <p class="text-muted mt-3">Are you sure you want to approve this claim? The customer will be notified.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="submitForm('approve')">
+                    <i class="fas fa-check"></i> Yes, Approve Claim
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Claim Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-times-circle"></i> Reject Claim</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <p>You are about to reject this claim.</p>
+                <div id="rejectReasonPreview" class="alert alert-secondary">
+                    <strong>Rejection Reason:</strong>
+                    <p id="rejectReasonText" class="mb-0">No reason provided</p>
+                </div>
+                <p class="text-muted mt-3">Are you sure you want to reject this claim? The customer will be notified.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="submitForm('reject')">
+                    <i class="fas fa-times"></i> Yes, Reject Claim
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settle Claim Modal -->
+<div class="modal fade" id="settleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-money-bill-wave"></i> Settle Claim</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-check-double fa-3x text-primary"></i>
+                </div>
+                <p>You are about to mark this claim as settled.</p>
+                <p class="text-muted mt-3">This action confirms that payment has been made to the customer. The customer will be notified.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitForm('settle')">
+                    <i class="fas fa-check"></i> Yes, Mark as Settled
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Validation Error Modal -->
+<div class="modal fade" id="validationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Validation Error</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="validationMessage">
+                Please fix the errors before proceeding.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let toastInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('notificationToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    }
+    
+    // Add Bootstrap classes to form fields
+    const fields = ['surveyor_notes', 'approved_amount', 'rejection_reason'];
+    fields.forEach(field => {
+        const element = document.getElementById(`id_${field}`);
+        if (element) {
+            element.classList.add('form-control');
+            if (field === 'surveyor_notes' || field === 'rejection_reason') {
+                element.rows = 3;
+            }
+        }
+    });
+    
+    // Set max for approved amount
+    const approvedInput = document.getElementById('id_approved_amount');
+    if (approvedInput) {
+        approvedInput.max = {{ claim.claimed_amount }};
+    }
+});
+
+function showToast(title, message, type = 'info') {
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    if (toastTitle) toastTitle.textContent = title;
+    if (toastMessage) toastMessage.textContent = message;
+    
+    if (toastIcon) {
+        toastIcon.className = 'fas me-2';
+        if (type === 'success') {
+            toastIcon.classList.add('fa-check-circle');
+            toastIcon.style.color = '#28a745';
+        } else if (type === 'error') {
+            toastIcon.classList.add('fa-exclamation-circle');
+            toastIcon.style.color = '#dc3545';
+        } else if (type === 'warning') {
+            toastIcon.classList.add('fa-exclamation-triangle');
+            toastIcon.style.color = '#ffc107';
+        } else {
+            toastIcon.classList.add('fa-info-circle');
+            toastIcon.style.color = '#4169E1';
+        }
+    }
+    
+    if (toastInstance) toastInstance.show();
+}
+
+function showValidationModal(message) {
+    document.getElementById('validationMessage').textContent = message;
+    const modal = new bootstrap.Modal(document.getElementById('validationModal'));
+    modal.show();
+}
+
+function showApproveModal() {
+    const approvedAmount = document.getElementById('id_approved_amount').value;
+    
+    if (!approvedAmount || parseFloat(approvedAmount) <= 0) {
+        showValidationModal('Please enter a valid approved amount (must be greater than zero).');
+        return;
+    }
+    
+    if (parseFloat(approvedAmount) > {{ claim.claimed_amount }}) {
+        showValidationModal(`Approved amount cannot exceed the claimed amount of ₦{{ claim.claimed_amount|floatformat:2 }}.`);
+        return;
+    }
+    
+    document.getElementById('approveAmountDisplay').textContent = '₦' + parseFloat(approvedAmount).toLocaleString('en-NG', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    
+    const modal = new bootstrap.Modal(document.getElementById('approveModal'));
+    modal.show();
+}
+
+function showRejectModal() {
+    const reason = document.getElementById('id_rejection_reason').value;
+    
+    if (!reason.trim()) {
+        showValidationModal('Please provide a rejection reason before rejecting the claim.');
+        return;
+    }
+    
+    document.getElementById('rejectReasonText').textContent = reason;
+    
+    const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+    modal.show();
+}
+
+function showSettleModal() {
+    const modal = new bootstrap.Modal(document.getElementById('settleModal'));
+    modal.show();
+}
+
+function submitReviewAction() {
+    document.getElementById('formAction').value = 'review';
+    const form = document.getElementById('claimForm');
+    showToast('Processing', 'Marking claim as under review...', 'info');
+    form.submit();
+}
+
+function submitForm(action) {
+    // Set the action value
+    document.getElementById('formAction').value = action;
+    
+    // Get the form
+    const form = document.getElementById('claimForm');
+    
+    // Hide all modals
+    const approveModal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
+    const rejectModal = bootstrap.Modal.getInstance(document.getElementById('rejectModal'));
+    const settleModal = bootstrap.Modal.getInstance(document.getElementById('settleModal'));
+    
+    if (approveModal) approveModal.hide();
+    if (rejectModal) rejectModal.hide();
+    if (settleModal) settleModal.hide();
+    
+    // Show loading toast
+    showToast('Processing', 'Processing claim...', 'info');
+    
+    // Disable submit buttons to prevent double submission
+    const buttons = document.querySelectorAll('#claimForm button');
+    buttons.forEach(btn => btn.disabled = true);
+    
+    // Submit the form
+    form.submit();
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.btn-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover {
+    background-color: #138496;
+    border-color: #117a8b;
+    color: white;
+}
+
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.toast {
+    background: white;
+    border-left: 4px solid #4169E1;
+}
+
+.modal-header.bg-success {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%) !important;
+}
+
+.modal-header.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%) !important;
+}
+
+.modal-header.bg-primary {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%) !important;
+}
+
+.modal-header.bg-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
+}
+
+.timeline-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.timeline-icon.bg-primary {
+    background-color: #4169E1;
+}
+
+.timeline-icon.bg-success {
+    background-color: #28a745;
+}
+</style>
+{% endblock %}

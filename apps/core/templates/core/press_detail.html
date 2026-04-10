@@ -1,0 +1,652 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+{% block meta_description %}{{ meta_description }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);
+        padding: 40px 0;
+        color: white;
+        margin-top: -24px;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.05;
+    }
+    
+    .page-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+    }
+    
+    .release-container {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+    }
+    
+    .release-header {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .release-category {
+        display: inline-block;
+        background: var(--royal-blue);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-decoration: none;
+        margin-bottom: 20px;
+    }
+    
+    .release-title {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+        line-height: 1.3;
+    }
+    
+    .release-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 25px;
+        color: #64748b;
+        font-size: 0.95rem;
+    }
+    
+    .release-meta i {
+        color: var(--royal-blue);
+        margin-right: 8px;
+    }
+    
+    .release-featured-image {
+        margin: 30px 0;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .release-featured-image img {
+        width: 100%;
+        max-height: 500px;
+        object-fit: cover;
+    }
+    
+    .release-content {
+        color: #334155;
+        line-height: 1.9;
+        font-size: 1.05rem;
+    }
+    
+    .release-content h2 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin: 40px 0 20px;
+    }
+    
+    .release-content h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin: 30px 0 15px;
+    }
+    
+    .release-content p {
+        margin-bottom: 20px;
+    }
+    
+    .release-content ul, .release-content ol {
+        margin-bottom: 20px;
+        padding-left: 20px;
+    }
+    
+    .release-content li {
+        margin-bottom: 10px;
+    }
+    
+    .release-content blockquote {
+        border-left: 4px solid var(--royal-blue);
+        padding: 20px 30px;
+        background: var(--gray-light);
+        border-radius: 12px;
+        margin: 30px 0;
+        font-style: italic;
+    }
+    
+    .gallery-section {
+        margin: 40px 0;
+    }
+    
+    .gallery-section h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+    
+    .gallery-item {
+        border-radius: 16px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .gallery-item:hover {
+        transform: scale(1.02);
+    }
+    
+    .gallery-item img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+    
+    .media-contact-box {
+        background: var(--gray-light);
+        border-radius: 20px;
+        padding: 30px;
+        margin: 40px 0;
+    }
+    
+    .media-contact-box h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .media-contact-box i {
+        color: var(--royal-blue);
+        margin-right: 10px;
+        width: 20px;
+    }
+    
+    .attachments-section {
+        margin: 30px 0;
+        padding: 20px;
+        background: var(--gray-light);
+        border-radius: 16px;
+    }
+    
+    .attachments-section h4 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .attachment-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 12px;
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        text-decoration: none;
+        color: var(--navy-dark);
+        transition: all 0.3s;
+    }
+    
+    .attachment-item:hover {
+        background: #eef2ff;
+    }
+    
+    .attachment-item i {
+        color: var(--royal-blue);
+        font-size: 1.2rem;
+    }
+    
+    .share-section {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid var(--gray-border);
+    }
+    
+    .share-section span {
+        font-weight: 600;
+        color: var(--navy-dark);
+    }
+    
+    .share-link {
+        width: 40px;
+        height: 40px;
+        background: var(--gray-light);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--royal-blue);
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    
+    .share-link:hover {
+        background: var(--royal-blue);
+        color: white;
+    }
+    
+    .related-releases {
+        margin: 50px 0;
+    }
+    
+    .related-releases h3 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 25px;
+    }
+    
+    .related-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+    }
+    
+    .related-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+    }
+    
+    .related-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(65, 105, 225, 0.1);
+    }
+    
+    .related-image {
+        height: 160px;
+        background-size: cover;
+        background-position: center;
+    }
+    
+    .related-content {
+        padding: 20px;
+    }
+    
+    .related-content h5 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .related-content h5 a {
+        color: var(--navy-dark);
+        text-decoration: none;
+    }
+    
+    .related-content .date {
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+    
+    .sidebar {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+    }
+    
+    .sidebar h4 {
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 20px;
+    }
+    
+    .recent-item {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+    
+    .recent-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        background-size: cover;
+        background-position: center;
+        flex-shrink: 0;
+    }
+    
+    .recent-content h5 {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .recent-content .date {
+        color: #94a3b8;
+        font-size: 0.8rem;
+    }
+    
+    /* Lightbox */
+    .lightbox {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.9);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .lightbox.active {
+        display: flex;
+    }
+    
+    .lightbox img {
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 10px;
+    }
+    
+    .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+    }
+    
+    .lightbox-prev, .lightbox-next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        padding: 20px;
+    }
+    
+    .lightbox-prev { left: 20px; }
+    .lightbox-next { right: 20px; }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 1.8rem;
+        }
+        
+        .release-container {
+            padding: 25px;
+        }
+        
+        .release-title {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>{{ release.title }}</h1>
+        <div class="breadcrumb-custom">
+            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <a href="{% url 'core:press' %}">Press</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
+            <span class="active">{{ release.title|truncatechars:30 }}</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="release-container">
+                <!-- Release Header -->
+                <div class="release-header">
+                    <a href="{% url 'core:press_category' release.category.slug %}" class="release-category">
+                        <i class="fas fa-folder me-1"></i> {{ release.category.name }}
+                    </a>
+                    <h1 class="release-title">{{ release.title }}</h1>
+                    <div class="release-meta">
+                        <span><i class="far fa-calendar"></i> {{ release.press_date|default:release.published_at|date:"F d, Y" }}</span>
+                        {% if release.location %}
+                        <span><i class="fas fa-map-marker-alt"></i> {{ release.location }}</span>
+                        {% endif %}
+                        <span><i class="far fa-user"></i> {{ release.author.get_full_name|default:release.author.username }}</span>
+                        <span><i class="far fa-eye"></i> {{ release.views_count }} views</span>
+                    </div>
+                </div>
+                
+                <!-- Featured Image -->
+                {% if release.featured_image %}
+                <div class="release-featured-image">
+                    <img src="{{ release.featured_image.url }}" alt="{{ release.title }}">
+                </div>
+                {% endif %}
+                
+                <!-- Content -->
+                <div class="release-content">
+                    {{ release.content|safe }}
+                </div>
+                
+                <!-- Gallery -->
+                {% if release.gallery_images %}
+                <div class="gallery-section">
+                    <h3><i class="fas fa-images me-2"></i> Image Gallery</h3>
+                    <div class="gallery-grid">
+                        {% for image_url in release.gallery_images %}
+                        <div class="gallery-item" onclick="openLightbox('{{ image_url }}')">
+                            <img src="{{ image_url }}" alt="Gallery image">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Attachments -->
+                {% if release.attachments %}
+                <div class="attachments-section">
+                    <h4><i class="fas fa-paperclip me-2"></i> Downloads</h4>
+                    {% for attachment in release.attachments %}
+                    <a href="{{ attachment.url }}" class="attachment-item" target="_blank">
+                        <i class="fas fa-download"></i>
+                        <span>{{ attachment.name|default:"Download File" }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Media Contact -->
+                {% if release.media_contact_name %}
+                <div class="media-contact-box">
+                    <h4><i class="fas fa-address-card me-2"></i> Media Contact</h4>
+                    <p><i class="fas fa-user"></i> <strong>{{ release.media_contact_name }}</strong></p>
+                    {% if release.media_contact_email %}
+                    <p><i class="fas fa-envelope"></i> <a href="mailto:{{ release.media_contact_email }}">{{ release.media_contact_email }}</a></p>
+                    {% endif %}
+                    {% if release.media_contact_phone %}
+                    <p><i class="fas fa-phone"></i> {{ release.media_contact_phone }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Share -->
+                <div class="share-section">
+                    <span>Share:</span>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="share-link">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ release.title }}" target="_blank" class="share-link">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}" target="_blank" class="share-link">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    <a href="https://wa.me/?text={{ release.title }}%20{{ request.build_absolute_uri }}" target="_blank" class="share-link">
+                        <i class="fab fa-whatsapp"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Related Releases -->
+            {% if related_releases %}
+            <div class="related-releases">
+                <h3><i class="fas fa-link me-2"></i> Related Releases</h3>
+                <div class="related-grid">
+                    {% for related in related_releases %}
+                    <div class="related-card">
+                        {% if related.featured_image %}
+                        <div class="related-image" style="background-image: url('{{ related.featured_image.url }}');"></div>
+                        {% else %}
+                        <div class="related-image" style="background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);"></div>
+                        {% endif %}
+                        <div class="related-content">
+                            <h5><a href="{{ related.get_absolute_url }}">{{ related.title|truncatechars:60 }}</a></h5>
+                            <span class="date"><i class="far fa-calendar"></i> {{ related.press_date|default:related.published_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Recent Releases -->
+            {% if recent_releases %}
+            <div class="sidebar">
+                <h4><i class="fas fa-clock me-2"></i> Recent Releases</h4>
+                {% for recent in recent_releases %}
+                <div class="recent-item">
+                    {% if recent.featured_image %}
+                    <div class="recent-image" style="background-image: url('{{ recent.featured_image.url }}');"></div>
+                    {% else %}
+                    <div class="recent-image" style="background: linear-gradient(135deg, var(--royal-blue) 0%, var(--navy-dark) 100%);"></div>
+                    {% endif %}
+                    <div class="recent-content">
+                        <h5><a href="{{ recent.get_absolute_url }}" style="color: var(--navy-dark); text-decoration: none;">{{ recent.title|truncatechars:50 }}</a></h5>
+                        <span class="date"><i class="far fa-calendar"></i> {{ recent.press_date|default:recent.published_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Categories -->
+            {% if categories %}
+            <div class="sidebar">
+                <h4><i class="fas fa-folder me-2"></i> Categories</h4>
+                <ul class="category-list">
+                    {% for category in categories %}
+                    <li>
+                        <a href="{% url 'core:press_category' category.slug %}">
+                            <span>{{ category.name }}</span>
+                            <span>{{ category.release_count }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <!-- Media Contact -->
+            <div class="sidebar">
+                <h4><i class="fas fa-address-card me-2"></i> Media Contact</h4>
+                <p class="mb-2"><i class="fas fa-user me-2" style="color: var(--royal-blue);"></i> <strong>Funke Adeyemi</strong></p>
+                <p class="mb-2"><i class="fas fa-envelope me-2" style="color: var(--royal-blue);"></i> <a href="mailto:press@vehicleinsure.ng">press@vehicleinsure.ng</a></p>
+                <p><i class="fas fa-phone me-2" style="color: var(--royal-blue);"></i> +234 123 456 7890</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+    <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+    <span class="lightbox-prev" onclick="prevImage()"><i class="fas fa-chevron-left"></i></span>
+    <span class="lightbox-next" onclick="nextImage()"><i class="fas fa-chevron-right"></i></span>
+    <img id="lightboxImg" src="" alt="Lightbox">
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let galleryImages = [];
+    let currentImageIndex = 0;
+    
+    {% if release.gallery_images %}
+    galleryImages = {{ release.gallery_images|safe }};
+    {% endif %}
+    
+    function openLightbox(imageUrl) {
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightboxImg');
+        
+        currentImageIndex = galleryImages.indexOf(imageUrl);
+        lightboxImg.src = imageUrl;
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    function nextImage() {
+        if (galleryImages.length > 0) {
+            currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
+            document.getElementById('lightboxImg').src = galleryImages[currentImageIndex];
+        }
+    }
+    
+    function prevImage() {
+        if (galleryImages.length > 0) {
+            currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
+            document.getElementById('lightboxImg').src = galleryImages[currentImageIndex];
+        }
+    }
+    
+    document.addEventListener('keydown', function(e) {
+        const lightbox = document.getElementById('lightbox');
+        if (lightbox.classList.contains('active')) {
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowRight') nextImage();
+            if (e.key === 'ArrowLeft') prevImage();
+        }
+    });
+    
+    document.getElementById('lightbox').addEventListener('click', function(e) {
+        if (e.target === this) closeLightbox();
+    });
+</script>
+{% endblock %}

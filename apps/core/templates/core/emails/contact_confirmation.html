@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; }
+        .inquiry-details { background: white; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 0.9rem; }
+        .reference { font-family: monospace; background: #eef2ff; padding: 5px 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Thank You for Contacting Us!</h1>
+            <p>We've received your inquiry and will respond shortly.</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ inquiry.full_name }},</p>
+            <p>Thank you for reaching out to VehicleInsure Nigeria. We have received your inquiry and our team will review it shortly. We aim to respond to all inquiries within 2 business hours.</p>
+            
+            <div class="inquiry-details">
+                <h3>Inquiry Details</h3>
+                <p><strong>Reference Number:</strong> <span class="reference">{{ inquiry.inquiry_number }}</span></p>
+                <p><strong>Type:</strong> {{ inquiry.get_inquiry_type_display }}</p>
+                <p><strong>Submitted:</strong> {{ inquiry.created_at|date:"F d, Y H:i" }}</p>
+            </div>
+            
+            <p>If you need immediate assistance, please call our 24/7 claims hotline at <strong>+234 800 225 5467</strong>.</p>
+            
+            <p>Best regards,<br>The VehicleInsure Team</p>
+        </div>
+        <div class="footer">
+            <p>VehicleInsure Nigeria | NAICOM Licensed | www.vehicleinsure.ng</p>
+            <p>This is an automated message. Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>
