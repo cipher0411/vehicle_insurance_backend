@@ -95,26 +95,26 @@ class Command(BaseCommand):
         ]
         
         # Add support emails
-        for i in range(1, 6):
+        for i in range(1, 4):
             demo_emails.append(f'support{i}@vehicleinsure.ng')
         
-        # Add customer emails (50 customers)
-        for i in range(1, 51):
+        # Add customer emails (15 customers)
+        for i in range(1, 16):
             demo_emails.append(f'customer{i}@vehicleinsure.ng')
         
-        # Add agent emails (10 agents)
-        for i in range(1, 11):
+        # Add agent emails (3 agents)
+        for i in range(1, 4):
             demo_emails.append(f'agent{i}@vehicleinsure.ng')
         
-        # Add underwriter emails (5 underwriters)
-        for i in range(1, 6):
+        # Add underwriter emails (2 underwriters)
+        for i in range(1, 3):
             demo_emails.append(f'underwriter{i}@vehicleinsure.ng')
         
         # Clear demo users only
         users_deleted = User.objects.filter(email__in=demo_emails).delete()
         self.stdout.write(f'  Cleared {users_deleted[0]} demo users')
         
-        # Clear other demo data (all records from these tables are demo data)
+        # Clear other demo data
         models_to_clear = [
             Vehicle, InsurancePolicy, Claim, Payment, InsuranceQuote,
             Notification, SupportTicket, TicketReply,
@@ -131,7 +131,7 @@ class Command(BaseCommand):
                     model.objects.all().delete()
                     self.stdout.write(f'  Cleared {model.__name__}: {count} records')
             except Exception as e:
-                pass  # Skip if error
+                pass
         
         self.stdout.write('✅ Demo data cleared successfully')
 
@@ -154,13 +154,11 @@ class Command(BaseCommand):
             admin.set_password('Admin@123456')
             admin.save()
         
-        # Support staff (5 support agents)
+        # Support staff (3 support agents)
         support_agents = [
             ('John', 'Support', 'support1@vehicleinsure.ng'),
             ('Jane', 'Support', 'support2@vehicleinsure.ng'),
             ('Mike', 'Helpdesk', 'support3@vehicleinsure.ng'),
-            ('Sarah', 'Support', 'support4@vehicleinsure.ng'),
-            ('David', 'Customer Care', 'support5@vehicleinsure.ng'),
         ]
         
         support_users = []
@@ -182,42 +180,26 @@ class Command(BaseCommand):
             support_users.append(user)
         
         # Nigerian names for realistic data
-        nigerian_first_names_male = [
-            'Chidi', 'Emeka', 'Adebayo', 'Tunde', 'Victor', 'Daniel', 'Michael', 'David',
-            'Joseph', 'Samuel', 'Joshua', 'Jonathan', 'Stephen', 'Andrew', 'Philip',
-            'Simon', 'Timothy', 'Paul', 'Oluwaseun', 'Ibrahim', 'Musa', 'Adamu',
-            'Okechukwu', 'Chukwudi', 'Nnamdi', 'Uchenna', 'Ifeanyi', 'Obinna'
-        ]
-        
-        nigerian_first_names_female = [
-            'Ngozi', 'Funke', 'Chinwe', 'Fatima', 'Blessing', 'Grace', 'Esther', 'Mary',
-            'Jennifer', 'Elizabeth', 'Ruth', 'Deborah', 'Hannah', 'Patience', 'Joy',
-            'Catherine', 'Martha', 'Rebecca', 'Sarah', 'Amina', 'Zainab', 'Bola',
-            'Chiamaka', 'Adaeze', 'Ifeoma', 'Nkechi', 'Amara', 'Chidinma'
+        nigerian_first_names = [
+            'Chidi', 'Emeka', 'Ngozi', 'Funke', 'Adebayo', 'Tunde', 'Blessing', 
+            'Victor', 'Grace', 'Daniel', 'Elizabeth', 'Michael', 'Esther', 'David',
+            'Oluwaseun', 'Fatima', 'Chinwe', 'Ibrahim', 'Musa', 'Amina'
         ]
         
         nigerian_last_names = [
-            'Okonkwo', 'Okafor', 'Eze', 'Nwosu', 'Ogunleye', 'Balogun', 'Adeyemi', 'Bello',
-            'Mohammed', 'Aliu', 'Onyekwere', 'Nwachukwu', 'Ugwu', 'Obi', 'Ezeobi',
-            'Adebayo', 'Oladipo', 'Fashola', 'Oyinlola', 'Kanu', 'Okocha', 'Ikpeba',
-            'Amokachi', 'Yekini', 'Osimhen', 'Lookman', 'Iwobi', 'Ndidi', 'Ejuke', 'Simon',
-            'Adewale', 'Ogunlana', 'Akinwale', 'Ogunbiyi', 'Suleiman', 'Abubakar', 'Gbadamosi'
+            'Okonkwo', 'Okafor', 'Eze', 'Nwosu', 'Ogunleye', 'Balogun', 'Adeyemi', 
+            'Bello', 'Mohammed', 'Onyekwere', 'Nwachukwu', 'Ugwu', 'Obi', 'Adebayo',
+            'Suleiman', 'Abubakar', 'Gbadamosi', 'Ogunlana', 'Akinwale'
         ]
         
-        cities = ['Lagos', 'Abuja', 'Port Harcourt', 'Ibadan', 'Kano', 'Enugu', 'Benin City', 
-                  'Jos', 'Abeokuta', 'Warri', 'Calabar', 'Uyo', 'Maiduguri', 'Kaduna', 'Ilorin']
-        states = ['Lagos', 'FCT', 'Rivers', 'Oyo', 'Kano', 'Enugu', 'Edo', 'Plateau', 'Ogun', 
-                  'Delta', 'Cross River', 'Akwa Ibom', 'Borno', 'Kaduna', 'Kwara']
+        cities = ['Lagos', 'Abuja', 'Port Harcourt', 'Ibadan', 'Kano', 'Enugu', 'Benin City']
+        states = ['Lagos', 'FCT', 'Rivers', 'Oyo', 'Kano', 'Enugu', 'Edo']
         
-        # Customers (50 users)
+        # Customers (15 users)
         customers = []
-        for i in range(1, 51):
+        for i in range(1, 16):
             gender = random.choice(['Male', 'Female'])
-            if gender == 'Male':
-                first_name = random.choice(nigerian_first_names_male)
-            else:
-                first_name = random.choice(nigerian_first_names_female)
-            
+            first_name = random.choice(nigerian_first_names)
             last_name = random.choice(nigerian_last_names)
             city = random.choice(cities)
             state = states[cities.index(city)] if city in cities else random.choice(states)
@@ -245,15 +227,11 @@ class Command(BaseCommand):
                 user.save()
             customers.append(user)
         
-        # Agents (10 insurance agents)
+        # Agents (3 insurance agents)
         agents = []
-        for i in range(1, 11):
+        for i in range(1, 4):
             gender = random.choice(['Male', 'Female'])
-            if gender == 'Male':
-                first_name = random.choice(nigerian_first_names_male)
-            else:
-                first_name = random.choice(nigerian_first_names_female)
-            
+            first_name = random.choice(nigerian_first_names)
             last_name = random.choice(nigerian_last_names)
             city = random.choice(cities)
             
@@ -277,15 +255,11 @@ class Command(BaseCommand):
                 user.save()
             agents.append(user)
         
-        # Underwriters (5 underwriters)
+        # Underwriters (2 underwriters)
         underwriters = []
-        for i in range(1, 6):
+        for i in range(1, 3):
             gender = random.choice(['Male', 'Female'])
-            if gender == 'Male':
-                first_name = random.choice(nigerian_first_names_male)
-            else:
-                first_name = random.choice(nigerian_first_names_female)
-            
+            first_name = random.choice(nigerian_first_names)
             last_name = random.choice(nigerian_last_names)
             city = random.choice(cities)
             
@@ -312,26 +286,26 @@ class Command(BaseCommand):
         total_users = 1 + len(support_users) + len(customers) + len(agents) + len(underwriters)
         self.stdout.write(f'✅ Created {total_users} users (1 Admin, {len(support_users)} Support, {len(customers)} Customers, {len(agents)} Agents, {len(underwriters)} Underwriters)')
         
-        # Store credentials for display (first 10 customers only)
+        # Store credentials for display
         self.credentials = {
             'Admin': {'email': 'admin@vehicleinsure.ng', 'password': 'Admin@123456', 'role': 'Admin'},
         }
         
-        for i, support in enumerate(support_users[:3], 1):
+        for i, support in enumerate(support_users, 1):
             self.credentials[f'Support {i}'] = {
                 'email': support.email,
                 'password': 'Support@123456',
                 'role': 'Support'
             }
         
-        for i, agent in enumerate(agents[:3], 1):
+        for i, agent in enumerate(agents, 1):
             self.credentials[f'Agent {i}'] = {
                 'email': agent.email,
                 'password': 'Agent@123456',
                 'role': 'Agent'
             }
         
-        for i, customer in enumerate(customers[:10], 1):
+        for i, customer in enumerate(customers[:5], 1):
             self.credentials[f'Customer {i}'] = {
                 'email': customer.email,
                 'password': f'Customer@{i}23',
@@ -356,10 +330,8 @@ class Command(BaseCommand):
         self.stdout.write('Creating vehicles...')
         customers = User.objects.filter(role='customer', email__contains='customer')
         
-        makes = ['Toyota', 'Honda', 'Ford', 'Hyundai', 'Kia', 'Nissan', 'Mercedes', 'BMW', 'Lexus', 'Mazda', 
-                 'Volkswagen', 'Subaru', 'Mitsubishi', 'Chevrolet', 'Hyundai', 'Kia', 'Suzuki', 'Peugeot']
-        models = ['Camry', 'Corolla', 'Civic', 'Accord', 'Fusion', 'Elantra', 'Sonata', 'Optima', 'Altima', '3 Series',
-                  'Golf', 'Passat', 'Outback', 'Forester', 'Lancer', 'Cruze', 'Rio', 'Cerato', 'Swift']
+        makes = ['Toyota', 'Honda', 'Hyundai', 'Kia', 'Nissan', 'Ford', 'Mercedes', 'BMW']
+        models = ['Camry', 'Corolla', 'Civic', 'Accord', 'Elantra', 'Sonata', 'Optima', 'Altima', '3 Series', 'C-Class']
         
         for customer in customers:
             # Create 1-2 vehicles per customer
@@ -369,15 +341,15 @@ class Command(BaseCommand):
                     registration_number=f"{fake.license_plate()}-{uuid.uuid4().hex[:4].upper()}",
                     engine_number=f"ENG-{uuid.uuid4().hex[:8].upper()}",
                     chassis_number=f"CHS-{uuid.uuid4().hex[:8].upper()}",
-                    vehicle_type=random.choice(['car', 'motorcycle', 'truck', 'bus']),
+                    vehicle_type=random.choice(['car', 'motorcycle', 'truck']),
                     make=random.choice(makes),
                     model=random.choice(models),
-                    year=random.randint(2015, 2025),
-                    fuel_type=random.choice(['petrol', 'diesel', 'electric', 'hybrid']),
-                    engine_capacity=random.randint(1000, 3500),
-                    color=random.choice(['Black', 'White', 'Silver', 'Blue', 'Red', 'Gray', 'Green', 'Brown']),
-                    ownership_type=random.choice(['single', 'joint', 'corporate']),
-                    current_mileage=random.randint(1000, 150000),
+                    year=random.randint(2018, 2025),
+                    fuel_type=random.choice(['petrol', 'diesel', 'electric']),
+                    engine_capacity=random.randint(1200, 3500),
+                    color=random.choice(['Black', 'White', 'Silver', 'Blue', 'Red', 'Gray']),
+                    ownership_type=random.choice(['single', 'joint']),
+                    current_mileage=random.randint(1000, 100000),
                     is_insured=random.choice([True, False])
                 )
         
@@ -387,10 +359,10 @@ class Command(BaseCommand):
         self.stdout.write('Creating insurance policies...')
         vehicles = Vehicle.objects.all()
         
-        policy_types = ['comprehensive', 'third_party', 'standalone', 'personal_accident']
+        policy_types = ['comprehensive', 'third_party', 'standalone']
         statuses = ['active', 'expired', 'pending']
         
-        for vehicle in vehicles:
+        for vehicle in vehicles[:25]:
             start_date = timezone.now().date() - timedelta(days=random.randint(0, 365))
             end_date = start_date + timedelta(days=365)
             
@@ -400,9 +372,9 @@ class Command(BaseCommand):
                 vehicle=vehicle,
                 policy_type=random.choice(policy_types),
                 status=random.choice(statuses),
-                coverage_amount=Decimal(random.randint(1000000, 10000000)),
-                premium_amount=Decimal(random.randint(50000, 500000)),
-                deductible=Decimal(random.randint(5000, 50000)),
+                coverage_amount=Decimal(random.randint(1000000, 7000000)),
+                premium_amount=Decimal(random.randint(50000, 250000)),
+                deductible=Decimal(random.randint(5000, 30000)),
                 start_date=start_date,
                 end_date=end_date,
                 terms_accepted=True
@@ -412,36 +384,42 @@ class Command(BaseCommand):
 
     def create_claims(self):
         self.stdout.write('Creating claims...')
-        policies = InsurancePolicy.objects.filter(status='active')[:50]
+        policies = InsurancePolicy.objects.filter(status='active')[:15]
         
-        claim_types = ['accident', 'theft', 'natural_disaster', 'fire', 'vandalism', 'third_party']
+        claim_types = ['accident', 'theft', 'fire', 'vandalism', 'third_party']
         statuses = ['pending', 'under_review', 'approved', 'settled', 'rejected']
         
+        claims_created = 0
         for policy in policies:
-            if random.choice([True, False]):  # 50% chance of claim
-                Claim.objects.create(
-                    claim_number=f"CLM-{uuid.uuid4().hex[:8].upper()}",
-                    policy=policy,
-                    user=policy.user,
-                    claim_type=random.choice(claim_types),
-                    status=random.choice(statuses),
-                    incident_date=timezone.now() - timedelta(days=random.randint(1, 90)),
-                    incident_location=fake.address()[:255],
-                    incident_description=fake.text(max_nb_chars=200),
-                    claimed_amount=Decimal(random.randint(100000, 2000000)),
-                    approved_amount=Decimal(random.randint(50000, 1500000)) if random.choice([True, False]) else None
-                )
+            if random.choice([True, False]):  # 50% chance
+                try:
+                    Claim.objects.create(
+                        claim_number=f"CLM-{uuid.uuid4().hex[:8].upper()}",
+                        policy=policy,
+                        user=policy.user,
+                        claim_type=random.choice(claim_types),
+                        status=random.choice(statuses),
+                        incident_date=timezone.now() - timedelta(days=random.randint(1, 60)),
+                        incident_location=fake.address()[:255],
+                        incident_description=fake.text(max_nb_chars=150),
+                        claimed_amount=Decimal(random.randint(100000, 1500000)),
+                        approved_amount=Decimal(random.randint(50000, 1000000)) if random.choice([True, False]) else None
+                    )
+                    claims_created += 1
+                except Exception as e:
+                    pass
         
-        self.stdout.write(f'✅ Created {Claim.objects.count()} claims')
+        self.stdout.write(f'✅ Created {claims_created} claims')
 
     def create_payments(self):
         self.stdout.write('Creating payments...')
-        policies = InsurancePolicy.objects.all()
+        policies = InsurancePolicy.objects.all()[:20]
         
-        payment_methods = ['card', 'bank_transfer', 'mobile_wallet', 'cash']
-        statuses = ['completed', 'pending', 'failed', 'refunded']
+        payment_methods = ['card', 'bank_transfer', 'mobile_wallet']
+        statuses = ['completed', 'pending', 'failed']
         
-        for policy in policies[:100]:
+        payments_created = 0
+        for policy in policies:
             try:
                 Payment.objects.create(
                     transaction_id=f"TXN-{uuid.uuid4().hex[:12].upper()}",
@@ -453,136 +431,142 @@ class Command(BaseCommand):
                     payment_reference=f"REF-{uuid.uuid4().hex[:10].upper()}",
                     paid_at=timezone.now() - timedelta(days=random.randint(1, 180)) if random.choice([True, False]) else None
                 )
+                payments_created += 1
             except Exception as e:
-                pass
+                pass  # Skip errors silently
         
-        self.stdout.write(f'✅ Created {Payment.objects.count()} payments')
+        self.stdout.write(f'✅ Created {payments_created} payments')
 
     def create_quotes(self):
         self.stdout.write('Creating insurance quotes...')
-        customers = User.objects.filter(role='customer', email__contains='customer')
+        # Get vehicles that exist
+        vehicles = Vehicle.objects.all()
         
-        coverage_types = ['basic', 'standard', 'premium', 'custom']
+        if not vehicles.exists():
+            self.stdout.write('  No vehicles found, skipping quotes...')
+            return
         
-        for customer in customers[:40]:
-            Vehicle.objects.create(
-                user=customer,
-                registration_number=f"QUOTE-{uuid.uuid4().hex[:8].upper()}",
-                engine_number=f"ENG-{uuid.uuid4().hex[:8].upper()}",
-                chassis_number=f"CHS-{uuid.uuid4().hex[:8].upper()}",
-                vehicle_type=random.choice(['car', 'motorcycle', 'truck', 'bus']),
-                make=random.choice(['Toyota', 'Honda', 'Hyundai', 'Kia']),
-                model=random.choice(['Corolla', 'Civic', 'Elantra', 'Cerato']),
-                year=random.randint(2018, 2024),
-                fuel_type=random.choice(['petrol', 'diesel']),
-                engine_capacity=random.randint(1300, 2500),
-                color=random.choice(['White', 'Silver', 'Black']),
-                ownership_type='single',
-                current_mileage=random.randint(1000, 50000),
-                is_insured=False
-            )
+        coverage_types = ['basic', 'standard', 'premium']
+        statuses = ['pending', 'approved', 'expired']
         
-        vehicles = Vehicle.objects.filter(registration_number__startswith='QUOTE')
+        quotes_created = 0
+        for vehicle in vehicles[:15]:  # Create quotes for first 15 vehicles
+            try:
+                InsuranceQuote.objects.create(
+                    user=vehicle.user,
+                    vehicle=vehicle,  # vehicle is required - not null
+                    coverage_type=random.choice(coverage_types),
+                    status=random.choice(statuses),
+                    base_premium=Decimal(random.randint(40000, 150000)),
+                    total_premium=Decimal(random.randint(50000, 200000)),
+                    coverage_amount=Decimal(random.randint(1000000, 6000000)),
+                    deductible=Decimal(random.randint(5000, 30000)),
+                    valid_until=timezone.now() + timedelta(days=30),
+                    coverage_details={
+                        'collision': True,
+                        'theft': True,
+                        'liability': True,
+                        'fire': random.choice([True, False])
+                    }
+                )
+                quotes_created += 1
+            except Exception as e:
+                self.stdout.write(f'  Warning: Could not create quote: {e}')
         
-        for vehicle in vehicles:
-            InsuranceQuote.objects.create(
-                user=vehicle.user,
-                vehicle=vehicle,
-                coverage_type=random.choice(coverage_types),
-                status=random.choice(['pending', 'approved', 'expired']),
-                base_premium=Decimal(random.randint(40000, 150000)),
-                total_premium=Decimal(random.randint(50000, 250000)),
-                coverage_amount=Decimal(random.randint(1000000, 7500000)),
-                deductible=Decimal(random.randint(5000, 50000)),
-                valid_until=timezone.now() + timedelta(days=30),
-                coverage_details={
-                    'collision': True,
-                    'theft': True,
-                    'liability': True,
-                    'fire': random.choice([True, False]),
-                    'flood': random.choice([True, False])
-                }
-            )
-        
-        self.stdout.write(f'✅ Created {InsuranceQuote.objects.count()} quotes')
+        self.stdout.write(f'✅ Created {quotes_created} insurance quotes')
 
     def create_notifications(self):
         self.stdout.write('Creating notifications...')
-        customers = User.objects.filter(role='customer', email__contains='customer')[:40]
+        customers = User.objects.filter(role='customer', email__contains='customer')[:12]
         
         notification_types = ['claim_update', 'policy_expiry', 'payment_confirmation', 'quote_generated', 'system_alert']
         titles = [
             'Policy Renewal Reminder', 'Claim Status Update', 'Payment Received',
             'New Quote Available', 'Document Ready', 'Policy Expiring Soon',
-            'Welcome to VehicleInsure', 'Your Policy is Active', 'Claim Approved'
+            'Welcome to VehicleInsure', 'Your Policy is Active'
         ]
         
+        notifications_created = 0
         for customer in customers:
-            for _ in range(random.randint(2, 8)):
-                Notification.objects.create(
-                    user=customer,
-                    title=random.choice(titles),
-                    message=fake.text(max_nb_chars=150),
-                    notification_type=random.choice(notification_types),
-                    is_read=random.choice([True, False])
-                )
+            for _ in range(random.randint(2, 5)):
+                try:
+                    Notification.objects.create(
+                        user=customer,
+                        title=random.choice(titles),
+                        message=fake.text(max_nb_chars=100),
+                        notification_type=random.choice(notification_types),
+                        is_read=random.choice([True, False])
+                    )
+                    notifications_created += 1
+                except Exception as e:
+                    pass
         
-        self.stdout.write(f'✅ Created {Notification.objects.count()} notifications')
+        self.stdout.write(f'✅ Created {notifications_created} notifications')
 
     def create_documents(self):
         self.stdout.write('Creating documents...')
-        customers = User.objects.filter(role='customer', email__contains='customer')[:40]
+        customers = User.objects.filter(role='customer', email__contains='customer')[:12]
         
         doc_types = ['driving_license', 'rc', 'other']
         verification_statuses = ['pending', 'verified', 'rejected']
         doc_names = ["Driver's License", 'Vehicle Registration', 'Identification Card', 'Proof of Address']
         
+        documents_created = 0
         for customer in customers:
-            for _ in range(random.randint(1, 3)):
-                Document.objects.create(
-                    user=customer,
-                    name=random.choice(doc_names),
-                    document_type=random.choice(doc_types),
-                    document_number=f"DOC-{uuid.uuid4().hex[:8].upper()}",
-                    is_verified=random.choice([True, False]),
-                    verification_status=random.choice(verification_statuses)
-                )
+            for _ in range(random.randint(1, 2)):
+                try:
+                    Document.objects.create(
+                        user=customer,
+                        name=random.choice(doc_names),
+                        document_type=random.choice(doc_types),
+                        document_number=f"DOC-{uuid.uuid4().hex[:8].upper()}",
+                        is_verified=random.choice([True, False]),
+                        verification_status=random.choice(verification_statuses)
+                    )
+                    documents_created += 1
+                except Exception as e:
+                    pass
         
-        self.stdout.write(f'✅ Created {Document.objects.count()} documents')
+        self.stdout.write(f'✅ Created {documents_created} documents')
 
     def create_support_tickets(self):
         self.stdout.write('Creating support tickets...')
-        customers = User.objects.filter(role='customer', email__contains='customer')[:30]
+        customers = User.objects.filter(role='customer', email__contains='customer')[:10]
         support_staff = User.objects.filter(role='support')
         
-        priorities = ['low', 'medium', 'high', 'urgent']
+        priorities = ['low', 'medium', 'high']
         statuses = ['open', 'in_progress', 'resolved', 'closed']
         subjects = [
             'Login Issue', 'Payment Failed', 'Claim Processing', 'Policy Question',
-            'Document Upload Problem', 'Wrong Premium Calculation', 'Need Assistance',
-            'Update Personal Information', 'Vehicle Addition Request'
+            'Document Upload Problem', 'Need Assistance', 'Update Information'
         ]
         
+        tickets_created = 0
         for customer in customers:
             if random.choice([True, False]):
-                ticket = SupportTicket.objects.create(
-                    ticket_number=f"TKT-{uuid.uuid4().hex[:8].upper()}",
-                    user=customer,
-                    subject=random.choice(subjects),
-                    message=fake.text(max_nb_chars=250),
-                    priority=random.choice(priorities),
-                    status=random.choice(statuses),
-                    assigned_to=random.choice(support_staff) if support_staff.exists() else None
-                )
-                
-                if random.choice([True, False]) and support_staff.exists():
-                    TicketReply.objects.create(
-                        ticket=ticket,
-                        user=random.choice(support_staff),
-                        message=fake.text(max_nb_chars=150)
+                try:
+                    ticket = SupportTicket.objects.create(
+                        ticket_number=f"TKT-{uuid.uuid4().hex[:8].upper()}",
+                        user=customer,
+                        subject=random.choice(subjects),
+                        message=fake.text(max_nb_chars=150),
+                        priority=random.choice(priorities),
+                        status=random.choice(statuses),
+                        assigned_to=random.choice(support_staff) if support_staff.exists() else None
                     )
+                    tickets_created += 1
+                    
+                    # Add reply sometimes
+                    if random.choice([True, False]) and support_staff.exists():
+                        TicketReply.objects.create(
+                            ticket=ticket,
+                            user=random.choice(support_staff),
+                            message=fake.text(max_nb_chars=100)
+                        )
+                except Exception as e:
+                    pass
         
-        self.stdout.write(f'✅ Created {SupportTicket.objects.count()} tickets')
+        self.stdout.write(f'✅ Created {tickets_created} support tickets')
 
     def create_promocodes(self):
         self.stdout.write('Creating promo codes...')
@@ -593,26 +577,25 @@ class Command(BaseCommand):
             {'code': 'SAVE15', 'discount_value': 15, 'discount_type': 'percentage', 'description': '15% off on all policies'},
             {'code': 'FLAT5000', 'discount_value': 5000, 'discount_type': 'fixed', 'description': 'Flat ₦5000 off'},
             {'code': 'RENEW10', 'discount_value': 10, 'discount_type': 'percentage', 'description': '10% off on renewals'},
-            {'code': 'FESTIVE25', 'discount_value': 25, 'discount_type': 'percentage', 'description': 'Festive season discount'},
-            {'code': 'FIRSTCAR', 'discount_value': 15, 'discount_type': 'percentage', 'description': 'First vehicle discount'},
-            {'code': 'LOYALTY', 'discount_value': 20, 'discount_type': 'percentage', 'description': 'Loyalty discount'},
-            {'code': 'FLAT10000', 'discount_value': 10000, 'discount_type': 'fixed', 'description': 'Flat ₦10000 off on comprehensive'},
         ]
         
         for promo_data in promos:
-            PromoCode.objects.get_or_create(
-                code=promo_data['code'],
-                defaults={
-                    'discount_type': promo_data['discount_type'],
-                    'discount_value': Decimal(promo_data['discount_value']),
-                    'valid_from': timezone.now(),
-                    'valid_to': timezone.now() + timedelta(days=90),
-                    'max_uses': random.randint(50, 200),
-                    'is_active': True,
-                    'description': promo_data['description'],
-                    'created_by': admin
-                }
-            )
+            try:
+                PromoCode.objects.get_or_create(
+                    code=promo_data['code'],
+                    defaults={
+                        'discount_type': promo_data['discount_type'],
+                        'discount_value': Decimal(promo_data['discount_value']),
+                        'valid_from': timezone.now(),
+                        'valid_to': timezone.now() + timedelta(days=90),
+                        'max_uses': 100,
+                        'is_active': True,
+                        'description': promo_data['description'],
+                        'created_by': admin
+                    }
+                )
+            except Exception as e:
+                pass
         
         self.stdout.write(f'✅ Created {PromoCode.objects.count()} promo codes')
 
@@ -621,7 +604,7 @@ class Command(BaseCommand):
         
         # Categories
         categories = []
-        cat_names = ['Insurance Tips', 'Car Maintenance', 'Safety', 'Industry News', 'Claims Guide', 'Vehicle Reviews', 'Road Safety']
+        cat_names = ['Insurance Tips', 'Car Maintenance', 'Safety Tips', 'Industry News', 'Claims Guide']
         for name in cat_names:
             cat, created = BlogCategory.objects.get_or_create(
                 name=name,
@@ -634,8 +617,7 @@ class Command(BaseCommand):
         
         # Tags
         tags = []
-        tag_names = ['Insurance', 'Vehicle', 'Safety', 'Tips', 'Claims', 'Renewal', 'Discount', 
-                     'Car Care', 'Driving', 'Accident', 'Prevention', 'Coverage']
+        tag_names = ['Insurance', 'Vehicle', 'Safety', 'Tips', 'Claims', 'Renewal', 'Discount']
         for name in tag_names:
             tag, created = BlogTag.objects.get_or_create(
                 name=name,
@@ -643,53 +625,64 @@ class Command(BaseCommand):
             )
             tags.append(tag)
         
-        # Posts
+        # Posts (8 posts)
         users = User.objects.all()
-        for i in range(15):
-            post = BlogPost.objects.create(
-                title=fake.sentence(nb_words=8)[:300],
-                slug=f"blog-post-{i+1}-{uuid.uuid4().hex[:4]}",
-                category=random.choice(categories),
-                excerpt=fake.text(max_nb_chars=200),
-                content=f"<p>{fake.text(max_nb_chars=800)}</p><p>{fake.text(max_nb_chars=800)}</p><p>{fake.text(max_nb_chars=500)}</p>",
-                status='published',
-                author=random.choice(users) if users.exists() else None,
-                published_at=timezone.now() - timedelta(days=random.randint(1, 120)),
-                is_featured=random.choice([True, False])
-            )
-            post.tags.add(*random.sample(tags, k=min(random.randint(2, 4), len(tags))))
-            
-            # Add comments
-            for _ in range(random.randint(1, 5)):
-                BlogComment.objects.create(
-                    post=post,
-                    name=fake.name()[:100],
-                    email=fake.email(),
-                    content=fake.text(max_nb_chars=120),
-                    is_approved=random.choice([True, False])
+        posts_created = 0
+        for i in range(8):
+            try:
+                post = BlogPost.objects.create(
+                    title=fake.sentence(nb_words=6)[:200],
+                    slug=f"blog-post-{i+1}-{uuid.uuid4().hex[:4]}",
+                    category=random.choice(categories),
+                    excerpt=fake.text(max_nb_chars=150),
+                    content=f"<p>{fake.text(max_nb_chars=500)}</p><p>{fake.text(max_nb_chars=500)}</p>",
+                    status='published',
+                    author=random.choice(users) if users.exists() else None,
+                    published_at=timezone.now() - timedelta(days=random.randint(1, 90)),
+                    is_featured=random.choice([True, False])
                 )
+                post.tags.add(*random.sample(tags, k=min(random.randint(2, 3), len(tags))))
+                posts_created += 1
+                
+                # Add comments
+                for _ in range(random.randint(1, 3)):
+                    BlogComment.objects.create(
+                        post=post,
+                        name=fake.name()[:100],
+                        email=fake.email(),
+                        content=fake.text(max_nb_chars=100),
+                        is_approved=True
+                    )
+            except Exception as e:
+                pass
         
-        self.stdout.write(f'✅ Created {BlogPost.objects.count()} blog posts with {BlogComment.objects.count()} comments')
+        self.stdout.write(f'✅ Created {posts_created} blog posts')
 
     def create_newsletter_subscribers(self):
         self.stdout.write('Creating newsletter subscribers...')
-        for i in range(30):
-            NewsletterSubscriber.objects.get_or_create(
-                email=fake.email(),
-                defaults={
-                    'name': fake.name()[:100],
-                    'is_active': True,
-                    'is_confirmed': True,
-                    'source': random.choice(['website', 'blog', 'checkout', 'footer'])
-                }
-            )
-        self.stdout.write(f'✅ Created {NewsletterSubscriber.objects.count()} subscribers')
+        subscribers_created = 0
+        for i in range(15):
+            try:
+                NewsletterSubscriber.objects.get_or_create(
+                    email=fake.email(),
+                    defaults={
+                        'name': fake.name()[:100],
+                        'is_active': True,
+                        'is_confirmed': True,
+                        'source': random.choice(['website', 'blog', 'footer'])
+                    }
+                )
+                subscribers_created += 1
+            except Exception as e:
+                pass
+        
+        self.stdout.write(f'✅ Created {subscribers_created} subscribers')
 
     def create_press_content(self):
         self.stdout.write('Creating press releases...')
         
         # Categories
-        press_cats = ['Product Launch', 'Company News', 'Awards', 'Partnership', 'Expansion', 'Milestone']
+        press_cats = ['Product Launch', 'Company News', 'Awards', 'Partnership']
         categories = []
         for name in press_cats:
             cat, created = PressCategory.objects.get_or_create(
@@ -698,43 +691,51 @@ class Command(BaseCommand):
             )
             categories.append(cat)
         
-        # Press releases
+        # Press releases (5 releases)
         users = User.objects.filter(role='admin').first()
-        for i in range(10):
-            PressRelease.objects.create(
-                title=fake.sentence(nb_words=10)[:300],
-                slug=f"press-release-{i+1}-{uuid.uuid4().hex[:4]}",
-                category=random.choice(categories),
-                excerpt=fake.text(max_nb_chars=200),
-                content=f"<p>{fake.text(max_nb_chars=600)}</p><p>{fake.text(max_nb_chars=600)}</p>",
-                status='published',
-                author=users,
-                published_at=timezone.now() - timedelta(days=random.randint(1, 180)),
-                location=random.choice(['Lagos', 'Abuja', 'Port Harcourt', 'International'])
-            )
+        releases_created = 0
+        for i in range(5):
+            try:
+                PressRelease.objects.create(
+                    title=fake.sentence(nb_words=8)[:200],
+                    slug=f"press-release-{i+1}-{uuid.uuid4().hex[:4]}",
+                    category=random.choice(categories),
+                    excerpt=fake.text(max_nb_chars=150),
+                    content=f"<p>{fake.text(max_nb_chars=400)}</p>",
+                    status='published',
+                    author=users,
+                    published_at=timezone.now() - timedelta(days=random.randint(1, 120)),
+                    location=random.choice(['Lagos', 'Abuja', 'International'])
+                )
+                releases_created += 1
+            except Exception as e:
+                pass
         
-        # Media coverage
-        publications = ['TechCrunch', 'AutoNews', 'Business Insider', 'Pulse', 'Guardian', 'Vanguard', 
-                       'Punch', 'ThisDay', 'Channels TV', 'Arise TV', 'Bloomberg', 'Reuters']
-        for i in range(15):
-            MediaCoverage.objects.create(
-                title=fake.sentence(nb_words=8)[:300],
-                publication=random.choice(publications)[:200],
-                url=fake.url()[:500],
-                excerpt=fake.text(max_nb_chars=150),
-                coverage_date=timezone.now().date() - timedelta(days=random.randint(1, 120)),
-                is_active=True,
-                featured=random.choice([True, False])
-            )
+        # Media coverage (8 items)
+        publications = ['TechCrunch', 'AutoNews', 'Business Insider', 'Pulse', 'Guardian', 'Vanguard']
+        media_created = 0
+        for i in range(8):
+            try:
+                MediaCoverage.objects.create(
+                    title=fake.sentence(nb_words=6)[:200],
+                    publication=random.choice(publications)[:200],
+                    url=fake.url()[:500],
+                    excerpt=fake.text(max_nb_chars=120),
+                    coverage_date=timezone.now().date() - timedelta(days=random.randint(1, 90)),
+                    is_active=True,
+                    featured=random.choice([True, False])
+                )
+                media_created += 1
+            except Exception as e:
+                pass
         
-        self.stdout.write(f'✅ Created press content')
+        self.stdout.write(f'✅ Created {releases_created} press releases and {media_created} media coverage items')
 
     def create_job_postings(self):
         self.stdout.write('Creating job postings...')
         
         # Categories
-        job_cats = ['Engineering', 'Sales', 'Marketing', 'Customer Support', 'Operations', 
-                    'Finance', 'HR', 'Legal', 'Product', 'Data Science']
+        job_cats = ['Engineering', 'Sales', 'Marketing', 'Customer Support', 'Operations']
         categories = []
         for name in job_cats:
             cat, created = JobCategory.objects.get_or_create(
@@ -751,10 +752,7 @@ class Command(BaseCommand):
         loc_data = [
             ('Lagos HQ', 'Lagos', 'Lagos'),
             ('Abuja Office', 'Abuja', 'FCT'),
-            ('Port Harcourt', 'Port Harcourt', 'Rivers'),
-            ('Ibadan Office', 'Ibadan', 'Oyo'),
-            ('Kano Office', 'Kano', 'Kano'),
-            ('Enugu Office', 'Enugu', 'Enugu')
+            ('Port Harcourt', 'Port Harcourt', 'Rivers')
         ]
         for name, city, state in loc_data:
             loc, created = JobLocation.objects.get_or_create(
@@ -769,7 +767,7 @@ class Command(BaseCommand):
             locations.append(loc)
         
         # Job Types
-        job_types = ['Full-time', 'Part-time', 'Contract', 'Remote', 'Hybrid', 'Internship']
+        job_types = ['Full-time', 'Part-time', 'Remote', 'Hybrid']
         types = []
         for name in job_types:
             jt, created = JobType.objects.get_or_create(
@@ -778,91 +776,95 @@ class Command(BaseCommand):
             )
             types.append(jt)
         
-        # Job postings
+        # Job postings (8 jobs)
         users = User.objects.filter(role='admin').first()
         job_titles = [
-            'Software Engineer', 'Sales Executive', 'Marketing Manager', 'Customer Support Agent',
-            'Insurance Underwriter', 'Claims Adjuster', 'Data Analyst', 'Product Manager',
-            'UI/UX Designer', 'DevOps Engineer', 'Financial Analyst', 'HR Generalist',
-            'Legal Counsel', 'Risk Analyst', 'Business Development Manager'
+            'Software Engineer', 'Sales Executive', 'Marketing Manager', 
+            'Customer Support Agent', 'Insurance Underwriter', 'Claims Adjuster',
+            'Data Analyst', 'Product Manager'
         ]
         
-        for i in range(15):
-            JobPosting.objects.create(
-                title=random.choice(job_titles),
-                slug=f"job-{i+1}-{uuid.uuid4().hex[:4]}",
-                category=random.choice(categories),
-                location=random.choice(locations),
-                job_type=random.choice(types),
-                short_description=fake.text(max_nb_chars=200),
-                description=f"<p>{fake.text(max_nb_chars=600)}</p><h3>Requirements</h3><p>{fake.text(max_nb_chars=400)}</p>",
-                requirements=f"<ul><li>{fake.text(max_nb_chars=100)}</li><li>{fake.text(max_nb_chars=100)}</li><li>{fake.text(max_nb_chars=100)}</li></ul>",
-                responsibilities=f"<ul><li>{fake.text(max_nb_chars=100)}</li><li>{fake.text(max_nb_chars=100)}</li><li>{fake.text(max_nb_chars=100)}</li></ul>",
-                experience_level=random.choice(['entry', 'mid', 'senior', 'lead', 'executive']),
-                salary_min=Decimal(random.randint(100000, 500000)),
-                salary_max=Decimal(random.randint(600000, 2000000)),
-                application_email='careers@vehicleinsure.ng',
-                status='published',
-                is_active=True,
-                created_by=users,
-                published_at=timezone.now() - timedelta(days=random.randint(1, 45))
-            )
+        jobs_created = 0
+        for i in range(8):
+            try:
+                JobPosting.objects.create(
+                    title=random.choice(job_titles),
+                    slug=f"job-{i+1}-{uuid.uuid4().hex[:4]}",
+                    category=random.choice(categories),
+                    location=random.choice(locations),
+                    job_type=random.choice(types),
+                    short_description=fake.text(max_nb_chars=150),
+                    description=f"<p>{fake.text(max_nb_chars=400)}</p>",
+                    requirements=f"<p>{fake.text(max_nb_chars=200)}</p>",
+                    responsibilities=f"<p>{fake.text(max_nb_chars=200)}</p>",
+                    experience_level=random.choice(['entry', 'mid', 'senior']),
+                    salary_min=Decimal(random.randint(100000, 400000)),
+                    salary_max=Decimal(random.randint(500000, 1500000)),
+                    application_email='careers@vehicleinsure.ng',
+                    status='published',
+                    is_active=True,
+                    created_by=users,
+                    published_at=timezone.now() - timedelta(days=random.randint(1, 45))
+                )
+                jobs_created += 1
+            except Exception as e:
+                pass
         
-        self.stdout.write(f'✅ Created {JobPosting.objects.count()} job postings')
+        self.stdout.write(f'✅ Created {jobs_created} job postings')
 
     def create_contact_inquiries(self):
         self.stdout.write('Creating contact inquiries...')
         
-        inquiry_types = ['general', 'quote', 'claim', 'policy', 'complaint', 'partnership', 'feedback', 'support']
+        inquiry_types = ['general', 'quote', 'claim', 'policy', 'complaint', 'partnership']
         
-        for i in range(25):
-            ContactInquiry.objects.create(
-                full_name=fake.name()[:200],
-                email=fake.email(),
-                phone=fake.phone_number()[:20],
-                inquiry_type=random.choice(inquiry_types),
-                subject=fake.sentence(nb_words=6)[:300],
-                message=fake.text(max_nb_chars=300),
-                status=random.choice(['pending', 'in_progress', 'resolved', 'closed']),
-                priority=random.choice(['low', 'medium', 'high', 'urgent']),
-                ip_address=fake.ipv4(),
-                user_agent=fake.user_agent()
-            )
+        inquiries_created = 0
+        for i in range(12):
+            try:
+                ContactInquiry.objects.create(
+                    full_name=fake.name()[:200],
+                    email=fake.email(),
+                    phone=fake.phone_number()[:20],
+                    inquiry_type=random.choice(inquiry_types),
+                    subject=fake.sentence(nb_words=5)[:200],
+                    message=fake.text(max_nb_chars=200),
+                    status=random.choice(['pending', 'in_progress', 'resolved']),
+                    priority=random.choice(['low', 'medium', 'high'])
+                )
+                inquiries_created += 1
+            except Exception as e:
+                pass
         
-        self.stdout.write(f'✅ Created {ContactInquiry.objects.count()} inquiries')
+        self.stdout.write(f'✅ Created {inquiries_created} contact inquiries')
 
     def create_office_locations(self):
         self.stdout.write('Creating office locations...')
         
         offices = [
-            {'name': 'Lagos Headquarters', 'city': 'Lagos', 'state': 'Lagos', 'is_headquarters': True, 'lat': 6.5244, 'lng': 3.3792},
-            {'name': 'Abuja Regional Office', 'city': 'Abuja', 'state': 'FCT', 'is_headquarters': False, 'lat': 9.0579, 'lng': 7.4951},
-            {'name': 'Port Harcourt Branch', 'city': 'Port Harcourt', 'state': 'Rivers', 'is_headquarters': False, 'lat': 4.8156, 'lng': 7.0498},
-            {'name': 'Ibadan Office', 'city': 'Ibadan', 'state': 'Oyo', 'is_headquarters': False, 'lat': 7.3775, 'lng': 3.9470},
-            {'name': 'Kano Office', 'city': 'Kano', 'state': 'Kano', 'is_headquarters': False, 'lat': 12.0022, 'lng': 8.5917},
-            {'name': 'Enugu Office', 'city': 'Enugu', 'state': 'Enugu', 'is_headquarters': False, 'lat': 6.4567, 'lng': 7.5465},
-            {'name': 'Benin City Branch', 'city': 'Benin City', 'state': 'Edo', 'is_headquarters': False, 'lat': 6.3176, 'lng': 5.6145},
-            {'name': 'Jos Office', 'city': 'Jos', 'state': 'Plateau', 'is_headquarters': False, 'lat': 9.8965, 'lng': 8.8583},
+            {'name': 'Lagos Headquarters', 'city': 'Lagos', 'state': 'Lagos', 'is_headquarters': True},
+            {'name': 'Abuja Regional Office', 'city': 'Abuja', 'state': 'FCT', 'is_headquarters': False},
+            {'name': 'Port Harcourt Branch', 'city': 'Port Harcourt', 'state': 'Rivers', 'is_headquarters': False},
+            {'name': 'Ibadan Office', 'city': 'Ibadan', 'state': 'Oyo', 'is_headquarters': False},
         ]
         
         for office_data in offices:
-            OfficeLocation.objects.get_or_create(
-                name=office_data['name'],
-                defaults={
-                    'slug': slugify(office_data['name']),
-                    'address': f"Plot {random.randint(1, 50)} {office_data['name']} Road, {office_data['city']}",
-                    'city': office_data['city'],
-                    'state': office_data['state'],
-                    'country': 'NG',
-                    'phone': f"+234 800 123 {random.randint(1000, 9999)}",
-                    'email': f"info@{office_data['name'].replace(' ', '').lower()}.com",
-                    'working_hours': "Mon-Fri: 9AM - 6PM, Sat: 10AM - 2PM",
-                    'is_headquarters': office_data['is_headquarters'],
-                    'is_active': True,
-                    'latitude': office_data.get('lat'),
-                    'longitude': office_data.get('lng')
-                }
-            )
+            try:
+                OfficeLocation.objects.get_or_create(
+                    name=office_data['name'],
+                    defaults={
+                        'slug': slugify(office_data['name']),
+                        'address': f"Plot {random.randint(1, 30)} {office_data['name']} Road, {office_data['city']}",
+                        'city': office_data['city'],
+                        'state': office_data['state'],
+                        'country': 'NG',
+                        'phone': f"+234 800 123 {random.randint(1000, 9999)}",
+                        'email': f"info@{office_data['name'].replace(' ', '').lower()}.com",
+                        'working_hours': "Mon-Fri: 9AM - 6PM",
+                        'is_headquarters': office_data['is_headquarters'],
+                        'is_active': True
+                    }
+                )
+            except Exception as e:
+                pass
         
         self.stdout.write(f'✅ Created {OfficeLocation.objects.count()} office locations')
 
@@ -874,21 +876,22 @@ class Command(BaseCommand):
             {'name': 'Claims', 'icon': 'fa-file-invoice', 'color': '#DC2626'},
             {'name': 'Receipts', 'icon': 'fa-receipt', 'color': '#10B981'},
             {'name': 'Certificates', 'icon': 'fa-certificate', 'color': '#F59E0B'},
-            {'name': 'Legal', 'icon': 'fa-gavel', 'color': '#8B5CF6'},
             {'name': 'KYC Documents', 'icon': 'fa-id-card', 'color': '#6366F1'},
-            {'name': 'Vehicle Papers', 'icon': 'fa-car', 'color': '#14B8A6'},
         ]
         
         for cat_data in doc_cats:
-            DocumentCategory.objects.get_or_create(
-                name=cat_data['name'],
-                defaults={
-                    'slug': slugify(cat_data['name']),
-                    'icon': cat_data['icon'],
-                    'color': cat_data['color'],
-                    'is_active': True
-                }
-            )
+            try:
+                DocumentCategory.objects.get_or_create(
+                    name=cat_data['name'],
+                    defaults={
+                        'slug': slugify(cat_data['name']),
+                        'icon': cat_data['icon'],
+                        'color': cat_data['color'],
+                        'is_active': True
+                    }
+                )
+            except Exception as e:
+                pass
         
         self.stdout.write(f'✅ Created {DocumentCategory.objects.count()} document categories')
 
@@ -912,6 +915,7 @@ class Command(BaseCommand):
         self.stdout.write(f'  • Policies: {InsurancePolicy.objects.count()}')
         self.stdout.write(f'  • Claims: {Claim.objects.count()}')
         self.stdout.write(f'  • Payments: {Payment.objects.count()}')
+        self.stdout.write(f'  • Quotes: {InsuranceQuote.objects.count()}')
         self.stdout.write(f'  • Blog Posts: {BlogPost.objects.count()}')
         self.stdout.write(f'  • Job Postings: {JobPosting.objects.count()}')
         self.stdout.write('='*70)
