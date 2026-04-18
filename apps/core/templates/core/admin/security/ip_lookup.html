@@ -1,0 +1,189 @@
+{% extends 'core/admin/security/security_base.html' %}
+{% block title %}IP Reputation Lookup - Edgway Security{% endblock %}
+
+{% block content %}
+<div class="edgway-topbar">
+    <h1 class="page-title">
+        <i class="fas fa-search"></i> IP Reputation Lookup
+    </h1>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Search Form -->
+        <div class="edgway-card">
+            <div class="edgway-card-body">
+                <form method="post" class="mb-0">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <input type="text" class="edgway-form-control form-control-lg" name="ip_address" 
+                               placeholder="Enter IP address to check..." value="{{ ip_address|default:'' }}" required>
+                        <button type="submit" class="edgway-btn edgway-btn-primary">
+                            <i class="fas fa-search"></i> Check Reputation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if reputation %}
+        <!-- Results -->
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-globe"></i> Reputation Results for {{ ip_address }}</h5>
+                <span class="badge badge-{{ reputation.risk_level|lower }} px-3 py-2">
+                    Risk Score: {{ reputation.score }}/100
+                </span>
+            </div>
+            <div class="edgway-card-body">
+                <!-- Risk Score Progress -->
+                <div class="mb-4">
+                    <label class="text-muted mb-2">Threat Level</label>
+                    <div class="edgway-progress" style="height: 12px;">
+                        <div class="edgway-progress-bar bg-{% if reputation.score >= 70 %}danger{% elif reputation.score >= 40 %}warning{% else %}success{% endif %}" 
+                             style="width: {{ reputation.score }}%"></div>
+                    </div>
+                </div>
+                
+                <!-- Detection Summary -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="text-center">
+                                <div class="stat-value text-danger">{{ reputation.malicious_count|default:0 }}</div>
+                                <div class="stat-label">Malicious Detections</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="text-center">
+                                <div class="stat-value text-warning">{{ reputation.suspicious_count|default:0 }}</div>
+                                <div class="stat-label">Suspicious</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="text-center">
+                                <div class="stat-value text-success">{{ reputation.clean_count|default:0 }}</div>
+                                <div class="stat-label">Clean</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Geolocation -->
+                <div class="mb-4">
+                    <h6><i class="fas fa-map-marker-alt"></i> Geolocation</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Country:</strong> {{ reputation.country|default:"Unknown" }}</p>
+                            <p><strong>City:</strong> {{ reputation.city|default:"Unknown" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>ISP:</strong> {{ reputation.isp|default:"Unknown" }}</p>
+                            <p><strong>Organization:</strong> {{ reputation.org|default:"Unknown" }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Detection Details -->
+                <div class="mb-4">
+                    <h6><i class="fas fa-shield"></i> Detection Details</h6>
+                    <div class="table-responsive">
+                        <table class="edgway-table">
+                            <thead>
+                                <tr>
+                                    <th>Engine</th>
+                                    <th>Category</th>
+                                    <th>Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detection in reputation.detections %}
+                                <tr>
+                                    <td>{{ detection.engine }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if detection.category == 'malicious' %}danger{% elif detection.category == 'suspicious' %}warning{% else %}success{% endif %}">
+                                            {{ detection.category }}
+                                        </span>
+                                    </td>
+                                    <td>{{ detection.result|default:"Clean" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">No detection data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="d-flex gap-2">
+                    {% if reputation.score >= 50 %}
+                        <form method="post" action="{% url 'core:block_ip' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="ip_address" value="{{ ip_address }}">
+                            <input type="hidden" name="reason" value="High threat score from reputation lookup">
+                            <button type="submit" class="edgway-btn edgway-btn-danger">
+                                <i class="fas fa-ban"></i> Block This IP
+                            </button>
+                        </form>
+                    {% endif %}
+                    <a href="{% url 'core:add_threat_intel' %}?value={{ ip_address }}&type=ip" class="edgway-btn edgway-btn-outline">
+                        <i class="fas fa-bug"></i> Add to Threat Intel
+                    </a>
+                    <button class="edgway-btn edgway-btn-outline" onclick="window.print()">
+                        <i class="fas fa-print"></i> Print Report
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="edgway-card">
+            <div class="edgway-card-body text-center py-5">
+                <i class="fas fa-search fa-4x mb-3" style="color: var(--edgway-accent); opacity: 0.5;"></i>
+                <h5>Enter an IP address to check its reputation</h5>
+                <p class="text-muted">We'll check against multiple threat intelligence sources</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Recent Lookups -->
+        <div class="edgway-card mt-4">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-history"></i> Recent IP Lookups</h5>
+            </div>
+            <div class="edgway-card-body p-0">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center" style="background: transparent; border-color: var(--edgway-border);">
+                        <div>
+                            <code>185.220.101.1</code>
+                            <span class="badge bg-danger ms-2">Score: 95</span>
+                        </div>
+                        <small class="text-muted">2 minutes ago</small>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center" style="background: transparent; border-color: var(--edgway-border);">
+                        <div>
+                            <code>45.142.120.1</code>
+                            <span class="badge bg-warning ms-2">Score: 45</span>
+                        </div>
+                        <small class="text-muted">15 minutes ago</small>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center" style="background: transparent; border-color: var(--edgway-border);">
+                        <div>
+                            <code>192.168.1.1</code>
+                            <span class="badge bg-success ms-2">Score: 0</span>
+                        </div>
+                        <small class="text-muted">1 hour ago</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

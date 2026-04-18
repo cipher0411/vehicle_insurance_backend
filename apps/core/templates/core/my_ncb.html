@@ -1,0 +1,286 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}My No Claim Bonus{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-star"></i> No Claim Bonus</h2>
+            <p class="text-muted">Track your no claim bonus and discounts</p>
+        </div>
+    </div>
+
+    <!-- Info Alert -->
+    <div class="alert alert-info mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-info-circle fa-2x me-3"></i>
+            <div>
+                <h5 class="alert-heading mb-1">What is No Claim Bonus (NCB)?</h5>
+                <p class="mb-0">NCB is a discount on your renewal premium for every claim-free year. 
+                   The more claim-free years you accumulate, the higher your discount!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- NCB Slabs Info -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> NCB Discount Slabs</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead style="background-color: #4169E1; color: white;">
+                                <tr>
+                                    <th>Claim-Free Years</th>
+                                    <th>Discount Percentage</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1 Year</td>
+                                    <td><strong>20%</strong></td>
+                                    <td><span class="badge bg-info">Silver</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2 Years</td>
+                                    <td><strong>25%</strong></td>
+                                    <td><span class="badge bg-info">Silver Plus</span></td>
+                                </tr>
+                                <tr>
+                                    <td>3 Years</td>
+                                    <td><strong>35%</strong></td>
+                                    <td><span class="badge bg-warning">Gold</span></td>
+                                </tr>
+                                <tr>
+                                    <td>4 Years</td>
+                                    <td><strong>45%</strong></td>
+                                    <td><span class="badge bg-warning">Gold Plus</span></td>
+                                </tr>
+                                <tr>
+                                    <td>5+ Years</td>
+                                    <td><strong>50%</strong></td>
+                                    <td><span class="badge bg-success">Platinum</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-shield-alt"></i> NCB Protection</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Protect your NCB from being reset if you need to file a claim.</p>
+                    <p><strong>Benefits:</strong></p>
+                    <ul>
+                        <li>One claim allowed without losing NCB</li>
+                        <li>Valid for one policy year</li>
+                        <li>Only ₦5,000 per vehicle</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NCB Records -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-list"></i> Your NCB Records</h5>
+        </div>
+        <div class="card-body">
+            {% if ncb_records %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Vehicle</th>
+                            <th>Claim-Free Years</th>
+                            <th>Current NCB</th>
+                            <th>Last Claim Date</th>
+                            <th>Protection Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ncb in ncb_records %}
+                        <tr>
+                            <td>
+                                {% if ncb.vehicle %}
+                                    <i class="fas fa-car me-2" style="color: #4169E1;"></i>
+                                    {{ ncb.vehicle.make }} {{ ncb.vehicle.model }} ({{ ncb.vehicle.year }})
+                                    <br><small class="text-muted">{{ ncb.vehicle.registration_number }}</small>
+                                {% else %}
+                                    <span class="text-muted">All Vehicles</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <h5 class="mb-0">{{ ncb.claim_free_years }}</h5>
+                                <small class="text-muted">years</small>
+                            </td>
+                            <td>
+                                <h4 class="mb-0 text-success">{{ ncb.current_ncb_percentage }}%</h4>
+                                <small class="text-muted">discount</small>
+                            </td>
+                            <td>
+                                {% if ncb.last_claim_date %}
+                                    {{ ncb.last_claim_date|date:"M d, Y" }}
+                                {% else %}
+                                    <span class="text-success">No claims filed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if ncb.is_protected %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-shield-alt"></i> Protected
+                                    </span>
+                                    {% if ncb.protection_expiry %}
+                                        <br><small>Expires: {{ ncb.protection_expiry|date:"M d, Y" }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-secondary">Not Protected</span>
+                                    <br>
+                                    <a href="{% url 'core:purchase_ncb_protection' ncb.id %}" class="btn btn-sm btn-outline-primary mt-1">
+                                        <i class="fas fa-shield-alt"></i> Protect Now
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info" onclick="showHistory('{{ ncb.id }}')">
+                                    <i class="fas fa-history"></i> History
+                                </button>
+                            </td>
+                        </tr>
+                        
+                        <!-- NCB History Row (hidden by default) -->
+                        <tr id="history-{{ ncb.id }}" style="display: none;">
+                            <td colspan="6">
+                                <div class="p-3 bg-light">
+                                    <h6>NCB History</h6>
+                                    {% if ncb.ncb_history %}
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Year</th>
+                                                <th>Claim-Free Years</th>
+                                                <th>NCB Percentage</th>
+                                                <th>Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for entry in ncb.ncb_history %}
+                                            <tr>
+                                                <td>{{ entry.year }}</td>
+                                                <td>{{ entry.claim_free_years }}</td>
+                                                <td>{{ entry.percentage }}%</td>
+                                                <td>{{ entry.date|slice:":10" }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    {% else %}
+                                    <p class="text-muted mb-0">No history available</p>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No NCB records found. NCB will be calculated when you purchase your first policy.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tips Card -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-lightbulb"></i> Tips to Maximize Your NCB</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="fas fa-car-crash fa-2x text-warning mb-2"></i>
+                        <h6>Avoid Small Claims</h6>
+                        <p class="text-muted small">For minor damages, consider paying out of pocket to preserve your NCB discount.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
+                        <h6>Purchase NCB Protection</h6>
+                        <p class="text-muted small">Protect your accumulated NCB for just ₦5,000 per year.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="fas fa-sync-alt fa-2x text-primary mb-2"></i>
+                        <h6>Renew on Time</h6>
+                        <p class="text-muted small">Renew your policy before expiry to maintain your NCB continuity.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showHistory(ncbId) {
+    const row = document.getElementById(`history-${ncbId}`);
+    if (row.style.display === 'none') {
+        row.style.display = 'table-row';
+    } else {
+        row.style.display = 'none';
+    }
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+.table td {
+    vertical-align: middle;
+}
+.btn-outline-primary {
+    border-color: #4169E1;
+    color: #4169E1;
+}
+.btn-outline-primary:hover {
+    background-color: #4169E1;
+    border-color: #4169E1;
+    color: white;
+}
+</style>
+{% endblock %}

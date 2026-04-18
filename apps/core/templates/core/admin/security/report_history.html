@@ -1,0 +1,157 @@
+{% extends 'core/admin/security/security_base.html' %}
+{% block title %}Report History - {{ report.name }} - Edgway Security{% endblock %}
+
+{% block content %}
+<div class="edgway-topbar">
+    <h1 class="page-title">
+        <i class="fas fa-history"></i> Report History
+    </h1>
+    <div class="topbar-actions">
+        <a href="{% url 'core:scheduled_reports_list' %}" class="edgway-btn edgway-btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Reports
+        </a>
+    </div>
+</div>
+
+<!-- Report Info -->
+<div class="edgway-card mb-4">
+    <div class="edgway-card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5><i class="fas fa-file-alt"></i> {{ report.name }}</h5>
+                <p class="text-muted mb-0">{{ report.get_report_type_display }} | {{ report.get_frequency_display }} at {{ report.time_of_day|time:"H:i" }}</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <span class="badge bg-{% if report.status == 'active' %}success{% elif report.status == 'paused' %}warning{% else %}secondary{% endif %} px-3 py-2">
+                    {{ report.get_status_display }}
+                </span>
+                <p class="text-muted mt-2 mb-0">Total Runs: {{ report.run_count }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Run History -->
+<div class="edgway-card">
+    <div class="edgway-card-header">
+        <h5><i class="fas fa-list"></i> Run History</h5>
+    </div>
+    <div class="edgway-card-body p-0">
+        <div class="table-responsive">
+            <table class="edgway-table">
+                <thead>
+                    <tr>
+                        <th>Started</th>
+                        <th>Completed</th>
+                        <th>Duration</th>
+                        <th>Recipients</th>
+                        <th>Status</th>
+                        <th>File</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in history %}
+                    <tr>
+                        <td>{{ run.started_at|date:"M d, Y H:i:s" }}</td>
+                        <td>
+                            {% if run.completed_at %}
+                                {{ run.completed_at|date:"M d, Y H:i:s" }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if run.completed_at %}
+                                {{ run.started_at|timesince:run.completed_at }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ run.recipients_count }}</td>
+                        <td>
+                            {% if run.status == 'success' %}
+                                <span class="badge bg-success">Success</span>
+                            {% elif run.status == 'failed' %}
+                                <span class="badge bg-danger" title="{{ run.error_message }}">Failed</span>
+                            {% else %}
+                                <span class="badge bg-warning">Partial</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if run.report_file %}
+                                <span class="badge bg-info">{{ run.file_size }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                {% if run.report_file %}
+                                <a href="{{ run.report_file.url }}" class="edgway-btn edgway-btn-outline btn-sm" download>
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                {% endif %}
+                                <button class="edgway-btn edgway-btn-outline btn-sm" onclick="viewDetails('{{ run.id }}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="fas fa-history fa-3x mb-3"></i>
+                            <p>No run history available</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-chart-bar"></i> Success Rate</h5>
+            </div>
+            <div class="edgway-card-body">
+                {% with success_count=history|length|default:0 %}
+                <div class="text-center">
+                    <div class="display-4 fw-bold text-success">{{ success_rate|default:100 }}%</div>
+                    <p class="text-muted">Successful runs: {{ success_count }} / {{ history|length }}</p>
+                    <div class="edgway-progress mt-3" style="height: 20px;">
+                        <div class="edgway-progress-bar bg-success" style="width: {{ success_rate|default:100 }}%">
+                            {{ success_rate|default:100 }}%
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-clock"></i> Average Duration</h5>
+            </div>
+            <div class="edgway-card-body">
+                <div class="text-center">
+                    <div class="display-4 fw-bold text-info">{{ avg_duration|default:"0s" }}</div>
+                    <p class="text-muted">Per report generation</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewDetails(runId) {
+    showToast('Info', 'Detailed view coming soon', 'info');
+}
+</script>
+{% endblock %}

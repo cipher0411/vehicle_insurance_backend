@@ -1,0 +1,418 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Cancellation - {{ cancellation.cancellation_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:admin_cancellations' %}">Cancellations</a></li>
+                    <li class="breadcrumb-item active">{{ cancellation.cancellation_number }}</li>
+                </ol>
+            </nav>
+            <h2>
+                <i class="fas fa-ban"></i> 
+                Cancellation Request - {{ cancellation.cancellation_number }}
+            </h2>
+        </div>
+        <div class="col-auto">
+            {% if cancellation.cancellation_document %}
+                <a href="{{ cancellation.cancellation_document.url }}" class="btn btn-outline-primary" target="_blank">
+                    <i class="fas fa-download"></i> Download Document
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-md-8">
+            <!-- Status Card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">Status: 
+                                {% if cancellation.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending Review</span>
+                                {% elif cancellation.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif cancellation.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% elif cancellation.status == 'processed' %}
+                                    <span class="badge bg-info">Processed</span>
+                                {% elif cancellation.status == 'refunded' %}
+                                    <span class="badge bg-primary">Refunded</span>
+                                {% endif %}
+                            </h5>
+                            <p class="text-muted mb-0">
+                                Requested on {{ cancellation.created_at|date:"F d, Y H:i" }}
+                            </p>
+                        </div>
+                        {% if cancellation.status == 'pending' %}
+                        <div>
+                            <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#approveModal">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        </div>
+                        {% elif cancellation.status == 'approved' %}
+                        <div>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#refundModal">
+                                <i class="fas fa-money-bill"></i> Process Refund
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cancellation Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Cancellation Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Cancellation Number:</div>
+                        <div class="col-md-9">{{ cancellation.cancellation_number }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Policy:</div>
+                        <div class="col-md-9">
+                            <a href="{% url 'core:admin_policy_detail' cancellation.policy.id %}">
+                                {{ cancellation.policy.policy_number }}
+                            </a>
+                            ({{ cancellation.policy.get_policy_type_display }})
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Customer:</div>
+                        <div class="col-md-9">
+                            {{ cancellation.user.get_full_name|default:cancellation.user.email }}<br>
+                            <small class="text-muted">{{ cancellation.user.email }}</small>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Reason:</div>
+                        <div class="col-md-9">
+                            {{ cancellation.get_reason_display }}
+                            {% if cancellation.other_reason %}
+                                <br><small class="text-muted">{{ cancellation.other_reason }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Cancellation Date:</div>
+                        <div class="col-md-9">{{ cancellation.cancellation_date|date:"F d, Y" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Effective Date:</div>
+                        <div class="col-md-9">{{ cancellation.effective_date|date:"F d, Y" }}</div>
+                    </div>
+                    {% if cancellation.rejection_reason %}
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Rejection Reason:</div>
+                        <div class="col-md-9 text-danger">{{ cancellation.rejection_reason }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Refund Calculation -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calculator"></i> Refund Calculation</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th width="40%">Total Premium Paid</th>
+                            <td class="text-end">₦{{ cancellation.total_premium|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>Days in Force</th>
+                            <td class="text-end">{{ cancellation.days_in_force|default:"0" }} days</td>
+                        </tr>
+                        <tr>
+                            <th>Short Rate Applied</th>
+                            <td class="text-end">{{ cancellation.short_rate_percentage }}%</td>
+                        </tr>
+                        <tr>
+                            <th>Earned Premium</th>
+                            <td class="text-end">₦{{ cancellation.earned_premium|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>Unearned Premium</th>
+                            <td class="text-end">₦{{ cancellation.unearned_premium|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>Cancellation Fee</th>
+                            <td class="text-end text-danger">- ₦{{ cancellation.cancellation_fee|floatformat:2 }}</td>
+                        </tr>
+                        <tr style="background-color: #f8f9fa;">
+                            <th>Refund Amount</th>
+                            <td class="text-end">
+                                <h5 class="mb-0 text-success">₦{{ cancellation.refund_amount|floatformat:2 }}</h5>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Refund Information -->
+            {% if cancellation.refund_method %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Refund Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <label class="text-muted">Method:</label>
+                        <div>{{ cancellation.refund_method }}</div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="text-muted">Reference:</label>
+                        <div>{{ cancellation.refund_reference }}</div>
+                    </div>
+                    <div>
+                        <label class="text-muted">Refund Date:</label>
+                        <div>{{ cancellation.refund_date|date:"F d, Y H:i" }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Related Credit Notes -->
+            {% if cancellation.debit_credit_notes.exists %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-exchange-alt"></i> Related Credit Notes</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Note #</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for note in cancellation.debit_credit_notes.all %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'core:admin_note_detail' note.id %}">
+                                        {{ note.note_number }}
+                                    </a>
+                                </td>
+                                <td>₦{{ note.total_amount|floatformat:2 }}</td>
+                                <td>{{ note.get_status_display }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Audit Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Audit Trail</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <small class="text-muted">Requested By:</small>
+                        <div>{{ cancellation.user.get_full_name|default:cancellation.user.email }}</div>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Requested At:</small>
+                        <div>{{ cancellation.created_at|date:"F d, Y H:i" }}</div>
+                    </div>
+                    {% if cancellation.approved_by %}
+                    <div class="mb-2">
+                        <small class="text-muted">Approved By:</small>
+                        <div>{{ cancellation.approved_by.get_full_name|default:cancellation.approved_by.email }}</div>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Approved At:</small>
+                        <div>{{ cancellation.approved_date|date:"F d, Y H:i" }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Approve Cancellation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        Refund amount will be calculated automatically based on short-rate table.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cancellation Fee (₦)</label>
+                        {{ form.cancellation_fee }}
+                        <small class="text-muted">Optional administrative fee</small>
+                    </div>
+                    <input type="hidden" name="action" value="approve">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Approve Cancellation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reject">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Cancellation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Rejection Reason *</label>
+                        <textarea class="form-control" name="rejection_reason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject Cancellation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Refund Modal -->
+<div class="modal fade" id="refundModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Process Refund</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> 
+                    Refund Amount: <strong>₦{{ cancellation.refund_amount|floatformat:2 }}</strong>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Refund Method</label>
+                    <select class="form-control" id="refundMethod" name="refund_method">
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="card_refund">Card Refund</option>
+                        <option value="credit_note">Credit Note</option>
+                        <option value="cash">Cash</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Reference Number</label>
+                    <input type="text" class="form-control" name="refund_reference" placeholder="Transaction/Reference #">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="processRefund()">
+                    <i class="fas fa-check"></i> Confirm Refund
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function processRefund() {
+    const method = document.getElementById('refundMethod').value;
+    const reference = document.querySelector('[name="refund_reference"]').value;
+    
+    if (!reference) {
+        alert('Please enter a reference number');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    formData.append('refund_method', method);
+    formData.append('refund_reference', reference);
+    
+    fetch('{% url "core:admin_process_refund" cancellation.id %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed to process refund: ' + data.message);
+        }
+    });
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+}
+.table th {
+    font-weight: 600;
+}
+.table td {
+    vertical-align: middle;
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+</style>
+{% endblock %}

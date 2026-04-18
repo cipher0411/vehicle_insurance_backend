@@ -1,0 +1,195 @@
+{% extends 'core/admin/security/security_base.html' %}
+{% block title %}Event Details - Edgway Security{% endblock %}
+
+{% block content %}
+<div class="edgway-topbar">
+    <h1 class="page-title">
+        <i class="fas fa-search"></i> Event Details
+    </h1>
+    <div class="topbar-actions">
+        <a href="{% url 'core:security_events' %}" class="edgway-btn edgway-btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Events
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Event Summary -->
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-info-circle"></i> Event Summary</h5>
+                <span class="badge badge-{{ event.severity|lower }} px-3 py-2">{{ event.severity }}</span>
+            </div>
+            <div class="edgway-card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Event Type</label>
+                        <div class="fw-bold fs-5">{{ event.get_event_type_display }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Timestamp</label>
+                        <div class="fw-bold">{{ event.created_at|date:"F d, Y H:i:s" }}</div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="text-muted small">IP Address</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <code class="fs-5">{{ event.ip_address }}</code>
+                            <button class="edgway-btn edgway-btn-outline btn-sm" onclick="copyToClipboard('{{ event.ip_address }}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="edgway-btn edgway-btn-danger btn-sm" onclick="blockIP('{{ event.ip_address }}')">
+                                <i class="fas fa-ban"></i> Block
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">User</label>
+                        <div>
+                            {% if event.user %}
+                                {{ event.user.email }}
+                            {% else %}
+                                <span class="text-muted">Anonymous</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Path</label>
+                        <div><code>{{ event.path }}</code></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Method</label>
+                        <div><span class="badge bg-secondary">{{ event.method }}</span></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="text-muted small">User Agent</label>
+                    <div class="edgway-code">{{ event.user_agent|default:"Not provided" }}</div>
+                </div>
+                
+                {% if event.details %}
+                <div class="mb-3">
+                    <label class="text-muted small">Event Details</label>
+                    <div class="edgway-code">
+                        <pre class="mb-0" style="color: inherit;">{{ event.details|pprint }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if event.request_data %}
+                <div class="mb-3">
+                    <label class="text-muted small">Request Data</label>
+                    <div class="edgway-code">
+                        <pre class="mb-0" style="color: inherit;">{{ event.request_data|pprint }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Actions -->
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-bolt"></i> Actions</h5>
+            </div>
+            <div class="edgway-card-body">
+                <div class="d-grid gap-2">
+                    <button class="edgway-btn edgway-btn-danger" onclick="blockIP('{{ event.ip_address }}')">
+                        <i class="fas fa-ban"></i> Block IP Address
+                    </button>
+                    <button class="edgway-btn edgway-btn-outline" onclick="addToThreatIntel('{{ event.ip_address }}')">
+                        <i class="fas fa-bug"></i> Add to Threat Intel
+                    </button>
+                    <button class="edgway-btn edgway-btn-outline" onclick="checkIPReputation('{{ event.ip_address }}')">
+                        <i class="fas fa-globe"></i> Check Reputation
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Events -->
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-link"></i> Related Events (Same IP)</h5>
+            </div>
+            <div class="edgway-card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for related in related_events %}
+                    <a href="{% url 'core:security_event_detail' related.id %}" class="list-group-item list-group-item-action" style="background: transparent; border-color: var(--edgway-border); color: #e2e8f0;">
+                        <div class="d-flex justify-content-between">
+                            <span>{{ related.get_event_type_display }}</span>
+                            <small class="text-muted">{{ related.created_at|time:"H:i:s" }}</small>
+                        </div>
+                        <span class="badge badge-{{ related.severity|lower }} mt-1">{{ related.severity }}</span>
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item text-center py-3 text-muted" style="background: transparent;">
+                        No related events
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Geolocation Info -->
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-map-marker-alt"></i> IP Information</h5>
+            </div>
+            <div class="edgway-card-body">
+                <div id="ipInfo">Loading...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied', 'Copied to clipboard', 'success');
+    });
+}
+
+function blockIP(ip) {
+    if (confirm(`Block IP address ${ip}?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{% url 'core:block_ip' %}";
+        form.innerHTML = `
+            {% csrf_token %}
+            <input type="hidden" name="ip_address" value="${ip}">
+            <input type="hidden" name="reason" value="Blocked from event detail">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function addToThreatIntel(ip) {
+    window.location.href = "{% url 'core:add_threat_intel' %}?value=" + ip + "&type=ip";
+}
+
+function checkIPReputation(ip) {
+    showToast('Checking', 'Fetching IP reputation...', 'info');
+    // You can implement an AJAX call here
+}
+
+// Fetch IP info (mock)
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('ipInfo').innerHTML = `
+        <div class="text-center text-muted">
+            <i class="fas fa-shield"></i> IP: {{ event.ip_address }}
+        </div>
+    `;
+});
+</script>
+{% endblock %}

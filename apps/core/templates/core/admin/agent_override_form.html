@@ -1,0 +1,304 @@
+<!-- templates/core/admin/agent_override_form.html -->
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:admin_commissions' %}">Commissions</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'core:admin_agent_overrides' %}">Agent Overrides</a></li>
+                    <li class="breadcrumb-item active">{{ title }}</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-user-tag"></i> {{ title }}</h2>
+            <p class="text-muted">Set custom commission rates for specific agents</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_agent_overrides' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Overrides
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-cog"></i> Override Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="overrideForm">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> Please correct the errors below.
+                            <ul class="mb-0 mt-2">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li><strong>{{ field }}:</strong> {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.agent.id_for_label }}" class="form-label">
+                                    Agent <span class="text-danger">*</span>
+                                </label>
+                                {{ form.agent }}
+                                <small class="text-muted">Select the agent to override commission for</small>
+                                {% if form.agent.errors %}
+                                <div class="text-danger">{{ form.agent.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.policy_type.id_for_label }}" class="form-label">
+                                    Policy Type <span class="text-danger">*</span>
+                                </label>
+                                {{ form.policy_type }}
+                                {% if form.policy_type.errors %}
+                                <div class="text-danger">{{ form.policy_type.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.commission_rate.id_for_label }}" class="form-label">
+                                    Commission Rate (%) <span class="text-danger">*</span>
+                                </label>
+                                {{ form.commission_rate }}
+                                <small class="text-muted">Enter a value between 0 and 100</small>
+                                {% if form.commission_rate.errors %}
+                                <div class="text-danger">{{ form.commission_rate.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.reason.id_for_label }}" class="form-label">
+                                Reason for Override
+                            </label>
+                            {{ form.reason }}
+                            <small class="text-muted">Explain why this override is being applied</small>
+                            {% if form.reason.errors %}
+                            <div class="text-danger">{{ form.reason.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.effective_from.id_for_label }}" class="form-label">
+                                    Effective From <span class="text-danger">*</span>
+                                </label>
+                                {{ form.effective_from }}
+                                {% if form.effective_from.errors %}
+                                <div class="text-danger">{{ form.effective_from.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.effective_to.id_for_label }}" class="form-label">
+                                    Effective To
+                                </label>
+                                {{ form.effective_to }}
+                                <small class="text-muted">Leave blank for indefinite</small>
+                                {% if form.effective_to.errors %}
+                                <div class="text-danger">{{ form.effective_to.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> This override will take precedence over any commission structure for the selected agent and policy type.
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-save"></i> 
+                                {% if override %}Update{% else %}Create{% endif %} Override
+                            </button>
+                            <a href="{% url 'core:admin_agent_overrides' %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Current Overrides for Selected Agent -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Existing Overrides</h5>
+                </div>
+                <div class="card-body p-0" id="existingOverrides">
+                    <div class="text-center py-3 text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Select an agent to view...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Help Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> Help</h5>
+                </div>
+                <div class="card-body">
+                    <h6>What are Overrides?</h6>
+                    <p class="small text-muted">
+                        Overrides allow you to set custom commission rates for specific agents, 
+                        overriding the default commission structure.
+                    </p>
+                    
+                    <h6 class="mt-3">When to Use Overrides</h6>
+                    <ul class="small text-muted">
+                        <li>Rewarding top-performing agents</li>
+                        <li>Temporary promotional rates</li>
+                        <li>Special agreements with specific agents</li>
+                        <li>Correcting commission discrepancies</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Priority</h6>
+                    <p class="small text-muted">
+                        Agent overrides always take precedence over commission structures.
+                        If an override exists for an agent and policy type, it will be used.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const agentSelect = document.getElementById('{{ form.agent.id_for_label }}');
+    const existingOverridesDiv = document.getElementById('existingOverrides');
+    
+    // Set default effective from date
+    const today = new Date().toISOString().split('T')[0];
+    const effectiveFrom = document.getElementById('{{ form.effective_from.id_for_label }}');
+    if (effectiveFrom && !effectiveFrom.value) {
+        effectiveFrom.value = today;
+    }
+    
+    // Load existing overrides when agent is selected
+    function loadExistingOverrides(agentId) {
+        if (!agentId) {
+            existingOverridesDiv.innerHTML = '<div class="text-center py-3 text-muted">Select an agent to view existing overrides</div>';
+            return;
+        }
+        
+        fetch(`/custom_admin/api/agent/${agentId}/overrides/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.overrides && data.overrides.length > 0) {
+                    let html = '<div class="list-group list-group-flush">';
+                    data.overrides.forEach(override => {
+                        html += `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge bg-info">${override.policy_type_display}</span>
+                                        <strong class="ms-2">${override.commission_rate}%</strong>
+                                    </div>
+                                    <span class="badge ${override.is_active ? 'bg-success' : 'bg-secondary'}">
+                                        ${override.is_active ? 'Active' : 'Inactive'}
+                                    </span>
+                                </div>
+                                <small class="text-muted">
+                                    Effective: ${override.effective_from}
+                                    ${override.effective_to ? ' to ' + override.effective_to : ' (Ongoing)'}
+                                </small>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    existingOverridesDiv.innerHTML = html;
+                } else {
+                    existingOverridesDiv.innerHTML = '<div class="text-center py-3 text-muted">No existing overrides for this agent</div>';
+                }
+            })
+            .catch(error => {
+                existingOverridesDiv.innerHTML = '<div class="text-center py-3 text-danger">Error loading overrides</div>';
+            });
+    }
+    
+    if (agentSelect) {
+        agentSelect.addEventListener('change', function() {
+            loadExistingOverrides(this.value);
+        });
+        
+        // Load on page load if editing
+        if (agentSelect.value) {
+            loadExistingOverrides(agentSelect.value);
+        }
+    }
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { 
+    margin: 0; 
+    font-weight: 600; 
+}
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    padding: 10px 12px;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+    padding: 10px 20px;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+}
+.alert-danger ul {
+    padding-left: 20px;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+.list-group-item:first-child {
+    border-top: none;
+}
+</style>
+{% endblock %}

@@ -1,36 +1,192 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm as AuthPasswordChangeForm
-from .models import Notification, User, Vehicle, InsurancePolicy, Claim, SupportTicket, TicketReply, PromoCode, Notification, PressCategory, PressRelease, MediaCoverage, MediaKit, BlogPost, BlogCategory, BlogTag, BlogComment, NewsletterSubscriber
 from django_countries.fields import CountryField
+from django_countries.widgets import CountrySelectWidget
+from phonenumber_field.formfields import PhoneNumberField
+from phonenumber_field.widgets import PhoneNumberPrefixWidget
+from .models import DebitCreditNote, User, Vehicle, InsurancePolicy, Claim, SupportTicket, TicketReply, PromoCode, Notification, MediaCoverage, PressRelease, PressRelease
+from apps.core.models import PressCategory, MediaKit, AgentCommissionOverride
 from django.utils import timezone
+import re
+from django import forms
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from .models import User
+import re
+from django_countries.fields import CountryField
+from django_countries.widgets import CountrySelectWidget
+
+
+# apps/core/forms.py - Updated UserRegistrationForm
+
 class UserRegistrationForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
-    confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter password'}),
+        label='Password',
+        help_text='Your password must contain at least 8 characters, including uppercase, lowercase, and numbers.'
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm password'}),
+        label='Confirm Password'
+    )
+    
+    # Custom phone number with country select
+    phone_country = CountryField().formfield(
+        initial='NG',
+        widget=CountrySelectWidget(attrs={'class': 'form-select', 'style': 'width: 100%;'})
+    )
+    phone_local = forms.CharField(
+        max_length=15,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone number'}),
+        label='Phone Number'
+    )
+    
+    # Terms and conditions agreement
+    agree_terms = forms.BooleanField(
+        required=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='I agree to the Terms and Conditions'
+    )
+    
+    # Hidden field for referral code
+    referral_code = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.HiddenInput()
+    )
     
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'phone_number', 'date_of_birth']
+        fields = ['email', 'first_name', 'last_name', 'date_of_birth', 'referral_code']
         widgets = {
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'date_of_birth': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Email address',
+                'autocomplete': 'off'
+            }),
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'First name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Last name'
+            }),
+            'date_of_birth': forms.DateInput(attrs={
+                'class': 'form-control', 
+                'type': 'date',
+                'placeholder': 'YYYY-MM-DD (Optional)'
+            }),
         }
+        labels = {
+            'date_of_birth': 'Date of Birth (Optional)',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['date_of_birth'].required = False
+        self.fields['phone_local'].required = False
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email=email).exists():
+            raise forms.ValidationError('This email is already registered.')
+        return email
+    
+    def clean_phone_local(self):
+        phone = self.cleaned_data.get('phone_local', '')
+        if phone:
+            # Remove any non-digit characters
+            phone = re.sub(r'\D', '', phone)
+            if len(phone) < 7 or len(phone) > 15:
+                raise forms.ValidationError('Please enter a valid phone number (7-15 digits)')
+        return phone
+    
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        
+        # Use Django's built-in password validators
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            raise forms.ValidationError(e.messages)
+        
+        # Additional custom validation
+        if len(password) < 8:
+            raise forms.ValidationError('Password must be at least 8 characters long.')
+        if not re.search(r'[A-Z]', password):
+            raise forms.ValidationError('Password must contain at least one uppercase letter.')
+        if not re.search(r'[a-z]', password):
+            raise forms.ValidationError('Password must contain at least one lowercase letter.')
+        if not re.search(r'[0-9]', password):
+            raise forms.ValidationError('Password must contain at least one number.')
+        
+        return password
     
     def clean(self):
         cleaned_data = super().clean()
         password = cleaned_data.get('password')
         confirm_password = cleaned_data.get('confirm_password')
+        phone_country = cleaned_data.get('phone_country')
+        phone_local = cleaned_data.get('phone_local')
         
-        if password != confirm_password:
+        # Check if passwords match
+        if password and confirm_password and password != confirm_password:
             raise forms.ValidationError("Passwords do not match")
         
+        # Combine country and phone number
+        if phone_local and phone_country:
+            try:
+                from phonenumbers import country_code_for_region
+                dial_code = country_code_for_region(phone_country)
+                full_phone = f"+{dial_code}{phone_local}"
+                cleaned_data['phone_number'] = full_phone
+                
+                # Check if phone number already exists
+                if User.objects.filter(phone_number=full_phone).exists():
+                    raise forms.ValidationError('This phone number is already registered.')
+            except Exception as e:
+                raise forms.ValidationError(f'Error processing phone number: {str(e)}')
+        
         return cleaned_data
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data['password'])
+        user.username = None  # Will be auto-generated in model save
+        user.phone_number = self.cleaned_data.get('phone_number', None)
+        
+        if commit:
+            user.save()
+        return user
+
 
 class UserLoginForm(forms.Form):
-    email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control'}))
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'Email address'
+        })
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'Password'
+        })
+    )
+    remember_me = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='Remember me'
+    )
+
+
+class PasswordChangeForm(AuthPasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
     
     
 # Add to forms.py
@@ -180,6 +336,132 @@ class CustomSetPasswordForm(SetPasswordForm):
         
         return password
     
+    
+
+
+from django import forms
+from django.db.models import Sum
+from .models import User, AgentProfile, AgentReferral, InsurancePolicy
+
+class AgentRegistrationForm(forms.ModelForm):
+    """Form for registering new agents (admin only)"""
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter password'}),
+        label='Password',
+        help_text='Minimum 8 characters with uppercase, lowercase, and numbers.'
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm password'}),
+        label='Confirm Password'
+    )
+    
+    agent_type = forms.ChoiceField(
+        choices=[('individual', 'Individual Agent'), ('corporate', 'Corporate Agent'), ('broker', 'Broker')],
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        initial='individual'
+    )
+    
+    # Commission rate is now optional - will use structure if not provided
+    commission_rate = forms.DecimalField(
+        max_digits=5, decimal_places=2, required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+        help_text='Leave blank to use default commission structure'
+    )
+    
+    # Option to override structure for this agent
+    use_custom_rate = forms.BooleanField(
+        required=False, initial=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='Use custom commission rate (overrides structure)'
+    )
+    
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'last_name', 'phone_number']
+        widgets = {
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email address'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last name'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone number (optional)'}),
+        }
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError('This email is already registered.')
+        return email
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+        
+        if password and confirm_password and password != confirm_password:
+            raise forms.ValidationError("Passwords do not match")
+        
+        if password and len(password) < 8:
+            raise forms.ValidationError("Password must be at least 8 characters long.")
+        
+        # If using custom rate, commission_rate is required
+        if cleaned_data.get('use_custom_rate') and not cleaned_data.get('commission_rate'):
+            self.add_error('commission_rate', 'Commission rate is required when using custom rate.')
+        
+        return cleaned_data
+
+
+class AgentProfileForm(forms.ModelForm):
+    """Form for updating agent profile"""
+    class Meta:
+        model = AgentProfile
+        fields = [
+            'agent_type', 'business_name', 'business_address', 'business_phone',
+            'tax_id', 'bank_name', 'bank_account_name', 'bank_account_number',
+            'bank_sort_code', 'commission_rate', 'bonus_eligible'
+        ]
+        widgets = {
+            'agent_type': forms.Select(attrs={'class': 'form-control'}),
+            'business_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Business name'}),
+            'business_address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Business address'}),
+            'business_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Business phone'}),
+            'tax_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tax ID/VAT number'}),
+            'bank_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Bank name'}),
+            'bank_account_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Account name'}),
+            'bank_account_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Account number'}),
+            'bank_sort_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Sort code'}),
+            'commission_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'bonus_eligible': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class AgentCustomerForm(forms.Form):
+    """Form for agents to add customers manually"""
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Customer email'})
+    )
+    first_name = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First name'})
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last name'})
+    )
+    phone_number = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone number'})
+    )
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Notes'})
+    )
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError('A user with this email already exists.')
+        return email
+
+
 
 class VehicleForm(forms.ModelForm):
     class Meta:
@@ -195,8 +477,8 @@ class VehicleForm(forms.ModelForm):
             'engine_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter engine number'}),
             'chassis_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter chassis number'}),
             'vehicle_type': forms.Select(attrs={'class': 'form-control'}),
-            'make': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Toyota, Honda'}),
-            'model': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Camry, Accord'}),
+            'make': forms.Select(attrs={'class': 'form-control', 'id': 'id_make'}),
+            'model': forms.Select(attrs={'class': 'form-control', 'id': 'id_model'}),
             'year': forms.NumberInput(attrs={'class': 'form-control', 'min': '1900', 'max': '2026'}),
             'fuel_type': forms.Select(attrs={'class': 'form-control'}),
             'engine_capacity': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Engine capacity in CC'}),
@@ -205,6 +487,12 @@ class VehicleForm(forms.ModelForm):
             'registration_certificate': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf,.jpg,.jpeg,.png'}),
             'current_mileage': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Current mileage in km', 'min': '0'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make fields optional if needed
+        self.fields['make'].required = True
+        self.fields['model'].required = True
 
 class PolicyPurchaseForm(forms.Form):
     vehicle_id = forms.CharField(widget=forms.HiddenInput())
@@ -224,15 +512,12 @@ class ClaimForm(forms.ModelForm):
     class Meta:
         model = Claim
         fields = [
-            'policy',
-            'claim_type',
-            'incident_date',
-            'incident_location',
-            'incident_description',
-            'claimed_amount'
+            'policy', 'vehicle', 'claim_type', 'incident_date',
+            'incident_location', 'incident_description', 'claimed_amount'
         ]
         widgets = {
             'policy': forms.Select(attrs={'class': 'form-control'}),
+            'vehicle': forms.Select(attrs={'class': 'form-control'}),
             'claim_type': forms.Select(attrs={'class': 'form-control'}),
             'incident_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
             'incident_location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter incident location'}),
@@ -244,7 +529,7 @@ class ClaimForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
-        # Set default incident date to now (rounded to nearest 5 minutes)
+        # Set default incident date to now
         if not self.initial.get('incident_date'):
             now = timezone.now()
             minutes = (now.minute // 5) * 5
@@ -252,8 +537,18 @@ class ClaimForm(forms.ModelForm):
         
         if user:
             self.fields['policy'].queryset = InsurancePolicy.objects.filter(user=user, status='active')
+            # Get vehicles from user's active policies
+            policy_vehicles = Vehicle.objects.filter(
+                policies__user=user, 
+                policies__status='active'
+            ).distinct()
+            self.fields['vehicle'].queryset = policy_vehicles
+            self.fields['vehicle'].required = False
+            self.fields['vehicle'].help_text = "Select the vehicle involved (optional, will use policy vehicle if not selected)"
         else:
             self.fields['policy'].queryset = InsurancePolicy.objects.filter(status='active')
+            self.fields['vehicle'].queryset = Vehicle.objects.filter(is_insured=True)
+            self.fields['vehicle'].required = False
     
     def clean_claimed_amount(self):
         claimed_amount = self.cleaned_data.get('claimed_amount')
@@ -276,12 +571,11 @@ class ClaimForm(forms.ModelForm):
         if incident_date:
             now = timezone.now()
             
-            # Allow incidents up to 10 minutes in the future (handles submission time)
+            # Allow incidents up to 10 minutes in the future
             if incident_date > now + timedelta(minutes=10):
                 raise forms.ValidationError('Incident date cannot be in the future')
             
             if policy:
-                # Convert policy start_date (date) to datetime for comparison
                 policy_start = timezone.make_aware(
                     datetime.combine(policy.start_date, datetime.min.time())
                 )
@@ -291,7 +585,6 @@ class ClaimForm(forms.ModelForm):
                         f'Incident date cannot be before policy start date ({policy.start_date.strftime("%B %d, %Y")})'
                     )
                 
-                # Check against policy end date
                 if policy.status == 'active':
                     policy_end = timezone.make_aware(
                         datetime.combine(policy.end_date, datetime.max.time())
@@ -302,6 +595,17 @@ class ClaimForm(forms.ModelForm):
                         )
         
         return incident_date
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        policy = cleaned_data.get('policy')
+        vehicle = cleaned_data.get('vehicle')
+        
+        # If vehicle not selected, use policy's vehicle
+        if policy and not vehicle:
+            cleaned_data['vehicle'] = policy.vehicle
+        
+        return cleaned_data
     
     
 
@@ -379,11 +683,6 @@ class ProfileUpdateForm(forms.ModelForm):
         return country
     
 
-class PasswordChangeForm(AuthPasswordChangeForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields:
-            self.fields[field].widget.attrs.update({'class': 'form-control'})
 
 from django import forms
 from .models import SupportTicket, TicketReply
@@ -676,8 +975,257 @@ class PolicyPurchaseForm(forms.Form):
     coverage_amount = forms.DecimalField(required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
     promo_code = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter promo code'}))
     
+
+
+
+
+
+
+
+
+from.models import DebitCreditNote, PolicyEndorsement, PolicyRenewal, InstallmentPlan, PolicyCancellation, CommissionStructure
+
+# ============================================
+# DEBIT/CREDIT NOTE FORMS
+# ============================================
+# apps/core/forms.py - Updated DebitCreditNoteForm
+
+class DebitCreditNoteForm(forms.ModelForm):
+    class Meta:
+        model = DebitCreditNote
+        fields = ['policy', 'note_type', 'base_amount', 'tax_amount', 
+                  'reason', 'description', 'issue_date', 'due_date', 'status']
+        widgets = {
+            'policy': forms.Select(attrs={'class': 'form-control'}),
+            'note_type': forms.Select(attrs={'class': 'form-control'}),
+            'base_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'tax_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'reason': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'issue_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'status': forms.Select(attrs={'class': 'form-control'}, choices=[
+                ('draft', 'Draft'),
+                ('issued', 'Issued'),
+            ]),
+        }
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Show only active and pending policies with customer names
+        self.fields['policy'].queryset = InsurancePolicy.objects.filter(
+            status__in=['active', 'pending']
+        ).select_related('user').order_by('-created_at')
+        
+        # Customize policy display
+        self.fields['policy'].label_from_instance = lambda obj: f"{obj.policy_number} - {obj.user.get_full_name() or obj.user.email} ({obj.get_policy_type_display()})"
     
+    def clean_base_amount(self):
+        base_amount = self.cleaned_data.get('base_amount')
+        if base_amount and base_amount < 0:
+            raise forms.ValidationError('Base amount cannot be negative')
+        return base_amount
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        note_type = cleaned_data.get('note_type')
+        base_amount = cleaned_data.get('base_amount')
+        
+        if note_type == 'credit' and base_amount and base_amount <= 0:
+            raise forms.ValidationError('Credit note amount must be positive')
+        
+        return cleaned_data
+
+
+# ============================================
+# ENDORSEMENT FORMS
+# ============================================
+
+class PolicyEndorsementForm(forms.ModelForm):
+    class Meta:
+        model = PolicyEndorsement
+        fields = ['policy', 'endorsement_type', 'effective_date', 'reason']
+        widgets = {
+            'policy': forms.Select(attrs={'class': 'form-control'}),
+            'endorsement_type': forms.Select(attrs={'class': 'form-control'}),
+            'effective_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields['policy'].queryset = InsurancePolicy.objects.filter(user=user, status='active')
+
+
+class EndorsementApprovalForm(forms.Form):
+    """Form for approving/rejecting endorsements"""
+    action = forms.ChoiceField(choices=[('approve', 'Approve'), ('reject', 'Reject')])
+    premium_adjustment = forms.DecimalField(required=False, max_digits=12, decimal_places=2)
+    tax_adjustment = forms.DecimalField(required=False, max_digits=12, decimal_places=2, initial=0)
+    rejection_reason = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 3}))
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        action = cleaned_data.get('action')
+        
+        if action == 'reject' and not cleaned_data.get('rejection_reason'):
+            raise forms.ValidationError('Rejection reason is required')
+        
+        return cleaned_data
+
+
+# ============================================
+# RENEWAL FORMS
+# ============================================
+
+class PolicyRenewalForm(forms.ModelForm):
+    apply_ncb = forms.BooleanField(required=False, initial=True, 
+                                   widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    promo_code = forms.CharField(required=False, max_length=50,
+                                 widget=forms.TextInput(attrs={'class': 'form-control'}))
+    
+    class Meta:
+        model = PolicyRenewal
+        fields = ['renewal_date']
+        widgets = {
+            'renewal_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
+
+
+# ============================================
+# INSTALLMENT PLAN FORMS
+# ============================================
+
+class InstallmentPlanForm(forms.ModelForm):
+    class Meta:
+        model = InstallmentPlan
+        fields = ['policy', 'frequency', 'number_of_installments', 'down_payment']
+        widgets = {
+            'policy': forms.Select(attrs={'class': 'form-control'}),
+            'frequency': forms.Select(attrs={'class': 'form-control'}),
+            'number_of_installments': forms.NumberInput(attrs={'class': 'form-control', 'min': '2', 'max': '12'}),
+            'down_payment': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['policy'].queryset = InsurancePolicy.objects.filter(status='pending')
+
+
+# ============================================
+# CANCELLATION FORMS
+# ============================================
+
+class PolicyCancellationForm(forms.ModelForm):
+    class Meta:
+        model = PolicyCancellation
+        fields = ['policy', 'reason', 'other_reason', 'cancellation_date', 'effective_date']
+        widgets = {
+            'policy': forms.Select(attrs={'class': 'form-control'}),
+            'reason': forms.Select(attrs={'class': 'form-control'}),
+            'other_reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'cancellation_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'effective_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields['policy'].queryset = InsurancePolicy.objects.filter(user=user, status='active')
+    
+    def clean_effective_date(self):
+        effective_date = self.cleaned_data.get('effective_date')
+        policy = self.cleaned_data.get('policy')
+        
+        if policy and effective_date:
+            if effective_date < policy.start_date:
+                raise forms.ValidationError('Effective date cannot be before policy start date')
+            if effective_date > policy.end_date:
+                raise forms.ValidationError('Effective date cannot be after policy end date')
+        
+        return effective_date
+
+
+class CancellationApprovalForm(forms.Form):
+    """Form for approving/rejecting cancellations"""
+    action = forms.ChoiceField(choices=[('approve', 'Approve'), ('reject', 'Reject')])
+    cancellation_fee = forms.DecimalField(required=False, max_digits=12, decimal_places=2, initial=0)
+    rejection_reason = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 3}))
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        action = cleaned_data.get('action')
+        
+        if action == 'reject' and not cleaned_data.get('rejection_reason'):
+            raise forms.ValidationError('Rejection reason is required')
+        
+        return cleaned_data
+
+
+# ============================================
+# COMMISSION FORMS
+# ============================================
+
+class CommissionStructureForm(forms.ModelForm):
+    class Meta:
+        model = CommissionStructure
+        fields = [
+            'name', 'policy_type', 'agent_type', 'base_commission_rate',
+            'enable_tiered_commission', 'tier_1_threshold', 'tier_1_rate',
+            'tier_2_threshold', 'tier_2_rate', 'tier_3_threshold', 'tier_3_rate',
+            'enable_bonus', 'bonus_threshold', 'bonus_rate', 'bonus_cap',
+            'effective_from', 'effective_to', 'priority'
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Standard Agent Commission 2024'}),
+            'policy_type': forms.Select(attrs={'class': 'form-select'}),
+            'agent_type': forms.Select(attrs={'class': 'form-select'}),
+            'base_commission_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'enable_tiered_commission': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'tier_1_threshold': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'tier_1_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'tier_2_threshold': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'tier_2_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'tier_3_threshold': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'tier_3_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'enable_bonus': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'bonus_threshold': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'bonus_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'bonus_cap': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'effective_from': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'effective_to': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'priority': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
+        }
+        help_texts = {
+            'priority': 'Higher number = higher priority when multiple structures match',
+            'effective_to': 'Leave blank for indefinite',
+            'bonus_cap': 'Maximum bonus amount (0 for unlimited)',
+        }
+
+
+class AgentCommissionOverrideForm(forms.ModelForm):
+    class Meta:
+        model = AgentCommissionOverride
+        fields = ['agent', 'policy_type', 'commission_rate', 'reason', 'effective_from', 'effective_to']
+        widgets = {
+            'agent': forms.Select(attrs={'class': 'form-select'}),
+            'policy_type': forms.Select(attrs={'class': 'form-select'}),
+            'commission_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'effective_from': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'effective_to': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
+
+
+class CommissionApprovalForm(forms.Form):
+    """Form for approving commission payments"""
+    action = forms.ChoiceField(choices=[('approve', 'Approve'), ('reject', 'Reject')])
+    payment_reference = forms.CharField(required=False, max_length=100,
+                                        widget=forms.TextInput(attrs={'class': 'form-control'}))
+    notes = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 2}))  
     
     
     
@@ -1128,6 +1676,58 @@ class OfficeLocationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['slug'].required = False
+        
+        
+        
+        
+        
+from .models import ThreatIntel, APIKey, InsuranceSettings     
+# Security Forms
+class ThreatIntelForm(forms.ModelForm):
+    class Meta:
+        model = ThreatIntel
+        fields = ['intel_type', 'value', 'threat_score', 'category', 'description', 'is_active', 'tags']
+        widgets = {
+            'intel_type': forms.Select(attrs={'class': 'form-control'}),
+            'value': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., 192.168.1.1'}),
+            'threat_score': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 100}),
+            'category': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., malware, phishing'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'tags': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'comma,separated,tags'}),
+        }
+
+
+class APIKeyForm(forms.ModelForm):
+    class Meta:
+        model = APIKey
+        fields = ['name', 'scopes', 'rate_limit', 'expires_at']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Production API Key'}),
+            'scopes': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'read,write'}),
+            'rate_limit': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 10000}),
+            'expires_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+        }
+
+
+class SecuritySettingsForm(forms.ModelForm):
+    class Meta:
+        model = InsuranceSettings
+        fields = [
+            'flutterwave_public_key', 'flutterwave_secret_key', 'flutterwave_encryption_key',
+            'flutterwave_is_live'
+        ]
+        widgets = {
+            'flutterwave_public_key': forms.TextInput(attrs={'class': 'form-control'}),
+            'flutterwave_secret_key': forms.PasswordInput(attrs={'class': 'form-control'}, render_value=True),
+            'flutterwave_encryption_key': forms.PasswordInput(attrs={'class': 'form-control'}, render_value=True),
+            'flutterwave_is_live': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        
+        
+        
+        
+        
         
         
         

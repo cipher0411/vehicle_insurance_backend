@@ -1,0 +1,304 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Policy Endorsements{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-pen"></i> Policy Endorsements</h2>
+            <p class="text-muted">Manage policy changes and endorsements</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_export_data' %}?model=endorsements&format=csv" class="btn btn-success">
+                <i class="fas fa-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Endorsements</h6>
+                            <h3>{{ total_endorsements }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-pen"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Pending Review</h6>
+                            <h3 class="text-warning">{{ pending_count }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Approved</h6>
+                            <h3 class="text-success">{{ approved_count }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Applied</h6>
+                            <h3 class="text-info">{{ applied_count }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-double text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second Row Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="fas fa-calculator fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted">Total Financial Adjustments</h6>
+                            <h4 class="{% if total_adjustments > 0 %}text-danger{% elif total_adjustments < 0 %}text-success{% else %}text-muted{% endif %}">
+                                {% if total_adjustments > 0 %}+{% endif %}₦{{ total_adjustments|floatformat:2|intcomma }}
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="fas fa-times-circle fa-2x text-danger"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted">Rejected</h6>
+                            <h4>{{ rejected_count }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by endorsement #, policy #, or customer..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="statusFilter">
+                <option value="">All Status</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="applied" {% if status_filter == 'applied' %}selected{% endif %}>Applied</option>
+                <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="typeFilter">
+                <option value="">All Types</option>
+                <option value="vehicle_change" {% if type_filter == 'vehicle_change' %}selected{% endif %}>Vehicle Change</option>
+                <option value="coverage_change" {% if type_filter == 'coverage_change' %}selected{% endif %}>Coverage Change</option>
+                <option value="premium_change" {% if type_filter == 'premium_change' %}selected{% endif %}>Premium Adjustment</option>
+                <option value="cancellation" {% if type_filter == 'cancellation' %}selected{% endif %}>Cancellation</option>
+                <option value="reinstatement" {% if type_filter == 'reinstatement' %}selected{% endif %}>Reinstatement</option>
+                <option value="other" {% if type_filter == 'other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary me-2" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Endorsements Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #4169E1; color: white;">
+                        <tr>
+                            <th>Endorsement #</th>
+                            <th>Type</th>
+                            <th>Policy #</th>
+                            <th>Customer</th>
+                            <th>Effective Date</th>
+                            <th>Premium Impact</th>
+                            <th>Requested Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for endorsement in endorsements %}
+                        <tr>
+                            <td><strong>{{ endorsement.endorsement_number }}</strong></td>
+                            <td>
+                                <span class="badge bg-info">{{ endorsement.get_endorsement_type_display }}</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'core:admin_policy_detail' endorsement.policy.id %}">
+                                    {{ endorsement.policy.policy_number }}
+                                </a>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user-circle me-2" style="color: #4169E1;"></i>
+                                    <div>
+                                        {{ endorsement.policy.user.get_full_name|default:endorsement.policy.user.email }}
+                                        <br><small class="text-muted">{{ endorsement.policy.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ endorsement.effective_date|date:"M d, Y" }}</td>
+                            <td>
+                                {% if endorsement.total_adjustment > 0 %}
+                                    <span class="text-danger">+₦{{ endorsement.total_adjustment|floatformat:2|intcomma }}</span>
+                                {% elif endorsement.total_adjustment < 0 %}
+                                    <span class="text-success">-₦{{ endorsement.total_adjustment|stringformat:".2f"|slice:"1:"|floatformat:2|intcomma }}</span>
+                                {% else %}
+                                    <span class="text-muted">₦0.00</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ endorsement.requested_date|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if endorsement.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif endorsement.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif endorsement.status == 'applied' %}
+                                    <span class="badge bg-info">Applied</span>
+                                {% elif endorsement.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% elif endorsement.status == 'cancelled' %}
+                                    <span class="badge bg-secondary">Cancelled</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'core:admin_endorsement_detail' endorsement.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <i class="fas fa-pen fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No endorsements found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% include 'core/includes/pagination.html' with page_obj=endorsements %}
+</div>
+
+<script>
+function applyFilters() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    const type = document.getElementById('typeFilter').value;
+    
+    let url = '?';
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    if (status) url += `status=${status}&`;
+    if (type) url += `type=${type}&`;
+    
+    window.location.href = url.slice(0, -1);
+}
+
+function clearFilters() {
+    window.location.href = window.location.pathname;
+}
+
+document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') applyFilters();
+});
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+.table td {
+    vertical-align: middle;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+.text-danger { color: #dc3545 !important; }
+.text-success { color: #10b981 !important; }
+</style>
+{% endblock %}

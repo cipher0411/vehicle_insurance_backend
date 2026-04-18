@@ -1,0 +1,441 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Policy Details - {{ policy.policy_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:agent_policies' %}">Policies</a></li>
+                    <li class="breadcrumb-item active">{{ policy.policy_number }}</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-file-contract"></i> Policy Details</h2>
+            <p class="text-muted">View policy information for your customer</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:agent_policies' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Policies
+            </a>
+            {% if policy.policy_document %}
+            <a href="{{ policy.policy_document.url }}" class="btn btn-primary" target="_blank">
+                <i class="fas fa-download"></i> Download Policy
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Policy Status Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Policy Information</h5>
+                        <span class="badge 
+                            {% if policy.status == 'active' %}bg-success
+                            {% elif policy.status == 'pending' %}bg-warning
+                            {% elif policy.status == 'expired' %}bg-danger
+                            {% elif policy.status == 'draft' %}bg-info
+                            {% else %}bg-secondary{% endif %} fs-6">
+                            {{ policy.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Policy Number:</strong> {{ policy.policy_number }}</p>
+                            <p class="mb-2"><strong>Policy Type:</strong> {{ policy.get_policy_type_display }}</p>
+                            <p class="mb-2"><strong>Coverage Amount:</strong> ₦{{ policy.coverage_amount|floatformat:2|intcomma }}</p>
+                            <p class="mb-2"><strong>Premium Amount:</strong> ₦{{ policy.premium_amount|floatformat:2|intcomma }}</p>
+                            <p class="mb-0"><strong>Deductible:</strong> ₦{{ policy.deductible|floatformat:2|intcomma }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Start Date:</strong> {{ policy.start_date|date:"F d, Y" }}</p>
+                            <p class="mb-2"><strong>End Date:</strong> {{ policy.end_date|date:"F d, Y" }}</p>
+                            <p class="mb-2"><strong>Created:</strong> {{ policy.created_at|date:"M d, Y" }}</p>
+                            <p class="mb-0">
+                                <strong>Days Remaining:</strong> 
+                                {% if policy.is_active %}
+                                    <span class="text-success">{{ policy.days_remaining }} days</span>
+                                {% elif policy.status == 'expired' %}
+                                    <span class="text-danger">Expired</span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Outstanding Balance -->
+                    {% with balance=policy.get_outstanding_balance %}
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Outstanding Balance:</strong></p>
+                            <p class="mb-0">
+                                <span class="fw-bold fs-5 {% if balance > 0 %}text-danger{% elif balance < 0 %}text-success{% else %}text-muted{% endif %}">
+                                    ₦{{ balance|floatformat:2|intcomma }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Payment Status:</strong></p>
+                            <p class="mb-0">
+                                {% if balance <= 0 %}
+                                    <span class="badge bg-success">Fully Paid</span>
+                                {% elif balance < policy.premium_amount %}
+                                    <span class="badge bg-warning">Partially Paid</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Unpaid</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    
+                    {% if policy.additional_benefits %}
+                    <hr>
+                    <h6>Additional Benefits</h6>
+                    <div class="row">
+                        {% for benefit in policy.additional_benefits %}
+                            <div class="col-md-6">
+                                <i class="fas fa-check-circle text-success me-2"></i>{{ benefit }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Name:</strong> {{ policy.user.get_full_name|default:'N/A' }}</p>
+                            <p class="mb-2"><strong>Email:</strong> {{ policy.user.email }}</p>
+                            <p class="mb-0"><strong>Phone:</strong> {{ policy.user.phone_number|default:'N/A' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Member Since:</strong> {{ policy.user.date_joined|date:"M d, Y" }}</p>
+                            <p class="mb-0">
+                                <a href="{% url 'core:agent_customer_detail' policy.user.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-user"></i> View Full Customer Profile
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicle Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-car"></i> Vehicle Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Vehicle:</strong> {{ policy.vehicle.make }} {{ policy.vehicle.model }}</p>
+                            <p class="mb-2"><strong>Year:</strong> {{ policy.vehicle.year }}</p>
+                            <p class="mb-2"><strong>Registration:</strong> {{ policy.vehicle.registration_number }}</p>
+                            <p class="mb-0"><strong>Color:</strong> {{ policy.vehicle.color }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Engine Number:</strong> {{ policy.vehicle.engine_number }}</p>
+                            <p class="mb-2"><strong>Chassis Number:</strong> {{ policy.vehicle.chassis_number }}</p>
+                            <p class="mb-2"><strong>Vehicle Type:</strong> {{ policy.vehicle.get_vehicle_type_display }}</p>
+                            <p class="mb-0"><strong>Fuel Type:</strong> {{ policy.vehicle.get_fuel_type_display }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payments History -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Payment History</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Transaction ID</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payments %}
+                                <tr>
+                                    <td><small>{{ payment.transaction_id|truncatechars:16 }}</small></td>
+                                    <td>
+                                        <span class="{% if payment.amount < 0 %}text-success{% else %}text-primary{% endif %} fw-bold">
+                                            {% if payment.amount < 0 %}-{% endif %}₦{{ payment.amount|floatformat:2|intcomma }}
+                                        </span>
+                                    </td>
+                                    <td>{{ payment.get_payment_method_display }}</td>
+                                    <td>
+                                        {% if payment.payment_details.type == 'down_payment' %}
+                                            <span class="badge bg-info">Down Payment</span>
+                                        {% elif payment.payment_details.type == 'installment' %}
+                                            <span class="badge bg-primary">Installment</span>
+                                        {% elif payment.payment_details.type == 'credit_note' %}
+                                            <span class="badge bg-success">Credit</span>
+                                        {% elif payment.payment_details.type == 'debit_note' %}
+                                            <span class="badge bg-danger">Debit</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Full</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if payment.status == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% elif payment.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif payment.status == 'pending_verification' %}
+                                            <span class="badge bg-info">Pending Verification</span>
+                                        {% elif payment.status == 'failed' %}
+                                            <span class="badge bg-danger">Failed</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ payment.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ payment.created_at|date:"M d, Y" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-3 text-muted">No payments recorded</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Claims History -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Claims History</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Claim #</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Filed Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for claim in claims %}
+                                <tr>
+                                    <td><strong>{{ claim.claim_number }}</strong></td>
+                                    <td>{{ claim.get_claim_type_display }}</td>
+                                    <td>₦{{ claim.claimed_amount|floatformat:2|intcomma }}</td>
+                                    <td>
+                                        {% if claim.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% elif claim.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif claim.status == 'under_review' %}
+                                            <span class="badge bg-info">Under Review</span>
+                                        {% elif claim.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% elif claim.status == 'settled' %}
+                                            <span class="badge bg-primary">Settled</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ claim.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ claim.created_at|date:"M d, Y" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-3 text-muted">No claims filed</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Commission Earned Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-hand-holding-usd"></i> Your Commission</h5>
+                </div>
+                <div class="card-body">
+                    {% if commission %}
+                        <div class="text-center">
+                            <div class="display-4 text-success mb-2">₦{{ commission.total_commission|floatformat:2|intcomma }}</div>
+                            <p class="mb-2">
+                                <span class="badge fs-6 
+                                    {% if commission.status == 'paid' %}bg-success
+                                    {% elif commission.status == 'approved' %}bg-info
+                                    {% elif commission.status == 'pending' %}bg-warning
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ commission.get_status_display }}
+                                </span>
+                            </p>
+                            <hr>
+                            <table class="table table-sm table-borderless text-start">
+                                <tr>
+                                    <td><strong>Commission #:</strong></td>
+                                    <td>{{ commission.commission_number }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Type:</strong></td>
+                                    <td>{{ commission.get_commission_type_display }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Rate:</strong></td>
+                                    <td>{{ commission.commission_rate }}%</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Base Commission:</strong></td>
+                                    <td>₦{{ commission.commission_amount|floatformat:2|intcomma }}</td>
+                                </tr>
+                                {% if commission.bonus_amount > 0 %}
+                                <tr>
+                                    <td><strong>Bonus:</strong></td>
+                                    <td class="text-success">+₦{{ commission.bonus_amount|floatformat:2|intcomma }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td><strong>Earned Date:</strong></td>
+                                    <td>{{ commission.earned_date|date:"M d, Y" }}</td>
+                                </tr>
+                                {% if commission.paid_date %}
+                                <tr>
+                                    <td><strong>Paid Date:</strong></td>
+                                    <td>{{ commission.paid_date|date:"M d, Y" }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                            <a href="{% url 'core:agent_commission_detail' commission.id %}" class="btn btn-outline-primary btn-sm w-100 mt-2">
+                                <i class="fas fa-eye"></i> View Full Details
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-hand-holding-usd fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No commission earned from this policy yet.</p>
+                            <p class="small text-muted">Commission is calculated when the policy is activated.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Policy Stats -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Policy Stats</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td>Total Payments:</td>
+                            <td class="text-end">{{ payments.count }}</td>
+                        </tr>
+                        <tr>
+                            <td>Completed Payments:</td>
+                            <td class="text-end">{{ payments|length }}</td>
+                        </tr>
+                        <tr>
+                            <td>Total Claims:</td>
+                            <td class="text-end">{{ claims.count }}</td>
+                        </tr>
+                        <tr>
+                            <td>Outstanding Balance:</td>
+                            <td class="text-end {% if policy.get_outstanding_balance > 0 %}text-danger{% elif policy.get_outstanding_balance < 0 %}text-success{% endif %} fw-bold">
+                                ₦{{ policy.get_outstanding_balance|floatformat:2|intcomma }}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Certificate Status -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-certificate"></i> Certificate Status</h5>
+                </div>
+                <div class="card-body">
+                    {% if policy.certificate and policy.certificate.status == 'generated' %}
+                        <div class="text-center">
+                            <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                            <p class="mb-1"><strong>Certificate Generated</strong></p>
+                            <p class="small text-muted">{{ policy.certificate.certificate_number }}</p>
+                            <p class="small text-muted">Issued: {{ policy.certificate.issue_date|date:"M d, Y" }}</p>
+                        </div>
+                    {% else %}
+                        <div class="text-center">
+                            <i class="fas fa-clock text-warning fa-2x mb-2"></i>
+                            <p class="mb-1"><strong>Certificate Not Available</strong></p>
+                            <p class="small text-muted">Certificate will be generated when policy is fully active.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.breadcrumb { background-color: transparent; padding: 0; }
+.table th { font-weight: 600; }
+.table td { vertical-align: middle; }
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.btn-outline-primary {
+    color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-outline-primary:hover {
+    background-color: #4169E1;
+    color: white;
+}
+.display-4 {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+.text-success { color: #10b981 !important; }
+.text-danger { color: #dc3545 !important; }
+.text-warning { color: #f59e0b !important; }
+.text-primary { color: #4169E1 !important; }
+</style>
+{% endblock %}

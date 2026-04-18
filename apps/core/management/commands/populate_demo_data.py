@@ -13,7 +13,8 @@ from apps.core.models import (
     PromoCode, BlogCategory, BlogTag, BlogPost, BlogComment,
     NewsletterSubscriber, PressCategory, PressRelease, MediaCoverage,
     JobCategory, JobLocation, JobType, JobPosting, JobApplication,
-    DocumentCategory, PublicDocument, ContactInquiry, OfficeLocation
+    DocumentCategory, PublicDocument, ContactInquiry, OfficeLocation,
+    NoClaimBonus, PolicyRenewal
 )
 
 fake = Faker()
@@ -40,10 +41,13 @@ class Command(BaseCommand):
         # Create vehicles
         self.create_vehicles()
         
-        # Create policies
+        # Create policies (with varied dates and statuses)
         self.create_policies()
         
-        # Create claims
+        # Create no claim bonus for customers
+        self.create_no_claim_bonus()
+        
+        # Create claims (some users have policy for over 3 years without claims)
         self.create_claims()
         
         # Create payments
@@ -58,25 +62,25 @@ class Command(BaseCommand):
         # Create documents
         self.create_documents()
         
-        # Create support tickets
+        # Create support tickets (reduced)
         self.create_support_tickets()
         
         # Create promo codes
         self.create_promocodes()
         
-        # Create blog content
+        # Create blog content (reduced)
         self.create_blog_content()
         
-        # Create newsletter subscribers
+        # Create newsletter subscribers (reduced)
         self.create_newsletter_subscribers()
         
-        # Create press content
+        # Create press content (reduced)
         self.create_press_content()
         
         # Create job postings
         self.create_job_postings()
         
-        # Create contact inquiries
+        # Create contact inquiries (reduced)
         self.create_contact_inquiries()
         
         # Create office locations
@@ -121,7 +125,7 @@ class Command(BaseCommand):
             PromoCode, BlogPost, BlogComment, BlogTag, BlogCategory,
             NewsletterSubscriber, PressRelease, MediaCoverage, PressCategory,
             JobPosting, JobApplication, JobType, JobLocation, JobCategory,
-            ContactInquiry, PublicDocument
+            ContactInquiry, PublicDocument, NoClaimBonus, PolicyRenewal
         ]
         
         for model in models_to_clear:
@@ -311,6 +315,9 @@ class Command(BaseCommand):
                 'password': f'Customer@{i}23',
                 'role': 'Customer'
             }
+        
+        # Store customers list for later use
+        self.customers = customers
 
     def create_settings(self):
         self.stdout.write('Creating insurance settings...')
@@ -331,7 +338,7 @@ class Command(BaseCommand):
         customers = User.objects.filter(role='customer', email__contains='customer')
         
         makes = ['Toyota', 'Honda', 'Hyundai', 'Kia', 'Nissan', 'Ford', 'Mercedes', 'BMW']
-        models = ['Camry', 'Corolla', 'Civic', 'Accord', 'Elantra', 'Sonata', 'Optima', 'Altima', '3 Series', 'C-Class']
+        models_list = ['Camry', 'Corolla', 'Civic', 'Accord', 'Elantra', 'Sonata', 'Optima', 'Altima', '3 Series', 'C-Class']
         
         for customer in customers:
             # Create 1-2 vehicles per customer
@@ -343,8 +350,8 @@ class Command(BaseCommand):
                     chassis_number=f"CHS-{uuid.uuid4().hex[:8].upper()}",
                     vehicle_type=random.choice(['car', 'motorcycle', 'truck']),
                     make=random.choice(makes),
-                    model=random.choice(models),
-                    year=random.randint(2018, 2025),
+                    model=random.choice(models_list),
+                    year=random.randint(2015, 2025),
                     fuel_type=random.choice(['petrol', 'diesel', 'electric']),
                     engine_capacity=random.randint(1200, 3500),
                     color=random.choice(['Black', 'White', 'Silver', 'Blue', 'Red', 'Gray']),
@@ -356,60 +363,204 @@ class Command(BaseCommand):
         self.stdout.write(f'✅ Created {Vehicle.objects.count()} vehicles')
 
     def create_policies(self):
-        self.stdout.write('Creating insurance policies...')
-        vehicles = Vehicle.objects.all()
+        self.stdout.write('Creating insurance policies with varied dates and statuses...')
+        vehicles = list(Vehicle.objects.all())
         
         policy_types = ['comprehensive', 'third_party', 'standalone']
-        statuses = ['active', 'expired', 'pending']
+        today = timezone.now().date()
         
-        for vehicle in vehicles[:25]:
-            start_date = timezone.now().date() - timedelta(days=random.randint(0, 365))
-            end_date = start_date + timedelta(days=365)
+        policies_created = 0
+        
+        for vehicle in vehicles:
+            # Determine policy status based on random distribution
+            status_choice = random.choices(
+                ['active', 'expired', 'active', 'active', 'expired', 'pending', 'cancelled'],
+                weights=[40, 25, 10, 5, 10, 5, 5],  # 40% active, 25% expired, etc.
+                k=1
+            )[0]
             
-            InsurancePolicy.objects.create(
-                policy_number=f"POL-{uuid.uuid4().hex[:8].upper()}",
-                user=vehicle.user,
-                vehicle=vehicle,
-                policy_type=random.choice(policy_types),
-                status=random.choice(statuses),
-                coverage_amount=Decimal(random.randint(1000000, 7000000)),
-                premium_amount=Decimal(random.randint(50000, 250000)),
-                deductible=Decimal(random.randint(5000, 30000)),
-                start_date=start_date,
-                end_date=end_date,
-                terms_accepted=True
-            )
+            if status_choice == 'active':
+                # Active policies: start date between 1-365 days ago, end date in future
+                days_since_start = random.randint(1, 300)
+                start_date = today - timedelta(days=days_since_start)
+                end_date = start_date + timedelta(days=365)
+                
+                # Ensure end_date is in future
+                if end_date < today:
+                    end_date = today + timedelta(days=random.randint(30, 300))
+                    start_date = end_date - timedelta(days=365)
+                
+            elif status_choice == 'expired':
+                # Expired policies: end date in the past
+                days_expired = random.randint(1, 365)
+                end_date = today - timedelta(days=days_expired)
+                start_date = end_date - timedelta(days=365)
+                
+            elif status_choice == 'pending':
+                # Pending policies: start date in near future
+                start_date = today + timedelta(days=random.randint(1, 30))
+                end_date = start_date + timedelta(days=365)
+                
+            else:  # cancelled
+                # Cancelled policies: cancelled within 30-180 days of start
+                days_since_start = random.randint(30, 180)
+                start_date = today - timedelta(days=days_since_start)
+                end_date = start_date + timedelta(days=365)
+            
+            try:
+                policy = InsurancePolicy.objects.create(
+                    policy_number=f"POL-{uuid.uuid4().hex[:8].upper()}",
+                    user=vehicle.user,
+                    vehicle=vehicle,
+                    policy_type=random.choice(policy_types),
+                    status=status_choice,
+                    coverage_amount=Decimal(random.randint(1000000, 7000000)),
+                    premium_amount=Decimal(random.randint(50000, 250000)),
+                    deductible=Decimal(random.randint(5000, 30000)),
+                    start_date=start_date,
+                    end_date=end_date,
+                    terms_accepted=True
+                )
+                policies_created += 1
+                
+                # Create renewal record for policies that are 40 days from expiry
+                if status_choice == 'active':
+                    days_to_expiry = (end_date - today).days
+                    if 35 <= days_to_expiry <= 45:  # ~40 days to expire
+                        PolicyRenewal.objects.create(
+                            original_policy=policy,
+                            user=policy.user,
+                            original_premium=policy.premium_amount,
+                            renewal_premium=policy.premium_amount * Decimal('0.9'),  # 10% discount
+                            ncb_discount=policy.premium_amount * Decimal('0.1'),
+                            renewal_date=today,
+                            expiry_date=end_date,
+                            new_start_date=end_date + timedelta(days=1),
+                            new_end_date=end_date + timedelta(days=366),
+                            status='pending'
+                        )
+                        self.stdout.write(f'  Created renewal for policy {policy.policy_number} (expires in {days_to_expiry} days)')
+                        
+            except Exception as e:
+                pass
         
-        self.stdout.write(f'✅ Created {InsurancePolicy.objects.count()} policies')
+        self.stdout.write(f'✅ Created {policies_created} policies')
+        
+        # Log policy status distribution
+        active_count = InsurancePolicy.objects.filter(status='active').count()
+        expired_count = InsurancePolicy.objects.filter(status='expired').count()
+        pending_count = InsurancePolicy.objects.filter(status='pending').count()
+        cancelled_count = InsurancePolicy.objects.filter(status='cancelled').count()
+        
+        self.stdout.write(f'  Policy Status Distribution: Active: {active_count}, Expired: {expired_count}, Pending: {pending_count}, Cancelled: {cancelled_count}')
+
+    def create_no_claim_bonus(self):
+        self.stdout.write('Creating No Claim Bonus records...')
+        
+        customers = User.objects.filter(role='customer', email__contains='customer')
+        
+        ncb_created = 0
+        for customer in customers:
+            vehicles = Vehicle.objects.filter(user=customer)
+            for vehicle in vehicles:
+                # Check if customer has any claims
+                has_claims = Claim.objects.filter(user=customer, vehicle=vehicle).exists()
+                
+                if not has_claims:
+                    # Calculate claim-free years (some up to 5+ years)
+                    claim_free_years = random.choices(
+                        [0, 1, 2, 3, 4, 5, 6],
+                        weights=[5, 10, 15, 25, 20, 15, 10],
+                        k=1
+                    )[0]
+                    
+                    ncb_percentage = 0
+                    if claim_free_years >= 5:
+                        ncb_percentage = 50
+                    elif claim_free_years >= 4:
+                        ncb_percentage = 45
+                    elif claim_free_years >= 3:
+                        ncb_percentage = 35
+                    elif claim_free_years >= 2:
+                        ncb_percentage = 25
+                    elif claim_free_years >= 1:
+                        ncb_percentage = 20
+                    
+                    try:
+                        NoClaimBonus.objects.create(
+                            user=customer,
+                            vehicle=vehicle,
+                            current_ncb_percentage=ncb_percentage,
+                            claim_free_years=claim_free_years,
+                            last_claim_date=None if claim_free_years > 0 else timezone.now().date() - timedelta(days=random.randint(100, 1000)),
+                            is_protected=random.choice([True, False]) if claim_free_years >= 3 else False
+                        )
+                        ncb_created += 1
+                        
+                        if claim_free_years >= 3:
+                            self.stdout.write(f'  Customer {customer.email} has {claim_free_years} claim-free years with {ncb_percentage}% NCB')
+                    except Exception as e:
+                        pass
+        
+        self.stdout.write(f'✅ Created {ncb_created} No Claim Bonus records')
 
     def create_claims(self):
         self.stdout.write('Creating claims...')
-        policies = InsurancePolicy.objects.filter(status='active')[:15]
+        policies = list(InsurancePolicy.objects.filter(status='active'))
         
         claim_types = ['accident', 'theft', 'fire', 'vandalism', 'third_party']
         statuses = ['pending', 'under_review', 'approved', 'settled', 'rejected']
         
         claims_created = 0
-        for policy in policies:
-            if random.choice([True, False]):  # 50% chance
+        customers_with_claims = set()
+        
+        for policy in policies[:20]:  # Limit to 20 policies for claims
+            # 40% chance of having a claim
+            if random.random() < 0.4:
                 try:
                     Claim.objects.create(
                         claim_number=f"CLM-{uuid.uuid4().hex[:8].upper()}",
                         policy=policy,
                         user=policy.user,
+                        vehicle=policy.vehicle,
                         claim_type=random.choice(claim_types),
                         status=random.choice(statuses),
-                        incident_date=timezone.now() - timedelta(days=random.randint(1, 60)),
+                        incident_date=timezone.now() - timedelta(days=random.randint(1, 180)),
                         incident_location=fake.address()[:255],
                         incident_description=fake.text(max_nb_chars=150),
                         claimed_amount=Decimal(random.randint(100000, 1500000)),
                         approved_amount=Decimal(random.randint(50000, 1000000)) if random.choice([True, False]) else None
                     )
                     claims_created += 1
+                    customers_with_claims.add(policy.user.email)
                 except Exception as e:
                     pass
         
+        # Identify customers with policies over 3 years without claims
+        three_years_ago = timezone.now().date() - timedelta(days=1095)
+        
+        # Get customers with policies older than 3 years
+        old_policies = InsurancePolicy.objects.filter(
+            start_date__lte=three_years_ago,
+            status__in=['active', 'expired']
+        ).values_list('user', flat=True).distinct()
+        
+        # Check which of these have no claims
+        no_claim_customers = []
+        for user_id in old_policies:
+            if not Claim.objects.filter(user_id=user_id).exists():
+                user = User.objects.filter(id=user_id).first()
+                if user:
+                    no_claim_customers.append(user.email)
+        
+        if no_claim_customers:
+            self.stdout.write(f'  Customers with policies over 3 years and NO claims:')
+            for email in no_claim_customers[:5]:  # Show first 5
+                self.stdout.write(f'    - {email}')
+        
         self.stdout.write(f'✅ Created {claims_created} claims')
+        self.stdout.write(f'  Customers with at least one claim: {len(customers_with_claims)}')
+        self.stdout.write(f'  Customers with 3+ years claim-free: {len(no_claim_customers)}')
 
     def create_payments(self):
         self.stdout.write('Creating payments...')
@@ -433,13 +584,12 @@ class Command(BaseCommand):
                 )
                 payments_created += 1
             except Exception as e:
-                pass  # Skip errors silently
+                pass
         
         self.stdout.write(f'✅ Created {payments_created} payments')
 
     def create_quotes(self):
         self.stdout.write('Creating insurance quotes...')
-        # Get vehicles that exist
         vehicles = Vehicle.objects.all()
         
         if not vehicles.exists():
@@ -450,11 +600,11 @@ class Command(BaseCommand):
         statuses = ['pending', 'approved', 'expired']
         
         quotes_created = 0
-        for vehicle in vehicles[:15]:  # Create quotes for first 15 vehicles
+        for vehicle in vehicles[:15]:
             try:
                 InsuranceQuote.objects.create(
                     user=vehicle.user,
-                    vehicle=vehicle,  # vehicle is required - not null
+                    vehicle=vehicle,
                     coverage_type=random.choice(coverage_types),
                     status=random.choice(statuses),
                     base_premium=Decimal(random.randint(40000, 150000)),
@@ -471,7 +621,7 @@ class Command(BaseCommand):
                 )
                 quotes_created += 1
             except Exception as e:
-                self.stdout.write(f'  Warning: Could not create quote: {e}')
+                pass
         
         self.stdout.write(f'✅ Created {quotes_created} insurance quotes')
 
@@ -530,8 +680,8 @@ class Command(BaseCommand):
         self.stdout.write(f'✅ Created {documents_created} documents')
 
     def create_support_tickets(self):
-        self.stdout.write('Creating support tickets...')
-        customers = User.objects.filter(role='customer', email__contains='customer')[:10]
+        self.stdout.write('Creating support tickets (reduced)...')
+        customers = User.objects.filter(role='customer', email__contains='customer')[:6]  # Reduced from 10 to 6
         support_staff = User.objects.filter(role='support')
         
         priorities = ['low', 'medium', 'high']
@@ -543,7 +693,8 @@ class Command(BaseCommand):
         
         tickets_created = 0
         for customer in customers:
-            if random.choice([True, False]):
+            # 60% chance of having a ticket (reduced)
+            if random.random() < 0.6:
                 try:
                     ticket = SupportTicket.objects.create(
                         ticket_number=f"TKT-{uuid.uuid4().hex[:8].upper()}",
@@ -556,8 +707,8 @@ class Command(BaseCommand):
                     )
                     tickets_created += 1
                     
-                    # Add reply sometimes
-                    if random.choice([True, False]) and support_staff.exists():
+                    # Add reply sometimes (40% chance)
+                    if random.random() < 0.4 and support_staff.exists():
                         TicketReply.objects.create(
                             ticket=ticket,
                             user=random.choice(support_staff),
@@ -600,11 +751,11 @@ class Command(BaseCommand):
         self.stdout.write(f'✅ Created {PromoCode.objects.count()} promo codes')
 
     def create_blog_content(self):
-        self.stdout.write('Creating blog content...')
+        self.stdout.write('Creating blog content (reduced)...')
         
         # Categories
         categories = []
-        cat_names = ['Insurance Tips', 'Car Maintenance', 'Safety Tips', 'Industry News', 'Claims Guide']
+        cat_names = ['Insurance Tips', 'Car Maintenance', 'Safety Tips']
         for name in cat_names:
             cat, created = BlogCategory.objects.get_or_create(
                 name=name,
@@ -617,7 +768,7 @@ class Command(BaseCommand):
         
         # Tags
         tags = []
-        tag_names = ['Insurance', 'Vehicle', 'Safety', 'Tips', 'Claims', 'Renewal', 'Discount']
+        tag_names = ['Insurance', 'Vehicle', 'Safety', 'Tips']
         for name in tag_names:
             tag, created = BlogTag.objects.get_or_create(
                 name=name,
@@ -625,10 +776,10 @@ class Command(BaseCommand):
             )
             tags.append(tag)
         
-        # Posts (8 posts)
+        # Posts (reduced from 8 to 4)
         users = User.objects.all()
         posts_created = 0
-        for i in range(8):
+        for i in range(4):
             try:
                 post = BlogPost.objects.create(
                     title=fake.sentence(nb_words=6)[:200],
@@ -644,8 +795,8 @@ class Command(BaseCommand):
                 post.tags.add(*random.sample(tags, k=min(random.randint(2, 3), len(tags))))
                 posts_created += 1
                 
-                # Add comments
-                for _ in range(random.randint(1, 3)):
+                # Add comments (reduced)
+                for _ in range(random.randint(0, 2)):  # 0-2 comments instead of 1-3
                     BlogComment.objects.create(
                         post=post,
                         name=fake.name()[:100],
@@ -659,9 +810,9 @@ class Command(BaseCommand):
         self.stdout.write(f'✅ Created {posts_created} blog posts')
 
     def create_newsletter_subscribers(self):
-        self.stdout.write('Creating newsletter subscribers...')
+        self.stdout.write('Creating newsletter subscribers (reduced)...')
         subscribers_created = 0
-        for i in range(15):
+        for i in range(8):  # Reduced from 15 to 8
             try:
                 NewsletterSubscriber.objects.get_or_create(
                     email=fake.email(),
@@ -679,10 +830,10 @@ class Command(BaseCommand):
         self.stdout.write(f'✅ Created {subscribers_created} subscribers')
 
     def create_press_content(self):
-        self.stdout.write('Creating press releases...')
+        self.stdout.write('Creating press releases (reduced)...')
         
         # Categories
-        press_cats = ['Product Launch', 'Company News', 'Awards', 'Partnership']
+        press_cats = ['Product Launch', 'Company News']
         categories = []
         for name in press_cats:
             cat, created = PressCategory.objects.get_or_create(
@@ -691,10 +842,10 @@ class Command(BaseCommand):
             )
             categories.append(cat)
         
-        # Press releases (5 releases)
+        # Press releases (reduced from 5 to 3)
         users = User.objects.filter(role='admin').first()
         releases_created = 0
-        for i in range(5):
+        for i in range(3):
             try:
                 PressRelease.objects.create(
                     title=fake.sentence(nb_words=8)[:200],
@@ -711,10 +862,10 @@ class Command(BaseCommand):
             except Exception as e:
                 pass
         
-        # Media coverage (8 items)
-        publications = ['TechCrunch', 'AutoNews', 'Business Insider', 'Pulse', 'Guardian', 'Vanguard']
+        # Media coverage (reduced from 8 to 4)
+        publications = ['TechCrunch', 'AutoNews', 'Business Insider', 'Pulse']
         media_created = 0
-        for i in range(8):
+        for i in range(4):
             try:
                 MediaCoverage.objects.create(
                     title=fake.sentence(nb_words=6)[:200],
@@ -735,7 +886,7 @@ class Command(BaseCommand):
         self.stdout.write('Creating job postings...')
         
         # Categories
-        job_cats = ['Engineering', 'Sales', 'Marketing', 'Customer Support', 'Operations']
+        job_cats = ['Engineering', 'Sales', 'Marketing']
         categories = []
         for name in job_cats:
             cat, created = JobCategory.objects.get_or_create(
@@ -752,7 +903,6 @@ class Command(BaseCommand):
         loc_data = [
             ('Lagos HQ', 'Lagos', 'Lagos'),
             ('Abuja Office', 'Abuja', 'FCT'),
-            ('Port Harcourt', 'Port Harcourt', 'Rivers')
         ]
         for name, city, state in loc_data:
             loc, created = JobLocation.objects.get_or_create(
@@ -767,7 +917,7 @@ class Command(BaseCommand):
             locations.append(loc)
         
         # Job Types
-        job_types = ['Full-time', 'Part-time', 'Remote', 'Hybrid']
+        job_types = ['Full-time', 'Part-time', 'Remote']
         types = []
         for name in job_types:
             jt, created = JobType.objects.get_or_create(
@@ -776,19 +926,18 @@ class Command(BaseCommand):
             )
             types.append(jt)
         
-        # Job postings (8 jobs)
+        # Job postings (reduced from 8 to 5)
         users = User.objects.filter(role='admin').first()
         job_titles = [
             'Software Engineer', 'Sales Executive', 'Marketing Manager', 
-            'Customer Support Agent', 'Insurance Underwriter', 'Claims Adjuster',
-            'Data Analyst', 'Product Manager'
+            'Customer Support Agent', 'Data Analyst'
         ]
         
         jobs_created = 0
-        for i in range(8):
+        for i, title in enumerate(job_titles):
             try:
                 JobPosting.objects.create(
-                    title=random.choice(job_titles),
+                    title=title,
                     slug=f"job-{i+1}-{uuid.uuid4().hex[:4]}",
                     category=random.choice(categories),
                     location=random.choice(locations),
@@ -813,12 +962,12 @@ class Command(BaseCommand):
         self.stdout.write(f'✅ Created {jobs_created} job postings')
 
     def create_contact_inquiries(self):
-        self.stdout.write('Creating contact inquiries...')
+        self.stdout.write('Creating contact inquiries (reduced)...')
         
         inquiry_types = ['general', 'quote', 'claim', 'policy', 'complaint', 'partnership']
         
         inquiries_created = 0
-        for i in range(12):
+        for i in range(8):  # Reduced from 12 to 8
             try:
                 ContactInquiry.objects.create(
                     full_name=fake.name()[:200],
@@ -843,7 +992,6 @@ class Command(BaseCommand):
             {'name': 'Lagos Headquarters', 'city': 'Lagos', 'state': 'Lagos', 'is_headquarters': True},
             {'name': 'Abuja Regional Office', 'city': 'Abuja', 'state': 'FCT', 'is_headquarters': False},
             {'name': 'Port Harcourt Branch', 'city': 'Port Harcourt', 'state': 'Rivers', 'is_headquarters': False},
-            {'name': 'Ibadan Office', 'city': 'Ibadan', 'state': 'Oyo', 'is_headquarters': False},
         ]
         
         for office_data in offices:
@@ -875,8 +1023,6 @@ class Command(BaseCommand):
             {'name': 'Policies', 'icon': 'fa-file-contract', 'color': '#4169E1'},
             {'name': 'Claims', 'icon': 'fa-file-invoice', 'color': '#DC2626'},
             {'name': 'Receipts', 'icon': 'fa-receipt', 'color': '#10B981'},
-            {'name': 'Certificates', 'icon': 'fa-certificate', 'color': '#F59E0B'},
-            {'name': 'KYC Documents', 'icon': 'fa-id-card', 'color': '#6366F1'},
         ]
         
         for cat_data in doc_cats:

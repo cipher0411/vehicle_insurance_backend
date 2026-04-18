@@ -1,0 +1,99 @@
+{% extends 'core/admin/security/security_base.html' %}
+{% block title %}Add Threat Intelligence - Edgway Security{% endblock %}
+
+{% block content %}
+<div class="edgway-topbar">
+    <h1 class="page-title">
+        <i class="fas fa-plus-circle"></i> Add Threat Intelligence
+    </h1>
+    <div class="topbar-actions">
+        <a href="{% url 'core:threat_intelligence' %}" class="edgway-btn edgway-btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Threats
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-bug"></i> New Threat Entry</h5>
+            </div>
+            <div class="edgway-card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Threat Type <span class="text-danger">*</span></label>
+                            {{ form.intel_type }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Value <span class="text-danger">*</span></label>
+                            {{ form.value }}
+                            <small class="text-muted">IP address, domain, URL, file hash, or email</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Threat Score (0-100)</label>
+                            {{ form.threat_score }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category</label>
+                            {{ form.category }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tags</label>
+                            {{ form.tags }}
+                            <small class="text-muted">Comma-separated tags</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check mt-4">
+                                {{ form.is_active }}
+                                <label class="form-check-label">Active (threat will be blocked)</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4" style="border-color: var(--edgway-border);">
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="edgway-btn edgway-btn-primary">
+                            <i class="fas fa-save"></i> Add Threat
+                        </button>
+                        <a href="{% url 'core:threat_intelligence' %}" class="edgway-btn edgway-btn-outline">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Bulk Import -->
+        <div class="edgway-card mt-4">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-file-import"></i> Bulk Import</h5>
+            </div>
+            <div class="edgway-card-body">
+                <p class="text-muted">Import multiple threats from a CSV or JSON file.</p>
+                <div class="border-dashed p-4 text-center" style="border: 2px dashed var(--edgway-border); border-radius: 12px;">
+                    <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color: var(--edgway-accent);"></i>
+                    <p>Drag and drop a file here, or click to select</p>
+                    <button class="edgway-btn edgway-btn-outline" disabled>
+                        <i class="fas fa-upload"></i> Upload File
+                    </button>
+                    <p class="small text-muted mt-2">Coming soon</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

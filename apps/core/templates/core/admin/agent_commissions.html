@@ -1,0 +1,787 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Agent Commissions{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-hand-holding-usd"></i> Agent Commissions</h2>
+            <p class="text-muted">Manage and track all agent commissions</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_export_data' %}?model=commissions&format=csv" class="btn btn-success">
+                <i class="fas fa-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Commissions</h6>
+                            <h3>₦{{ total_amount|floatformat:2|intcomma }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Pending</h6>
+                            <h3 class="text-warning">₦{{ pending_amount|floatformat:2|intcomma }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Approved</h6>
+                            <h3 class="text-info">₦{{ approved_amount|floatformat:2|intcomma }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Paid</h6>
+                            <h3 class="text-success">₦{{ paid_amount|floatformat:2|intcomma }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill-wave text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search commission #, agent, or policy..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="statusFilter">
+                <option value="">All Status</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Paid</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="agentFilter">
+                <option value="">All Agents</option>
+                {% for agent in agents %}
+                <option value="{{ agent.id }}" {% if agent_filter == agent.id|stringformat:"s" %}selected{% endif %}>
+                    {{ agent.get_full_name|default:agent.email }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="typeFilter">
+                <option value="">All Types</option>
+                <option value="new_policy" {% if type_filter == 'new_policy' %}selected{% endif %}>New Policy</option>
+                <option value="renewal" {% if type_filter == 'renewal' %}selected{% endif %}>Renewal</option>
+                <option value="bonus" {% if type_filter == 'bonus' %}selected{% endif %}>Bonus</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary me-2" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> Apply
+            </button>
+            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="row mb-3" id="bulkActions" style="display: none;">
+        <div class="col">
+            <button class="btn btn-success" onclick="showBulkApproveConfirm()">
+                <i class="fas fa-check"></i> Approve Selected
+            </button>
+            <button class="btn btn-primary" onclick="showBulkPayModal()">
+                <i class="fas fa-money-bill"></i> Pay Selected
+            </button>
+        </div>
+    </div>
+
+    <!-- Commissions Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #4169E1; color: white;">
+                        <tr>
+                            <th style="width: 40px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
+                            <th>Commission #</th>
+                            <th>Agent</th>
+                            <th>Type</th>
+                            <th>Policy</th>
+                            <th>Premium</th>
+                            <th>Rate</th>
+                            <th>Commission</th>
+                            <th>Bonus</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for commission in commissions %}
+                        <tr>
+                            <td>
+                                {% if commission.status == 'pending' or commission.status == 'approved' %}
+                                <input type="checkbox" class="commission-checkbox" value="{{ commission.id }}" 
+                                       data-status="{{ commission.status }}">
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ commission.commission_number }}</strong></td>
+                            <td>{{ commission.agent.get_full_name|default:commission.agent.email }}</td>
+                            <td>
+                                {% if commission.commission_type == 'new_policy' %}
+                                    <span class="badge bg-primary">New Policy</span>
+                                {% elif commission.commission_type == 'renewal' %}
+                                    <span class="badge bg-info">Renewal</span>
+                                {% elif commission.commission_type == 'bonus' %}
+                                    <span class="badge bg-warning">Bonus</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if commission.policy %}
+                                    {{ commission.policy.policy_number }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>₦{{ commission.premium_amount|floatformat:2|intcomma }}</td>
+                            <td>{{ commission.commission_rate }}%</td>
+                            <td>₦{{ commission.commission_amount|floatformat:2|intcomma }}</td>
+                            <td>
+                                {% if commission.bonus_amount > 0 %}
+                                    <span class="text-success">₦{{ commission.bonus_amount|floatformat:2|intcomma }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td><strong>₦{{ commission.total_commission|floatformat:2|intcomma }}</strong></td>
+                            <td>
+                                {% if commission.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif commission.status == 'approved' %}
+                                    <span class="badge bg-info">Approved</span>
+                                {% elif commission.status == 'paid' %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% elif commission.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Cancelled</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    {% if commission.status == 'pending' %}
+                                    <button class="btn btn-sm btn-success" onclick="showApproveConfirm('{{ commission.id }}')" title="Approve">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="showRejectModal('{{ commission.id }}')" title="Reject">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% elif commission.status == 'approved' %}
+                                    <button class="btn btn-sm btn-primary" onclick="showPayModal('{{ commission.id }}')" title="Mark Paid">
+                                        <i class="fas fa-money-bill"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="12" class="text-center py-4">
+                                <i class="fas fa-hand-holding-usd fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No commissions found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% include 'core/includes/pagination.html' with page_obj=commissions %}
+</div>
+
+<!-- Pay Modal -->
+<div class="modal fade" id="payModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="payForm">
+                {% csrf_token %}
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-money-bill"></i> Mark Commission as Paid</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Payment Reference</label>
+                        <input type="text" class="form-control" name="payment_reference" id="paymentReference" placeholder="e.g., Bank Transfer Ref">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select class="form-control" name="payment_method" id="paymentMethod">
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmPay()">Confirm Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Pay Modal -->
+<div class="modal fade" id="bulkPayModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-money-bill"></i> Bulk Mark as Paid</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Payment Reference</label>
+                    <input type="text" class="form-control" id="bulkPaymentReference" placeholder="e.g., Batch Payment Ref">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Payment Method</label>
+                    <select class="form-control" id="bulkPaymentMethod">
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Cheque">Cheque</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <p class="text-muted small" id="bulkPayCount"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmBulkPay()">Confirm Payment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-times-circle"></i> Reject Commission</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Reason for Rejection <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="rejectReason" rows="3" placeholder="Please provide a reason for rejection..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmReject()">Reject Commission</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Approve Modal -->
+<div class="modal fade" id="confirmApproveModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Confirm Approval</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                <h5 class="mt-3">Approve this commission?</h5>
+                <p class="text-muted" id="approveMessage">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmApproveBtn">Approve</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Approve Confirm Modal -->
+<div class="modal fade" id="bulkApproveModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-double"></i> Confirm Bulk Approval</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-check-double text-success" style="font-size: 48px;"></i>
+                <h5 class="mt-3">Approve selected commissions?</h5>
+                <p class="text-muted" id="bulkApproveMessage">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmBulkApproveBtn">Approve All</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Warning Modal (for no selection) -->
+<div class="modal fade" id="warningModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Warning</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-exclamation-triangle text-warning" style="font-size: 48px;"></i>
+                <h5 class="mt-3" id="warningMessage">No commissions selected.</h5>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let toastInstance = null;
+let selectedCommissionId = null;
+let selectedRejectId = null;
+let payModal, bulkPayModal, rejectModal, confirmApproveModal, bulkApproveModal, warningModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('notificationToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    }
+    
+    payModal = new bootstrap.Modal(document.getElementById('payModal'));
+    bulkPayModal = new bootstrap.Modal(document.getElementById('bulkPayModal'));
+    rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
+    confirmApproveModal = new bootstrap.Modal(document.getElementById('confirmApproveModal'));
+    bulkApproveModal = new bootstrap.Modal(document.getElementById('bulkApproveModal'));
+    warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+});
+
+function showToast(title, message, type = 'info') {
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    toastIcon.className = 'fas me-2';
+    toastIcon.style.color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#4169E1';
+    toastIcon.classList.add(type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+    
+    if (toastInstance) toastInstance.show();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function applyFilters() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    const agent = document.getElementById('agentFilter').value;
+    const type = document.getElementById('typeFilter').value;
+    
+    let url = '?';
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    if (status) url += `status=${status}&`;
+    if (agent) url += `agent=${agent}&`;
+    if (type) url += `type=${type}&`;
+    
+    window.location.href = url.slice(0, -1);
+}
+
+function clearFilters() {
+    window.location.href = window.location.pathname;
+}
+
+function toggleSelectAll(source) {
+    document.querySelectorAll('.commission-checkbox').forEach(cb => {
+        if (!cb.disabled) cb.checked = source.checked;
+    });
+    toggleBulkActions();
+}
+
+function toggleBulkActions() {
+    const checked = document.querySelectorAll('.commission-checkbox:checked').length;
+    document.getElementById('bulkActions').style.display = checked > 0 ? 'block' : 'none';
+}
+
+document.querySelectorAll('.commission-checkbox').forEach(cb => {
+    cb.addEventListener('change', toggleBulkActions);
+});
+
+function showApproveConfirm(id) {
+    selectedCommissionId = id;
+    document.getElementById('approveMessage').textContent = 'This action cannot be undone.';
+    confirmApproveModal.show();
+}
+
+function approveCommission() {
+    if (!selectedCommissionId) return;
+    
+    const btn = document.getElementById('confirmApproveBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+    btn.disabled = true;
+    
+    fetch(`/custom_admin/commission/${selectedCommissionId}/approve/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+    })
+    .then(response => response.json())
+    .then(data => {
+        confirmApproveModal.hide();
+        if (data.success) {
+            showToast('Success', 'Commission approved successfully!', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('Error', data.message || 'Failed to approve commission', 'error');
+        }
+    })
+    .catch(error => {
+        confirmApproveModal.hide();
+        showToast('Error', 'An error occurred', 'error');
+    })
+    .finally(() => {
+        btn.innerHTML = 'Approve';
+        btn.disabled = false;
+    });
+}
+
+function showPayModal(id) {
+    selectedCommissionId = id;
+    document.getElementById('paymentReference').value = '';
+    document.getElementById('paymentMethod').value = 'Bank Transfer';
+    payModal.show();
+}
+
+function confirmPay() {
+    const ref = document.getElementById('paymentReference').value;
+    const method = document.getElementById('paymentMethod').value;
+    
+    const btn = document.querySelector('#payModal .btn-primary');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+    btn.disabled = true;
+    
+    fetch(`/custom_admin/commission/${selectedCommissionId}/mark-paid/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ payment_reference: ref, payment_method: method })
+    })
+    .then(response => response.json())
+    .then(data => {
+        payModal.hide();
+        if (data.success) {
+            showToast('Success', 'Commission marked as paid!', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('Error', data.message || 'Failed to mark as paid', 'error');
+        }
+    })
+    .catch(error => {
+        payModal.hide();
+        showToast('Error', 'An error occurred', 'error');
+    })
+    .finally(() => {
+        btn.innerHTML = 'Confirm Payment';
+        btn.disabled = false;
+    });
+}
+
+function showRejectModal(id) {
+    selectedRejectId = id;
+    document.getElementById('rejectReason').value = '';
+    rejectModal.show();
+}
+
+function confirmReject() {
+    const reason = document.getElementById('rejectReason').value.trim();
+    
+    if (!reason) {
+        showToast('Warning', 'Please provide a reason for rejection.', 'warning');
+        return;
+    }
+    
+    const btn = document.querySelector('#rejectModal .btn-danger');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+    btn.disabled = true;
+    
+    fetch(`/custom_admin/commission/${selectedRejectId}/reject/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ reason: reason })
+    })
+    .then(response => response.json())
+    .then(data => {
+        rejectModal.hide();
+        if (data.success) {
+            showToast('Success', 'Commission rejected!', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('Error', data.message || 'Failed to reject commission', 'error');
+        }
+    })
+    .catch(error => {
+        rejectModal.hide();
+        showToast('Error', 'An error occurred', 'error');
+    })
+    .finally(() => {
+        btn.innerHTML = 'Reject Commission';
+        btn.disabled = false;
+    });
+}
+
+function showBulkApproveConfirm() {
+    const selected = Array.from(document.querySelectorAll('.commission-checkbox:checked'))
+        .filter(cb => cb.dataset.status === 'pending')
+        .map(cb => cb.value);
+    
+    if (selected.length === 0) {
+        document.getElementById('warningMessage').textContent = 'No pending commissions selected.';
+        warningModal.show();
+        return;
+    }
+    
+    document.getElementById('bulkApproveMessage').textContent = `Approve ${selected.length} commission(s)? This action cannot be undone.`;
+    bulkApproveModal.show();
+}
+
+function bulkApprove() {
+    const selected = Array.from(document.querySelectorAll('.commission-checkbox:checked'))
+        .filter(cb => cb.dataset.status === 'pending')
+        .map(cb => cb.value);
+    
+    const btn = document.getElementById('confirmBulkApproveBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+    btn.disabled = true;
+    
+    fetch('/custom_admin/commissions/bulk-approve/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ commission_ids: selected })
+    })
+    .then(response => response.json())
+    .then(data => {
+        bulkApproveModal.hide();
+        if (data.success) {
+            showToast('Success', `${selected.length} commission(s) approved!`, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('Error', data.message || 'Failed to approve commissions', 'error');
+        }
+    })
+    .catch(error => {
+        bulkApproveModal.hide();
+        showToast('Error', 'An error occurred', 'error');
+    })
+    .finally(() => {
+        btn.innerHTML = 'Approve All';
+        btn.disabled = false;
+    });
+}
+
+function showBulkPayModal() {
+    const selected = Array.from(document.querySelectorAll('.commission-checkbox:checked'))
+        .filter(cb => cb.dataset.status === 'approved')
+        .map(cb => cb.value);
+    
+    if (selected.length === 0) {
+        document.getElementById('warningMessage').textContent = 'No approved commissions selected.';
+        warningModal.show();
+        return;
+    }
+    
+    document.getElementById('bulkPayCount').textContent = `${selected.length} commission(s) selected.`;
+    document.getElementById('bulkPaymentReference').value = '';
+    document.getElementById('bulkPaymentMethod').value = 'Bank Transfer';
+    bulkPayModal.show();
+}
+
+function confirmBulkPay() {
+    const selected = Array.from(document.querySelectorAll('.commission-checkbox:checked'))
+        .filter(cb => cb.dataset.status === 'approved')
+        .map(cb => cb.value);
+    
+    const ref = document.getElementById('bulkPaymentReference').value;
+    const method = document.getElementById('bulkPaymentMethod').value;
+    
+    const btn = document.querySelector('#bulkPayModal .btn-primary');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+    btn.disabled = true;
+    
+    fetch('/custom_admin/commissions/bulk-pay/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ 
+            commission_ids: selected,
+            payment_reference: ref,
+            payment_method: method
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        bulkPayModal.hide();
+        if (data.success) {
+            showToast('Success', `${selected.length} commission(s) marked as paid!`, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('Error', data.message || 'Failed to process payment', 'error');
+        }
+    })
+    .catch(error => {
+        bulkPayModal.hide();
+        showToast('Error', 'An error occurred', 'error');
+    })
+    .finally(() => {
+        btn.innerHTML = 'Confirm Payment';
+        btn.disabled = false;
+    });
+}
+
+// Event listeners for modal confirm buttons
+document.getElementById('confirmApproveBtn')?.addEventListener('click', approveCommission);
+document.getElementById('confirmBulkApproveBtn')?.addEventListener('click', bulkApprove);
+
+document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') applyFilters();
+});
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+.table td {
+    vertical-align: middle;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.btn-group .btn {
+    margin: 0 2px;
+}
+.modal-header.bg-primary {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%) !important;
+}
+.modal-header.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+.modal-header.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+}
+.modal-header.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+}
+.toast {
+    background: white;
+    border-left: 4px solid #4169E1;
+}
+.text-warning { color: #f59e0b !important; }
+.text-info { color: #0dcaf0 !important; }
+.text-success { color: #10b981 !important; }
+</style>
+{% endblock %}

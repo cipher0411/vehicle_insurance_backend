@@ -34,3 +34,14 @@ app.conf.beat_schedule = {
 @app.task(bind=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')
+    
+    
+    
+    
+# Celery Beat Schedule
+CELERY_BEAT_SCHEDULE = {
+    'run-scheduled-reports': {
+        'task': 'apps.core.tasks.run_all_scheduled_reports',
+        'schedule': 300.0,  # Every 5 minutes
+    },
+}

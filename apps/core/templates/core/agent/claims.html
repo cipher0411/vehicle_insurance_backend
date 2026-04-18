@@ -1,0 +1,371 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Customer Claims{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-clipboard-list"></i> Customer Claims</h2>
+            <p class="text-muted">View and track claims from your referred customers</p>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Claims</h6>
+                            <h3>{{ total_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Pending</h6>
+                            <h3 class="text-warning">{{ pending_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Under Review</h6>
+                            <h3 class="text-info">{{ under_review_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-search text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Approved</h6>
+                            <h3 class="text-success">{{ approved_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Settled</h6>
+                            <h3 class="text-primary">{{ settled_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-hand-holding-usd text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card border-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Rejected</h6>
+                            <h3 class="text-danger">{{ rejected_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-times-circle text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Summary -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="fas fa-file-invoice fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted">Total Claimed Amount</h6>
+                            <h4>₦{{ total_claimed|floatformat:2|intcomma }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted">Total Approved Amount</h6>
+                            <h4>₦{{ total_approved|floatformat:2|intcomma }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by claim #, customer, or policy..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="statusFilter" onchange="applyFilters()">
+                <option value="">All Status</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="under_review" {% if status_filter == 'under_review' %}selected{% endif %}>Under Review</option>
+                <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                <option value="settled" {% if status_filter == 'settled' %}selected{% endif %}>Settled</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="typeFilter" onchange="applyFilters()">
+                <option value="">All Types</option>
+                <option value="accident" {% if type_filter == 'accident' %}selected{% endif %}>Accident</option>
+                <option value="theft" {% if type_filter == 'theft' %}selected{% endif %}>Theft</option>
+                <option value="fire" {% if type_filter == 'fire' %}selected{% endif %}>Fire</option>
+                <option value="vandalism" {% if type_filter == 'vandalism' %}selected{% endif %}>Vandalism</option>
+                <option value="natural_disaster" {% if type_filter == 'natural_disaster' %}selected{% endif %}>Natural Disaster</option>
+                <option value="third_party" {% if type_filter == 'third_party' %}selected{% endif %}>Third Party</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary me-2" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+            <a href="{% url 'core:agent_claims' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-times"></i> Clear
+            </a>
+        </div>
+    </div>
+
+    <!-- Claims Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #4169E1; color: white;">
+                        <tr>
+                            <th>Claim #</th>
+                            <th>Customer</th>
+                            <th>Policy #</th>
+                            <th>Type</th>
+                            <th>Claimed Amount</th>
+                            <th>Approved Amount</th>
+                            <th>Incident Date</th>
+                            <th>Filed Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for claim in claims %}
+                        <tr>
+                            <td><strong>{{ claim.claim_number }}</strong></td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user-circle me-2" style="color: #4169E1;"></i>
+                                    <div>
+                                        {{ claim.user.get_full_name|default:claim.user.email }}
+                                        <br><small class="text-muted">{{ claim.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="{% url 'core:agent_policy_detail' claim.policy.id %}">
+                                    {{ claim.policy.policy_number }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ claim.get_claim_type_display }}</span>
+                            </td>
+                            <td><strong>₦{{ claim.claimed_amount|floatformat:2|intcomma }}</strong></td>
+                            <td>
+                                {% if claim.approved_amount %}
+                                    <span class="text-success">₦{{ claim.approved_amount|floatformat:2|intcomma }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ claim.incident_date|date:"M d, Y" }}</td>
+                            <td>{{ claim.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                {% if claim.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif claim.status == 'under_review' %}
+                                    <span class="badge bg-info">Under Review</span>
+                                {% elif claim.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif claim.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% elif claim.status == 'settled' %}
+                                    <span class="badge bg-primary">Settled</span>
+                                {% elif claim.status == 'withdrawn' %}
+                                    <span class="badge bg-secondary">Withdrawn</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'core:agent_claim_detail' claim.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center py-5">
+                                <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No claims found</h5>
+                                <p class="text-muted">Your customers haven't filed any claims yet.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% include 'core/includes/pagination.html' with page_obj=claims %}
+</div>
+
+<script>
+let toastInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('notificationToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    }
+    
+    document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+});
+
+function applyFilters() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    const type = document.getElementById('typeFilter').value;
+    
+    let url = '?';
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    if (status) url += `status=${status}&`;
+    if (type) url += `type=${type}&`;
+    
+    window.location.href = url.slice(0, -1);
+}
+
+function showToast(title, message, type = 'info') {
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    toastIcon.className = 'fas me-2';
+    toastIcon.style.color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#4169E1';
+    toastIcon.classList.add(type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+    
+    toastInstance.show();
+}
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+.table td {
+    vertical-align: middle;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+.border-warning { border-left: 4px solid #f59e0b !important; }
+.border-info { border-left: 4px solid #0dcaf0 !important; }
+.border-success { border-left: 4px solid #10b981 !important; }
+.border-primary { border-left: 4px solid #4169E1 !important; }
+.border-danger { border-left: 4px solid #dc3545 !important; }
+.text-warning { color: #f59e0b !important; }
+.text-info { color: #0dcaf0 !important; }
+.text-success { color: #10b981 !important; }
+.text-primary { color: #4169E1 !important; }
+.text-danger { color: #dc3545 !important; }
+</style>
+{% endblock %}

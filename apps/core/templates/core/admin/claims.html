@@ -1,4 +1,6 @@
 {% extends 'core/logon_base.html' %}
+{% load humanize %}
+
 {% block title %}Manage Claims{% endblock %}
 
 {% block content %}
@@ -15,53 +17,107 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
     <!-- Summary Cards -->
     <div class="row mb-4">
         <div class="col-md-2">
             <div class="card stat-card">
                 <div class="card-body">
-                    <h6 class="text-muted">Total Claims</h6>
-                    <h3>{{ total_claims }}</h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Claims</h6>
+                            <h3>{{ total_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Pending</h6>
+                            <h3 class="text-warning">{{ pending_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Under Review</h6>
+                            <h3 class="text-info">{{ under_review_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-search text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Approved</h6>
+                            <h3 class="text-success">{{ approved_claims }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-2">
             <div class="card stat-card">
                 <div class="card-body">
-                    <h6 class="text-muted">Pending</h6>
-                    <h3 class="text-warning">{{ pending_claims }}</h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Claimed</h6>
+                            <h3>₦{{ total_claimed|floatformat:0|intcomma }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-2">
             <div class="card stat-card">
                 <div class="card-body">
-                    <h6 class="text-muted">Under Review</h6>
-                    <h3 class="text-info">{{ under_review_claims }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h6 class="text-muted">Approved</h6>
-                    <h3 class="text-success">{{ approved_claims }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h6 class="text-muted">Total Claimed</h6>
-                    <h3>₦{{ total_claimed|floatformat:0 }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h6 class="text-muted">Total Approved</h6>
-                    <h3>₦{{ total_approved|floatformat:0 }}</h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Approved</h6>
+                            <h3>₦{{ total_approved|floatformat:0|intcomma }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-double"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -69,10 +125,10 @@
 
     <!-- Filters -->
     <div class="row mb-4">
-        <div class="col-md-4">
-            <input type="text" class="form-control" id="searchInput" name="search" placeholder="Search by claim #, user, or policy..." value="{{ request.GET.search }}">
-        </div>
         <div class="col-md-3">
+            <input type="text" class="form-control" id="searchInput" name="search" placeholder="Search by claim #, user, policy, or vehicle..." value="{{ request.GET.search }}">
+        </div>
+        <div class="col-md-2">
             <select class="form-control" id="statusFilter" name="status">
                 <option value="">All Status</option>
                 <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
@@ -82,7 +138,7 @@
                 <option value="settled" {% if status_filter == 'settled' %}selected{% endif %}>Settled</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <select class="form-control" id="typeFilter" name="claim_type">
                 <option value="">All Types</option>
                 <option value="accident" {% if type_filter == 'accident' %}selected{% endif %}>Accident</option>
@@ -91,6 +147,8 @@
                 <option value="fire" {% if type_filter == 'fire' %}selected{% endif %}>Fire</option>
                 <option value="vandalism" {% if type_filter == 'vandalism' %}selected{% endif %}>Vandalism</option>
                 <option value="third_party" {% if type_filter == 'third_party' %}selected{% endif %}>Third Party</option>
+                <option value="own_damage" {% if type_filter == 'own_damage' %}selected{% endif %}>Own Damage</option>
+                <option value="other" {% if type_filter == 'other' %}selected{% endif %}>Other</option>
             </select>
         </div>
         <div class="col-md-2">
@@ -98,86 +156,121 @@
                 <i class="fas fa-filter"></i> Apply Filters
             </button>
         </div>
+        <div class="col-md-2">
+            <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
     </div>
 
     <!-- Claims Table -->
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead style="background-color: #4169E1; color: white;">
-                <tr>
-                    <th>Claim #</th>
-                    <th>User</th>
-                    <th>Policy #</th>
-                    <th>Type</th>
-                    <th>Claimed (₦)</th>
-                    <th>Approved (₦)</th>
-                    <th>Incident Date</th>
-                    <th>Status</th>
-                    <th>Filed On</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for claim in claims %}
-                <tr>
-                    <td><strong>{{ claim.claim_number }}</strong></td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-user-circle me-2" style="color: #4169E1;"></i>
-                            <div>
-                                {{ claim.user.get_full_name|default:claim.user.email }}
-                                <br><small class="text-muted">{{ claim.user.email }}</small>
-                            </div>
-                        </div>
-                    </td>
-                    <td>{{ claim.policy.policy_number }}</td>
-                    <td>{{ claim.get_claim_type_display }}</td>
-                    <td>₦{{ claim.claimed_amount|floatformat:2 }}</td>
-                    <td>{% if claim.approved_amount %}₦{{ claim.approved_amount|floatformat:2 }}{% else %}-{% endif %}</td>
-                    <td>{{ claim.incident_date|date:"M d, Y" }}</td>
-                    <td>
-                        {% if claim.status == 'approved' %}
-                            <span class="badge bg-success">Approved</span>
-                        {% elif claim.status == 'pending' %}
-                            <span class="badge bg-warning">Pending</span>
-                        {% elif claim.status == 'under_review' %}
-                            <span class="badge bg-info">Under Review</span>
-                        {% elif claim.status == 'rejected' %}
-                            <span class="badge bg-danger">Rejected</span>
-                        {% elif claim.status == 'settled' %}
-                            <span class="badge bg-primary">Settled</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ claim.get_status_display }}</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ claim.created_at|date:"M d, Y" }}</td>
-                    <td>
-                        <a href="{% url 'core:admin_claim_detail' claim.id %}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-eye"></i> Review
-                        </a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="10" class="text-center py-4">
-                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">No claims found</p>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #4169E1; color: white;">
+                        <tr>
+                            <th>Claim #</th>
+                            <th>User</th>
+                            <th>Policy #</th>
+                            <th>Vehicle</th>
+                            <th>Type</th>
+                            <th>Claimed (₦)</th>
+                            <th>Approved (₦)</th>
+                            <th>Incident Date</th>
+                            <th>Status</th>
+                            <th>Filed On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for claim in claims %}
+                        <tr>
+                            <td><strong>{{ claim.claim_number }}</strong></td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user-circle me-2" style="color: #4169E1;"></i>
+                                    <div>
+                                        {{ claim.user.get_full_name|default:claim.user.email }}
+                                        <br><small class="text-muted">{{ claim.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="{% url 'core:admin_policy_detail' claim.policy.id %}">
+                                    {{ claim.policy.policy_number }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if claim.vehicle %}
+                                    {{ claim.vehicle.make }} {{ claim.vehicle.model }} ({{ claim.vehicle.year }})
+                                    <br><small class="text-muted">{{ claim.vehicle.registration_number }}</small>
+                                {% elif claim.policy.vehicle %}
+                                    {{ claim.policy.vehicle.make }} {{ claim.policy.vehicle.model }} ({{ claim.policy.vehicle.year }})
+                                    <br><small class="text-muted">{{ claim.policy.vehicle.registration_number }}</small>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ claim.get_claim_type_display }}</td>
+                            <td>₦{{ claim.claimed_amount|floatformat:2|intcomma }}</td>
+                            <td>
+                                {% if claim.approved_amount %}
+                                    <span class="text-success">₦{{ claim.approved_amount|floatformat:2|intcomma }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ claim.incident_date|date:"M d, Y" }}</td>
+                            <td>
+                                {% if claim.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif claim.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif claim.status == 'under_review' %}
+                                    <span class="badge bg-info">Under Review</span>
+                                {% elif claim.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% elif claim.status == 'settled' %}
+                                    <span class="badge bg-primary">Settled</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ claim.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ claim.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'core:admin_claim_detail' claim.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> Review
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="11" class="text-center py-4">
+                                <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No claims found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Pagination -->
     {% if claims.has_other_pages %}
-    <nav>
+    <nav class="mt-4">
         <ul class="pagination justify-content-center">
             {% if claims.has_previous %}
                 <li class="page-item">
                     <a class="page-link" href="?page={{ claims.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&claim_type={{ type_filter }}{% endif %}">
                         <i class="fas fa-chevron-left"></i> Previous
                     </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
                 </li>
             {% endif %}
             
@@ -196,6 +289,10 @@
                     <a class="page-link" href="?page={{ claims.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&claim_type={{ type_filter }}{% endif %}">
                         Next <i class="fas fa-chevron-right"></i>
                     </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
                 </li>
             {% endif %}
         </ul>
@@ -217,6 +314,10 @@ function applyFilters() {
     window.location.href = url.slice(0, -1);
 }
 
+function clearFilters() {
+    window.location.href = window.location.pathname;
+}
+
 document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') applyFilters();
 });
@@ -227,11 +328,25 @@ document.getElementById('searchInput')?.addEventListener('keypress', function(e)
     border: none;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
 }
 .table th {
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+.table td {
+    vertical-align: middle;
 }
 .badge {
     padding: 5px 10px;
@@ -239,6 +354,24 @@ document.getElementById('searchInput')?.addEventListener('keypress', function(e)
     font-weight: 500;
 }
 .pagination .page-link { color: #4169E1; }
-.pagination .page-item.active .page-link { background-color: #4169E1; border-color: #4169E1; }
+.pagination .page-item.active .page-link { 
+    background-color: #4169E1; 
+    border-color: #4169E1; 
+    color: white;
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+.border-warning { border-left: 4px solid #f59e0b !important; }
+.border-info { border-left: 4px solid #0dcaf0 !important; }
+.border-success { border-left: 4px solid #10b981 !important; }
+.text-warning { color: #f59e0b !important; }
+.text-info { color: #0dcaf0 !important; }
+.text-success { color: #10b981 !important; }
 </style>
 {% endblock %}

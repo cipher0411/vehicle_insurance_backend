@@ -1,0 +1,247 @@
+{% extends 'core/admin/security/security_base.html' %}
+{% block title %}Security Settings - Edgway Security{% endblock %}
+
+{% block content %}
+<div class="edgway-topbar">
+    <h1 class="page-title">
+        <i class="fas fa-cog"></i> Security Settings
+    </h1>
+</div>
+
+<!-- API Status Overview -->
+<div class="edgway-card mb-4">
+    <div class="edgway-card-header">
+        <h5><i class="fas fa-plug"></i> API Integrations Status</h5>
+    </div>
+    <div class="edgway-card-body">
+        <div class="row">
+            {% for key, api in api_status.items %}
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center gap-3">
+                        <div>
+                            {% if api.status == 'online' %}
+                                <i class="fas fa-check-circle fa-2x" style="color: var(--edgway-success);"></i>
+                            {% elif api.status == 'error' %}
+                                <i class="fas fa-times-circle fa-2x" style="color: var(--edgway-danger);"></i>
+                            {% elif api.status == 'not_configured' %}
+                                <i class="fas fa-minus-circle fa-2x" style="color: #64748b;"></i>
+                            {% else %}
+                                <i class="fas fa-question-circle fa-2x" style="color: var(--edgway-warning);"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <strong>{{ api.name }}</strong>
+                            <br>
+                            <small class="text-muted">{{ api.message }}</small>
+                        </div>
+                        <button class="edgway-btn edgway-btn-outline btn-sm ms-auto" onclick="testAPI('{{ key }}')">
+                            <i class="fas fa-sync-alt"></i> Test
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <!-- API Configuration -->
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-key"></i> API Keys Configuration</h5>
+            </div>
+            <div class="edgway-card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">VirusTotal API Key</label>
+                        <div class="input-group">
+                            <input type="password" class="edgway-form-control" name="virustotal_api_key" 
+                                   value="{{ settings.VIRUSTOTAL_API_KEY|default:'' }}" placeholder="Enter VirusTotal API Key">
+                            <button type="button" class="edgway-btn edgway-btn-outline" onclick="togglePassword(this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Get your key from <a href="https://www.virustotal.com/" target="_blank">VirusTotal</a></small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">AbuseIPDB API Key</label>
+                        <div class="input-group">
+                            <input type="password" class="edgway-form-control" name="abuseipdb_api_key" 
+                                   value="{{ settings.ABUSEIPDB_API_KEY|default:'' }}" placeholder="Enter AbuseIPDB API Key">
+                            <button type="button" class="edgway-btn edgway-btn-outline" onclick="togglePassword(this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Get your key from <a href="https://www.abuseipdb.com/" target="_blank">AbuseIPDB</a></small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Shodan API Key</label>
+                        <div class="input-group">
+                            <input type="password" class="edgway-form-control" name="shodan_api_key" 
+                                   value="{{ settings.SHODAN_API_KEY|default:'' }}" placeholder="Enter Shodan API Key">
+                            <button type="button" class="edgway-btn edgway-btn-outline" onclick="togglePassword(this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Get your key from <a href="https://www.shodan.io/" target="_blank">Shodan</a></small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">MetaDefender API Key</label>
+                        <div class="input-group">
+                            <input type="password" class="edgway-form-control" name="metadefender_api_key" 
+                                   value="{{ settings.METADEFENDER_API_KEY|default:'' }}" placeholder="Enter MetaDefender API Key">
+                            <button type="button" class="edgway-btn edgway-btn-outline" onclick="togglePassword(this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Get your key from <a href="https://metadefender.com/" target="_blank">MetaDefender</a></small>
+                    </div>
+                    
+                    <button type="submit" class="edgway-btn edgway-btn-primary">
+                        <i class="fas fa-save"></i> Save API Keys
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <!-- WAF Settings -->
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-shield"></i> Web Application Firewall</h5>
+            </div>
+            <div class="edgway-card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <strong>WAF Status</strong>
+                        <br>
+                        <span class="text-success"><i class="fas fa-check-circle"></i> Active and Protecting</span>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="wafToggle" checked style="width: 3rem; height: 1.5rem;">
+                    </div>
+                </div>
+                
+                <hr style="border-color: var(--edgway-border);">
+                
+                <h6>Protection Modules</h6>
+                <div class="mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="sqliProtection" checked>
+                        <label class="form-check-label" for="sqliProtection">SQL Injection Protection</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="xssProtection" checked>
+                        <label class="form-check-label" for="xssProtection">XSS Protection</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="pathTraversal" checked>
+                        <label class="form-check-label" for="pathTraversal">Path Traversal Protection</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="cmdInjection" checked>
+                        <label class="form-check-label" for="cmdInjection">Command Injection Protection</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="botDetection" checked>
+                        <label class="form-check-label" for="botDetection">Bot Detection</label>
+                    </div>
+                </div>
+                
+                <hr style="border-color: var(--edgway-border);">
+                
+                <h6>Rate Limiting</h6>
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label">API Rate Limit</label>
+                        <input type="number" class="edgway-form-control" value="100" placeholder="requests/minute">
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label">Login Rate Limit</label>
+                        <input type="number" class="edgway-form-control" value="5" placeholder="attempts/minute">
+                    </div>
+                </div>
+                
+                <button class="edgway-btn edgway-btn-primary mt-3">
+                    <i class="fas fa-save"></i> Save WAF Settings
+                </button>
+            </div>
+        </div>
+        
+        <!-- Blocked IPs -->
+        <div class="edgway-card mt-4">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-ban"></i> Currently Blocked IPs</h5>
+            </div>
+            <div class="edgway-card-body p-0">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center" style="background: transparent; border-color: var(--edgway-border);">
+                        <code>192.168.1.100</code>
+                        <span class="badge bg-danger">Blocked</span>
+                        <button class="edgway-btn edgway-btn-outline btn-sm" onclick="unblockIP('192.168.1.100')">
+                            <i class="fas fa-check"></i> Unblock
+                        </button>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center" style="background: transparent; border-color: var(--edgway-border);">
+                        <code>10.0.0.55</code>
+                        <span class="badge bg-warning">Temp Block</span>
+                        <button class="edgway-btn edgway-btn-outline btn-sm">
+                            <i class="fas fa-check"></i> Unblock
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function testAPI(apiName) {
+    const csrf = getCookie('csrftoken');
+    showToast('Testing', `Testing ${apiName} connection...`, 'info');
+    
+    fetch(`/custom_admin/security/test-api/${apiName}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'online') {
+            showToast('Success', data.message, 'success');
+        } else {
+            showToast('Error', data.message, 'error');
+        }
+        setTimeout(() => location.reload(), 1500);
+    });
+}
+
+function togglePassword(btn) {
+    const input = btn.previousElementSibling;
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+function unblockIP(ip) {
+    if (confirm(`Unblock IP ${ip}?`)) {
+        window.location.href = `/custom_admin/security/unblock-ip/${ip}/`;
+    }
+}
+</script>
+{% endblock %}

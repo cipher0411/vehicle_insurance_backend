@@ -1,4 +1,6 @@
 {% extends 'core/logon_base.html' %}
+{% load humanize %}
+
 {% block title %}My Policies{% endblock %}
 
 {% block content %}
@@ -9,6 +11,9 @@
             <p class="text-muted">View and manage your insurance policies</p>
         </div>
         <div class="col-auto">
+            <a href="{% url 'core:my_certificates' %}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-certificate"></i> My Certificates
+            </a>
             <a href="{% url 'core:get_quote' %}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Get New Quote
             </a>
@@ -50,10 +55,10 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted">Active Policies</h6>
-                            <h3>{{ active_count|default:'0' }}</h3>
+                            <h3 class="text-success">{{ active_count|default:'0' }}</h3>
                         </div>
                         <div class="stat-icon">
-                            <i class="fas fa-check-circle"></i>
+                            <i class="fas fa-check-circle text-success"></i>
                         </div>
                     </div>
                 </div>
@@ -64,11 +69,13 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted">Total Premium Paid</h6>
-                            <h3>₦{{ total_premium|floatformat:2|default:'0.00' }}</h3>
+                            <h6 class="text-muted">Outstanding Balance</h6>
+                            <h3 class="{% if total_outstanding > 0 %}text-danger{% elif total_outstanding < 0 %}text-success{% else %}text-muted{% endif %}">
+                                ₦{{ total_outstanding|floatformat:2|intcomma }}
+                            </h3>
                         </div>
                         <div class="stat-icon">
-                            <i class="fas fa-money-bill"></i>
+                            <i class="fas fa-wallet"></i>
                         </div>
                     </div>
                 </div>
@@ -80,10 +87,10 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted">Expiring Soon</h6>
-                            <h3>{{ expiring_soon|default:'0' }}</h3>
+                            <h3 class="text-warning">{{ expiring_soon|default:'0' }}</h3>
                         </div>
                         <div class="stat-icon">
-                            <i class="fas fa-calendar-exclamation"></i>
+                            <i class="fas fa-calendar-exclamation text-warning"></i>
                         </div>
                     </div>
                 </div>
@@ -97,6 +104,7 @@
             <select class="form-control" id="statusFilter" onchange="filterPolicies()">
                 <option value="">All Policies</option>
                 <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft (Pending Payment)</option>
                 <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
                 <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
                 <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
@@ -121,8 +129,10 @@
                     <h5 class="mb-0">{{ policy.policy_number }}</h5>
                     <span class="badge 
                         {% if policy.status == 'active' %}bg-success
+                        {% elif policy.status == 'draft' %}bg-secondary
                         {% elif policy.status == 'pending' %}bg-warning
                         {% elif policy.status == 'expired' %}bg-danger
+                        {% elif policy.status == 'cancelled' %}bg-dark
                         {% else %}bg-secondary{% endif %}">
                         {{ policy.get_status_display }}
                     </span>
@@ -140,7 +150,7 @@
                             <p class="mb-1"><strong><i class="fas fa-shield-alt"></i> Coverage:</strong></p>
                             <p class="text-muted">
                                 {{ policy.get_policy_type_display }}<br>
-                                <small>Coverage: ₦{{ policy.coverage_amount|floatformat:2 }}</small>
+                                <small>Coverage: ₦{{ policy.coverage_amount|floatformat:2|intcomma }}</small>
                             </p>
                         </div>
                     </div>
@@ -154,7 +164,9 @@
                                     {% if policy.is_active %}
                                         <span class="text-success">{{ policy.days_remaining }} days remaining</span>
                                     {% elif policy.status == 'expired' %}
-                                        <span class="text-danger">Expired</span>
+                                        <span class="text-danger">Expired on {{ policy.end_date|date:"M d, Y" }}</span>
+                                    {% elif policy.status == 'cancelled' %}
+                                        <span class="text-muted">Cancelled</span>
                                     {% else %}
                                         <span class="text-warning">Not Active</span>
                                     {% endif %}
@@ -164,44 +176,131 @@
                         <div class="col-md-6">
                             <p class="mb-1"><strong><i class="fas fa-money-bill"></i> Premium:</strong></p>
                             <p class="text-muted">
-                                ₦{{ policy.premium_amount|floatformat:2 }}<br>
-                                <small>Deductible: ₦{{ policy.deductible|floatformat:2 }}</small>
+                                ₦{{ policy.premium_amount|floatformat:2|intcomma }}<br>
+                                <small>Deductible: ₦{{ policy.deductible|floatformat:2|intcomma }}</small>
                             </p>
                         </div>
                     </div>
                     
-                    {% if policy.additional_benefits %}
-                    <div class="mb-3">
-                        <strong><i class="fas fa-gift"></i> Benefits:</strong>
-                        <div class="mt-1">
-                            {% for benefit in policy.additional_benefits|slice:":3" %}
-                                <span class="badge bg-light text-dark me-1 mb-1">{{ benefit }}</span>
-                            {% endfor %}
-                            {% if policy.additional_benefits|length > 3 %}
-                                <span class="badge bg-light text-dark">+{{ policy.additional_benefits|length|add:"-3" }} more</span>
-                            {% endif %}
+                    <!-- Outstanding Balance -->
+                    {% with balance=policy.get_outstanding_balance %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <p class="mb-1"><strong><i class="fas fa-wallet"></i> Balance:</strong></p>
+                            <p class="mb-0">
+                                <span class="{% if balance > 0 %}text-danger{% elif balance < 0 %}text-success{% else %}text-muted{% endif %} fw-bold">
+                                    ₦{{ balance|floatformat:2|intcomma }}
+                                </span>
+                                <br>
+                                <small>
+                                    {% if balance > 0 %}
+                                        <span class="text-danger"><i class="fas fa-exclamation-circle"></i> Outstanding</span>
+                                    {% elif balance < 0 %}
+                                        <span class="text-success"><i class="fas fa-check-circle"></i> Credit Available</span>
+                                    {% else %}
+                                        <span class="text-muted"><i class="fas fa-check-circle"></i> Fully Paid</span>
+                                    {% endif %}
+                                </small>
+                            </p>
                         </div>
                     </div>
+                    {% endwith %}
+                    
+                    <!-- Reinsurance Status -->
+                    {% with reinsurance=policy.get_reinsurance_status %}
+                    {% if reinsurance.is_reinsured %}
+                    <div class="mb-2">
+                        <span class="badge bg-info">
+                            <i class="fas fa-shield-virus"></i> Reinsured ({{ reinsurance.reinsurer }})
+                        </span>
+                    </div>
                     {% endif %}
+                    {% endwith %}
+                    
+                    <!-- Certificate & Notes Indicators -->
+                    <div class="mt-2">
+                        {% if policy.certificate and policy.certificate.status == 'generated' %}
+                        <span class="badge bg-info me-1">
+                            <i class="fas fa-certificate"></i> Certificate
+                        </span>
+                        {% endif %}
+                        {% with note_count=policy.debit_credit_notes.count %}
+                        {% if note_count > 0 %}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-exchange-alt"></i> {{ note_count }} Adjustment(s)
+                        </span>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
                 </div>
                 <div class="card-footer bg-transparent">
-                    <div class="d-flex gap-2">
+                    <div class="d-flex flex-wrap gap-2">
                         <a href="{% url 'core:policy_detail' policy.id %}" class="btn btn-primary btn-sm">
                             <i class="fas fa-eye"></i> View Details
                         </a>
+                        
                         {% if policy.status == 'active' %}
                             <a href="{% url 'core:file_claim_policy' policy.id %}" class="btn btn-warning btn-sm">
                                 <i class="fas fa-clipboard-list"></i> File Claim
                             </a>
+                            
+                            <!-- Renewal Button - Show when expiring within 60 days -->
+                            {% if policy.days_remaining <= 60 %}
+                            <a href="{% url 'core:renew_policy' policy.id %}" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-sync-alt"></i> Renew
+                            </a>
+                            {% endif %}
+                            
+                            <!-- Reinsurance Button - Show for active policies that can be reinsured -->
+                            {% if policy.can_be_reinsured %}
+                            <a href="{% url 'core:request_reinsurance' policy.id %}" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-shield-virus"></i> Reinsure
+                            </a>
+                            {% endif %}
                         {% endif %}
-                        {% if policy.policy_document %}
-                            <a href="{{ policy.policy_document.url }}" class="btn btn-outline-secondary btn-sm" target="_blank">
+                        
+                        <!-- For EXPIRED policies - Show Renewal button -->
+                        {% if policy.status == 'expired' %}
+                            <a href="{% url 'core:renew_policy' policy.id %}" class="btn btn-success btn-sm">
+                                <i class="fas fa-sync-alt"></i> Renew Policy
+                            </a>
+                        {% endif %}
+                        
+                        <!-- For CANCELLED policies - Show Reinsure button -->
+                        {% if policy.status == 'cancelled' %}
+                            <a href="{% url 'core:request_reinsurance' policy.id %}" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-shield-virus"></i> Reinsure
+                            </a>
+                        {% endif %}
+                        
+                        {% if policy.certificate and policy.certificate.status == 'generated' %}
+                            <a href="{% url 'core:view_certificate' policy.certificate.id %}" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-certificate"></i> View Certificate
+                            </a>
+                            <a href="{% url 'core:download_certificate' policy.certificate.id %}" class="btn btn-outline-success btn-sm">
                                 <i class="fas fa-download"></i> Download
                             </a>
                         {% endif %}
-                        {% if policy.status == 'pending' %}
-                            <a href="{% url 'core:payment' payment_id=policy.payments.first.id %}" class="btn btn-success btn-sm">
-                                <i class="fas fa-credit-card"></i> Complete Payment
+                        
+                        {% if policy.policy_document %}
+                            <a href="{{ policy.policy_document.url }}" class="btn btn-outline-secondary btn-sm" target="_blank">
+                                <i class="fas fa-file-pdf"></i> Policy Doc
+                            </a>
+                        {% endif %}
+                        
+                        {% if policy.status == 'draft' or policy.status == 'pending' %}
+                            {% with payment=policy.payments.first %}
+                                {% if payment and payment.status == 'pending' %}
+                                    <a href="{% url 'core:payment_page' payment_id=payment.id %}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-credit-card"></i> Complete Payment
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                        
+                        {% if policy.get_outstanding_balance > 0 and policy.status == 'active' %}
+                            <a href="{% url 'core:support_tickets' %}" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-hand-holding-usd"></i> Make Payment
                             </a>
                         {% endif %}
                     </div>
@@ -330,86 +429,48 @@ function clearFilters() {
     transition: transform 0.3s;
     height: 100%;
 }
-
-.stat-card:hover {
-    transform: translateY(-5px);
-}
-
-.stat-icon {
-    font-size: 2rem;
-    color: #4169E1;
-    opacity: 0.7;
-}
-
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
 .card {
     border: none;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
 }
-
 .card-header {
     background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
     color: white;
     border-radius: 12px 12px 0 0 !important;
     padding: 15px 20px;
 }
-
-.card-header h5 {
-    margin: 0;
-    font-weight: 600;
-}
-
+.card-header h5 { margin: 0; font-weight: 600; }
 .card-footer {
     border-top: 1px solid #e9ecef;
     border-radius: 0 0 12px 12px !important;
+    padding: 15px 20px;
 }
-
 .form-control:focus, .form-select:focus {
     border-color: #4169E1;
     box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
 }
-
-.btn-primary {
-    background-color: #4169E1;
-    border-color: #4169E1;
-}
-
-.btn-primary:hover {
-    background-color: #3155b0;
-    border-color: #3155b0;
-}
-
-.btn-warning {
-    background-color: #ffc107;
-    border-color: #ffc107;
-    color: #000;
-}
-
-.btn-warning:hover {
-    background-color: #e0a800;
-    border-color: #e0a800;
-    color: #000;
-}
-
-.pagination .page-link {
-    color: #4169E1;
-}
-
-.pagination .page-item.active .page-link {
-    background-color: #4169E1;
-    border-color: #4169E1;
-    color: white;
-}
-
-.badge {
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-weight: 500;
-}
-
-.toast {
-    background: white;
-    border-left: 4px solid #4169E1;
-}
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.btn-warning { background-color: #ffc107; border-color: #ffc107; color: #000; }
+.btn-warning:hover { background-color: #e0a800; border-color: #e0a800; color: #000; }
+.btn-success { background-color: #10b981; border-color: #10b981; }
+.btn-success:hover { background-color: #059669; border-color: #059669; }
+.btn-outline-info { color: #0dcaf0; border-color: #0dcaf0; }
+.btn-outline-info:hover { background-color: #0dcaf0; color: white; }
+.btn-outline-success { color: #28a745; border-color: #28a745; }
+.btn-outline-success:hover { background-color: #28a745; color: white; }
+.btn-outline-warning { color: #f59e0b; border-color: #f59e0b; }
+.btn-outline-warning:hover { background-color: #f59e0b; color: white; }
+.pagination .page-link { color: #4169E1; }
+.pagination .page-item.active .page-link { background-color: #4169E1; border-color: #4169E1; color: white; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.bg-dark { background-color: #1f2937 !important; }
+.toast { background: white; border-left: 4px solid #4169E1; }
+.text-danger { color: #dc3545 !important; }
+.text-success { color: #10b981 !important; }
+.text-warning { color: #f59e0b !important; }
 </style>
 {% endblock %}

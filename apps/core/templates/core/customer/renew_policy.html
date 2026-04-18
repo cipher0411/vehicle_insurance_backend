@@ -1,0 +1,394 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Renew Policy - {{ policy.policy_number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-sync-alt"></i> Renew Policy</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Display Messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <!-- Original Policy Summary -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-file-contract"></i> Original Policy</h6>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Policy #:</strong> {{ policy.policy_number }}</p>
+                                <p class="mb-1"><strong>Vehicle:</strong> {{ policy.vehicle.make }} {{ policy.vehicle.model }}</p>
+                                <p class="mb-1"><strong>Registration:</strong> {{ policy.vehicle.registration_number }}</p>
+                                <p class="mb-0"><strong>Coverage Type:</strong> {{ policy.get_policy_type_display }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Coverage Amount:</strong> ₦{{ policy.coverage_amount|floatformat:2|intcomma }}</p>
+                                <p class="mb-1"><strong>Original Premium:</strong> ₦{{ policy.premium_amount|floatformat:2|intcomma }}</p>
+                                <p class="mb-1"><strong>Start Date:</strong> {{ policy.start_date|date:"F d, Y" }}</p>
+                                <p class="mb-0"><strong>Expiry Date:</strong> {{ policy.end_date|date:"F d, Y" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- NCB Information -->
+                    {% if ncb %}
+                    <div class="alert alert-success">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-star fa-2x me-3 text-warning"></i>
+                            <div>
+                                <h6 class="mb-1">No Claim Bonus (NCB) Applied!</h6>
+                                <p class="mb-0">
+                                    You have <strong>{{ ncb.claim_free_years }} claim-free year(s)</strong> 
+                                    earning you a <strong>{{ ncb.current_ncb_percentage }}% discount</strong> on your renewal premium.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Renewal Quote -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5 class="mb-3"><i class="fas fa-calculator"></i> Renewal Quote</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td width="50%">Base Premium:</td>
+                                    <td class="text-end">₦{{ policy.premium_amount|floatformat:2|intcomma }}</td>
+                                </tr>
+                                
+                                {% if ncb and ncb.current_ncb_percentage > 0 %}
+                                <tr>
+                                    <td>No Claim Bonus ({{ ncb.current_ncb_percentage }}%):</td>
+                                    <td class="text-end text-success">- ₦{{ renewal.ncb_discount|floatformat:2|intcomma }}</td>
+                                </tr>
+                                {% endif %}
+                                
+                                {% if policy.vehicle.vehicle_age > 5 %}
+                                <tr>
+                                    <td>Vehicle Age Loading ({{ policy.vehicle.vehicle_age }} years):</td>
+                                    <td class="text-end text-danger">+ ₦{{ age_loading|floatformat:2|intcomma }}</td>
+                                </tr>
+                                {% endif %}
+                                
+                                {% if renewal.other_discounts > 0 %}
+                                <tr>
+                                    <td>Other Discounts:</td>
+                                    <td class="text-end text-success">- ₦{{ renewal.other_discounts|floatformat:2|intcomma }}</td>
+                                </tr>
+                                {% endif %}
+                                
+                                <tr style="border-top: 2px solid #dee2e6;">
+                                    <td><strong>Renewal Premium:</strong></td>
+                                    <td class="text-end">
+                                        <h5 class="mb-0 text-primary">₦{{ renewal.renewal_premium|floatformat:2|intcomma }}</h5>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <div class="alert alert-success mt-3 mb-0">
+                                <i class="fas fa-calendar-check"></i>
+                                <strong>New Policy Period:</strong> {{ renewal.new_start_date|date:"F d, Y" }} - {{ renewal.new_end_date|date:"F d, Y" }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Benefits Comparison -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0"><i class="fas fa-gift"></i> What You Keep</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Same Coverage Amount</li>
+                                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Same Vehicle Details</li>
+                                        <li class="mb-0"><i class="fas fa-check-circle text-success me-2"></i> Same Policy Type</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> All Benefits Preserved</li>
+                                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> NCB Protection (if applicable)</li>
+                                        <li class="mb-0"><i class="fas fa-check-circle text-success me-2"></i> Continuous Coverage</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Important Notes -->
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Important:</strong> Renewing your policy ensures continuous coverage without any gap in protection.
+                        Your No Claim Bonus will continue to accumulate with each claim-free year.
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <form method="POST" id="renewalForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="accept_renewal">
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                                <i class="fas fa-check-circle"></i> Accept and Proceed to Payment
+                            </button>
+                            <a href="{% url 'core:policy_detail' policy.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Policy
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <!-- Help Text -->
+                    <p class="text-muted small text-center mt-3 mb-0">
+                        <i class="fas fa-lock"></i> Your payment information is secure and encrypted.
+                        Need help? <a href="{% url 'core:support_tickets' %}">Contact Support</a>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- FAQ Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> Frequently Asked Questions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    What happens if I don't renew on time?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    If you don't renew before your policy expires, you'll have a gap in coverage. 
+                                    This means any incidents occurring after expiry won't be covered. 
+                                    Additionally, you may lose your No Claim Bonus if the gap exceeds 90 days.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    Can I change my coverage during renewal?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    Yes! You can adjust your coverage amount or add additional benefits during renewal.
+                                    Please contact our support team before proceeding with renewal if you wish to make changes.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    Will I get a new policy document?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    Yes, upon successful renewal and payment, a new policy document will be generated 
+                                    with the new policy number and updated dates. Your certificate will also be regenerated.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                    How is my renewal premium calculated?
+                                </button>
+                            </h2>
+                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    Your renewal premium is based on your original premium, adjusted for:
+                                    <ul class="mt-2 mb-0">
+                                        <li>No Claim Bonus discount (if applicable)</li>
+                                        <li>Vehicle age (older vehicles may have a loading)</li>
+                                        <li>Any applicable promotional discounts</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <h5>Processing Renewal...</h5>
+                <p class="text-muted">Please wait while we prepare your renewal.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let loadingModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    
+    const form = document.getElementById('renewalForm');
+    
+    form.addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+        submitBtn.disabled = true;
+        
+        // Show loading modal
+        loadingModal.show();
+    });
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-header h4, .card-header h5, .card-header h6 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.card-header.bg-white {
+    background: #f8f9fa;
+    color: #1e293b;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.btn-success {
+    background-color: #10b981;
+    border-color: #10b981;
+}
+
+.btn-success:hover {
+    background-color: #059669;
+    border-color: #059669;
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
+}
+
+.alert-info {
+    background-color: #eef2ff;
+    border-color: #4169E1;
+    color: #1e293b;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffecb5;
+    color: #856404;
+}
+
+.table td {
+    padding: 0.5rem 0;
+}
+
+.text-primary {
+    color: #4169E1 !important;
+}
+
+.text-success {
+    color: #10b981 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-warning {
+    color: #f59e0b !important;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #eef2ff;
+    color: #4169E1;
+}
+
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+    border-color: #4169E1;
+}
+
+.accordion-item {
+    border: 1px solid #e9ecef;
+    border-radius: 8px !important;
+    margin-bottom: 8px;
+}
+
+.accordion-item:last-child {
+    margin-bottom: 0;
+}
+
+.fa-star {
+    color: #fbbf24 !important;
+}
+
+a {
+    color: #4169E1;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .card-header {
+        padding: 12px 15px;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,486 @@
+{% extends 'core/admin/security/security_base.html' %}
+{% block title %}Audit Logs - Edgway Security{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 200px;
+        width: 100%;
+    }
+    .filter-badge {
+        display: inline-flex;
+        align-items: center;
+        background: var(--edgway-primary);
+        border: 1px solid var(--edgway-border);
+        border-radius: 20px;
+        padding: 4px 12px;
+        margin: 0 8px 8px 0;
+        font-size: 0.85rem;
+    }
+    .filter-badge .remove {
+        margin-left: 8px;
+        cursor: pointer;
+        color: #64748b;
+    }
+    .filter-badge .remove:hover {
+        color: var(--edgway-danger);
+    }
+    .activity-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+    .activity-high { background: var(--edgway-danger); }
+    .activity-medium { background: var(--edgway-warning); }
+    .activity-low { background: var(--edgway-success); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edgway-topbar">
+    <h1 class="page-title">
+        <i class="fas fa-history"></i> Audit Logs
+    </h1>
+    <div class="topbar-actions">
+        <button class="edgway-btn edgway-btn-outline" onclick="exportLogs()">
+            <i class="fas fa-download"></i> Export CSV
+        </button>
+        <button class="edgway-btn edgway-btn-outline" onclick="location.reload()">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Key Metrics Row -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="text-center">
+                <div class="stat-value">{{ total_logs }}</div>
+                <div class="stat-label">Total Logs</div>
+                <small class="text-muted">{{ today_logs }} today</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="text-center">
+                <div class="stat-value text-success">{{ create_count }}</div>
+                <div class="stat-label">Creates</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="text-center">
+                <div class="stat-value text-warning">{{ update_count }}</div>
+                <div class="stat-label">Updates</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="text00-center">
+                <div class="stat-value text-danger">{{ delete_count }}</div>
+                <div class="stat-label">Deletes</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="text-center">
+                <div class="stat-value text-primary">{{ approve_count }}</div>
+                <div class="stat-label">Approves</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="text-center">
+                <div class="stat-value text-info">{{ export_count }}</div>
+                <div class="stat-label">Exports</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-pie"></i> Action Distribution</h6>
+            </div>
+            <div class="edgway-card-body">
+                <div class="chart-container">
+                    <canvas id="actionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-line"></i> Activity Timeline (24h)</h6>
+            </div>
+            <div class="edgway-card-body">
+                <div class="chart-container">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Filters Display -->
+<div class="mb-3" id="activeFilters">
+    {% if action_filter %}
+    <span class="filter-badge">
+        Action: {{ action_filter }}
+        <span class="remove" onclick="removeFilter('action')">&times;</span>
+    </span>
+    {% endif %}
+    {% if resource_filter %}
+    <span class="filter-badge">
+        Resource: {{ resource_filter }}
+        <span class="remove" onclick="removeFilter('resource_type')">&times;</span>
+    </span>
+    {% endif %}
+    {% if user_filter %}
+    <span class="filter-badge">
+        User ID: {{ user_filter }}
+        <span class="remove" onclick="removeFilter('user')">&times;</span>
+    </span>
+    {% endif %}
+    {% if ip_filter %}
+    <span class="filter-badge">
+        IP: {{ ip_filter }}
+        <span class="remove" onclick="removeFilter('ip')">&times;</span>
+    </span>
+    {% endif %}
+    {% if date_from or date_to %}
+    <span class="filter-badge">
+        Date: {{ date_from|default:'*' }} to {{ date_to|default:'*' }}
+        <span class="remove" onclick="removeFilter('date')">&times;</span>
+    </span>
+    {% endif %}
+    {% if action_filter or resource_filter or user_filter or ip_filter or date_from %}
+    <button class="edgway-btn edgway-btn-outline btn-sm" onclick="clearAllFilters()">
+        <i class="fas fa-times"></i> Clear All
+    </button>
+    {% endif %}
+</div>
+
+<!-- Advanced Filters -->
+<div class="edgway-card mb-4">
+    <div class="edgway-card-header">
+        <h6 class="mb-0"><i class="fas fa-filter"></i> Advanced Filters</h6>
+        <button class="btn btn-sm btn-link" onclick="toggleFilters()">
+            <i class="fas fa-chevron-down" id="filterToggleIcon"></i>
+        </button>
+    </div>
+    <div class="edgway-card-body" id="filterPanel">
+        <form method="get" id="filterForm">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Action</label>
+                    <select class="edgway-form-control" name="action">
+                        <option value="">All Actions</option>
+                        {% for value, label in actions %}
+                            <option value="{{ value }}" {% if action_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Resource Type</label>
+                    <select class="edgway-form-control" name="resource_type">
+                        <option value="">All Resources</option>
+                        {% for rt in resource_types %}
+                            <option value="{{ rt }}" {% if resource_filter == rt %}selected{% endif %}>{{ rt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">User</label>
+                    <select class="edgway-form-control" name="user">
+                        <option value="">All Users</option>
+                        {% for u in users %}
+                            <option value="{{ u.id }}" {% if user_filter == u.id|stringformat:"s" %}selected{% endif %}>
+                                {{ u.email|truncatechars:30 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">IP Address</label>
+                    <input type="text" class="edgway-form-control" name="ip" placeholder="e.g., 192.168.1.1" value="{{ ip_filter }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">From Date</label>
+                    <input type="date" class="edgway-form-control" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">To Date</label>
+                    <input type="date" class="edgway-form-control" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="edgway-form-control" name="search" placeholder="Search..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <button type="submit" class="edgway-btn edgway-btn-primary w-100">
+                            <i class="fas fa-search"></i> Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Top Users Quick Stats -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h6 class="mb-0"><i class="fas fa-users"></i> Most Active Users</h6>
+            </div>
+            <div class="edgway-card-body">
+                <div class="d-flex flex-wrap gap-3">
+                    {% for user_stat in top_users|slice:":10" %}
+                    <div class="border rounded p-2" style="border-color: var(--edgway-border); min-width: 180px;">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="activity-indicator 
+                                {% if user_stat.count > 100 %}activity-high
+                                {% elif user_stat.count > 50 %}activity-medium
+                                {% else %}activity-low{% endif %}">
+                            </span>
+                            <div>
+                                <strong>{{ user_stat.user__email|truncatechars:25 }}</strong>
+                                <br>
+                                <small class="text-muted">{{ user_stat.count }} actions</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No user activity data</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Audit Logs Table -->
+<div class="edgway-card">
+    <div class="table-responsive">
+        <table class="edgway-table">
+            <thead>
+                <tr>
+                    <th style="width: 160px;">Timestamp</th>
+                    <th style="width: 180px;">User</th>
+                    <th style="width: 100px;">Action</th>
+                    <th style="width: 130px;">Resource</th>
+                    <th style="width: 150px;">Resource ID</th>
+                    <th style="width: 130px;">IP Address</th>
+                    <th style="width: 80px;">Status</th>
+                    <th style="width: 80px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>
+                        <div>{{ log.created_at|date:"M d, Y" }}</div>
+                        <small class="text-muted">{{ log.created_at|time:"H:i:s" }}</small>
+                    </td>
+                    <td>
+                        {% if log.user %}
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas fa-user-circle"></i>
+                                <span title="{{ log.user.email }}">{{ log.user.email|truncatechars:25 }}</span>
+                            </div>
+                        {% else %}
+                            <span class="text-muted">
+                                <i class="fas fa-robot"></i> System
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if log.action == 'CREATE' %}bg-success
+                            {% elif log.action == 'UPDATE' %}bg-warning
+                            {% elif log.action == 'DELETE' %}bg-danger
+                            {% elif log.action == 'APPROVE' %}bg-primary
+                            {% elif log.action == 'REJECT' %}bg-danger
+                            {% elif log.action == 'EXPORT' %}bg-info
+                            {% elif log.action == 'IMPORT' %}bg-info
+                            {% elif log.action == 'LOGIN' %}bg-secondary
+                            {% elif log.action == 'LOGOUT' %}bg-secondary
+                            {% else %}bg-secondary{% endif %}">
+                            {{ log.action }}
+                        </span>
+                    </td>
+                    <td>{{ log.resource_type }}</td>
+                    <td>
+                        <code>{{ log.resource_id|truncatechars:15 }}</code>
+                        {% if log.resource_name %}
+                            <br><small class="text-muted" title="{{ log.resource_name }}">{{ log.resource_name|truncatechars:25 }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <code>{{ log.ip_address }}</code>
+                        {% if log.session_id %}
+                            <br><small class="text-muted">Session: {{ log.session_id|truncatechars:8 }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.metadata.status_code %}
+                            {% if log.metadata.status_code < 300 %}
+                                <span class="badge bg-success">{{ log.metadata.status_code }}</span>
+                            {% elif log.metadata.status_code < 400 %}
+                                <span class="badge bg-info">{{ log.metadata.status_code }}</span>
+                            {% elif log.metadata.status_code < 500 %}
+                                <span class="badge bg-warning">{{ log.metadata.status_code }}</span>
+                            {% else %}
+                                <span class="badge bg-danger">{{ log.metadata.status_code }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-secondary">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'core:audit_log_detail' log.id %}" class="edgway-btn edgway-btn-outline btn-sm">
+                            <i class="fas fa-eye"></i> Details
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        <i class="fas fa-history fa-3x mb-3"></i>
+                        <p>No audit logs found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if logs.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if logs.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ logs.previous_page_number }}&action={{ action_filter }}&resource_type={{ resource_filter }}&user={{ user_filter }}&ip={{ ip_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&search={{ search_query }}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+        {% endif %}
+        
+        {% for num in logs.paginator.page_range %}
+            {% if logs.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > logs.number|add:'-3' and num < logs.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}&action={{ action_filter }}&resource_type={{ resource_filter }}&user={{ user_filter }}&ip={{ ip_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&search={{ search_query }}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if logs.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ logs.next_page_number }}&action={{ action_filter }}&resource_type={{ resource_filter }}&user={{ user_filter }}&ip={{ ip_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&search={{ search_query }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<script>
+let actionChart, hourlyChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Action Distribution Chart
+    const actionCtx = document.getElementById('actionChart').getContext('2d');
+    actionChart = new Chart(actionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ action_labels|safe|default:'[]' }},
+            datasets: [{
+                data: {{ action_data|safe|default:'[]' }},
+                backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#e2e8f0', padding: 15 } }
+            },
+            cutout: '60%'
+        }
+    });
+    
+    // Hourly Activity Chart
+    const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+    hourlyChart = new Chart(hourlyCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ hourly_labels|safe|default:'[]' }},
+            datasets: [{
+                label: 'Actions',
+                data: {{ hourly_data|safe|default:'[]' }},
+                backgroundColor: '#3b82f6',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+});
+
+function toggleFilters() {
+    const panel = document.getElementById('filterPanel');
+    const icon = document.getElementById('filterToggleIcon');
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    } else {
+        panel.style.display = 'none';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    }
+}
+
+function removeFilter(filterName) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete(filterName);
+    window.location.href = url.toString();
+}
+
+function clearAllFilters() {
+    window.location.href = window.location.pathname;
+}
+
+function exportLogs() {
+    const url = new URL(window.location.href);
+    url.pathname = url.pathname + 'export/';
+    window.location.href = url.toString();
+}
+</script>
+{% endblock %}

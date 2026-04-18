@@ -1,10 +1,18 @@
 {% extends 'core/logon_base.html' %}
+{% load humanize %}
+
 {% block title %}Claim Details - {{ claim.claim_number }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:admin_claims' %}">Claims</a></li>
+                    <li class="breadcrumb-item active">{{ claim.claim_number }}</li>
+                </ol>
+            </nav>
             <h2><i class="fas fa-clipboard-list"></i> Claim #{{ claim.claim_number }}</h2>
             <p class="text-muted">Review and process claim</p>
         </div>
@@ -50,9 +58,9 @@
                         <div class="col-md-6">
                             <p><strong>Claim Number:</strong> {{ claim.claim_number }}</p>
                             <p><strong>Claim Type:</strong> {{ claim.get_claim_type_display }}</p>
-                            <p><strong>Claimed Amount:</strong> <span class="text-warning fw-bold">₦{{ claim.claimed_amount|floatformat:2 }}</span></p>
+                            <p><strong>Claimed Amount:</strong> <span class="text-warning fw-bold">₦{{ claim.claimed_amount|floatformat:2|intcomma }}</span></p>
                             {% if claim.approved_amount %}
-                                <p><strong>Approved Amount:</strong> <span class="text-success fw-bold">₦{{ claim.approved_amount|floatformat:2 }}</span></p>
+                                <p><strong>Approved Amount:</strong> <span class="text-success fw-bold">₦{{ claim.approved_amount|floatformat:2|intcomma }}</span></p>
                             {% endif %}
                             <p><strong>Filed On:</strong> {{ claim.created_at|date:"F d, Y H:i" }}</p>
                         </div>
@@ -63,10 +71,76 @@
                                 </a>
                             </p>
                             <p><strong>Policy Type:</strong> {{ claim.policy.get_policy_type_display }}</p>
-                            <p><strong>Coverage Amount:</strong> ₦{{ claim.policy.coverage_amount|floatformat:2 }}</p>
-                            <p><strong>Policy Status:</strong> {{ claim.policy.get_status_display }}</p>
+                            <p><strong>Coverage Amount:</strong> ₦{{ claim.policy.coverage_amount|floatformat:2|intcomma }}</p>
+                            <p><strong>Policy Status:</strong> 
+                                <span class="badge {% if claim.policy.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ claim.policy.get_status_display }}
+                                </span>
+                            </p>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Vehicle Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-car"></i> Vehicle Information</h5>
+                </div>
+                <div class="card-body">
+                    {% if claim.vehicle %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Vehicle:</strong> {{ claim.vehicle.make }} {{ claim.vehicle.model }}</p>
+                                <p><strong>Year:</strong> {{ claim.vehicle.year }}</p>
+                                <p><strong>Color:</strong> {{ claim.vehicle.color }}</p>
+                                <p><strong>Registration:</strong> {{ claim.vehicle.registration_number }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Engine Number:</strong> {{ claim.vehicle.engine_number }}</p>
+                                <p><strong>Chassis Number:</strong> {{ claim.vehicle.chassis_number }}</p>
+                                <p><strong>Insurance Status:</strong> 
+                                    {% if claim.vehicle.is_insured %}
+                                        <span class="badge bg-success">Insured</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Uninsured</span>
+                                    {% endif %}
+                                </p>
+                                <p>
+                                    <a href="{% url 'core:admin_vehicle_detail' claim.vehicle.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View Vehicle Details
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    {% elif claim.policy.vehicle %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Vehicle:</strong> {{ claim.policy.vehicle.make }} {{ claim.policy.vehicle.model }}</p>
+                                <p><strong>Year:</strong> {{ claim.policy.vehicle.year }}</p>
+                                <p><strong>Color:</strong> {{ claim.policy.vehicle.color }}</p>
+                                <p><strong>Registration:</strong> {{ claim.policy.vehicle.registration_number }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Engine Number:</strong> {{ claim.policy.vehicle.engine_number }}</p>
+                                <p><strong>Chassis Number:</strong> {{ claim.policy.vehicle.chassis_number }}</p>
+                                <p><strong>Insurance Status:</strong> 
+                                    {% if claim.policy.vehicle.is_insured %}
+                                        <span class="badge bg-success">Insured</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Uninsured</span>
+                                    {% endif %}
+                                </p>
+                                <p>
+                                    <a href="{% url 'core:admin_vehicle_detail' claim.policy.vehicle.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View Vehicle Details
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No vehicle information available</p>
+                    {% endif %}
                 </div>
             </div>
 
@@ -237,7 +311,6 @@
                             {% endif %}
                         </div>
                         
-                        <!-- Hidden action input -->
                         <input type="hidden" name="action" id="formAction" value="">
                     </form>
                 </div>
@@ -274,20 +347,6 @@
                     <a href="{% url 'core:admin_user_detail' claim.user.id %}" class="btn btn-outline-primary btn-sm w-100">
                         <i class="fas fa-user"></i> View Full Profile
                     </a>
-                </div>
-            </div>
-
-            <!-- Vehicle Information Card -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-car"></i> Vehicle Information</h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Vehicle:</strong> {{ claim.policy.vehicle.make }} {{ claim.policy.vehicle.model }}</p>
-                    <p><strong>Year:</strong> {{ claim.policy.vehicle.year }}</p>
-                    <p><strong>Registration:</strong> {{ claim.policy.vehicle.registration_number }}</p>
-                    <p><strong>Engine #:</strong> {{ claim.policy.vehicle.engine_number }}</p>
-                    <p><strong>Color:</strong> {{ claim.policy.vehicle.color }}</p>
                 </div>
             </div>
 
@@ -453,7 +512,6 @@ document.addEventListener('DOMContentLoaded', function() {
         toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
     }
     
-    // Add Bootstrap classes to form fields
     const fields = ['surveyor_notes', 'approved_amount', 'rejection_reason'];
     fields.forEach(field => {
         const element = document.getElementById(`id_${field}`);
@@ -465,7 +523,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Set max for approved amount
     const approvedInput = document.getElementById('id_approved_amount');
     if (approvedInput) {
         approvedInput.max = {{ claim.claimed_amount }};
@@ -555,13 +612,10 @@ function submitReviewAction() {
 }
 
 function submitForm(action) {
-    // Set the action value
     document.getElementById('formAction').value = action;
     
-    // Get the form
     const form = document.getElementById('claimForm');
     
-    // Hide all modals
     const approveModal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
     const rejectModal = bootstrap.Modal.getInstance(document.getElementById('rejectModal'));
     const settleModal = bootstrap.Modal.getInstance(document.getElementById('settleModal'));
@@ -570,14 +624,11 @@ function submitForm(action) {
     if (rejectModal) rejectModal.hide();
     if (settleModal) settleModal.hide();
     
-    // Show loading toast
     showToast('Processing', 'Processing claim...', 'info');
     
-    // Disable submit buttons to prevent double submission
     const buttons = document.querySelectorAll('#claimForm button');
     buttons.forEach(btn => btn.disabled = true);
     
-    // Submit the form
     form.submit();
 }
 </script>
@@ -589,102 +640,94 @@ function submitForm(action) {
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     margin-bottom: 20px;
 }
-
 .card-header {
     background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
     color: white;
     border-radius: 12px 12px 0 0 !important;
     padding: 15px 20px;
 }
-
 .card-header h5 {
     margin: 0;
     font-weight: 600;
 }
-
 .badge {
     padding: 5px 10px;
     border-radius: 20px;
     font-weight: 500;
 }
-
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+}
 .form-control:focus, .form-select:focus {
     border-color: #4169E1;
     box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
 }
-
 .btn-success {
     background-color: #28a745;
     border-color: #28a745;
 }
-
 .btn-success:hover {
     background-color: #218838;
     border-color: #1e7e34;
 }
-
 .btn-danger {
     background-color: #dc3545;
     border-color: #dc3545;
 }
-
 .btn-danger:hover {
     background-color: #c82333;
     border-color: #bd2130;
 }
-
 .btn-info {
     background-color: #17a2b8;
     border-color: #17a2b8;
     color: white;
 }
-
 .btn-info:hover {
     background-color: #138496;
     border-color: #117a8b;
     color: white;
 }
-
 .btn-primary {
     background-color: #4169E1;
     border-color: #4169E1;
 }
-
 .btn-primary:hover {
     background-color: #3155b0;
     border-color: #3155b0;
 }
-
+.btn-outline-primary {
+    color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-outline-primary:hover {
+    background-color: #4169E1;
+    color: white;
+}
 .list-group-item {
     border-left: none;
     border-right: none;
 }
-
 .list-group-item:first-child {
     border-top: none;
 }
-
 .toast {
     background: white;
     border-left: 4px solid #4169E1;
 }
-
 .modal-header.bg-success {
     background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%) !important;
 }
-
 .modal-header.bg-danger {
     background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%) !important;
 }
-
 .modal-header.bg-primary {
     background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%) !important;
 }
-
 .modal-header.bg-warning {
     background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
 }
-
 .timeline-icon {
     width: 36px;
     height: 36px;
@@ -694,13 +737,14 @@ function submitForm(action) {
     justify-content: center;
     color: white;
 }
-
 .timeline-icon.bg-primary {
     background-color: #4169E1;
 }
-
 .timeline-icon.bg-success {
     background-color: #28a745;
+}
+.bg-light {
+    background-color: #f8f9fa !important;
 }
 </style>
 {% endblock %}

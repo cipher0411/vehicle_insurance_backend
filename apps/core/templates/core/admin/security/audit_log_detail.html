@@ -1,0 +1,325 @@
+{% extends 'core/admin/security/security_base.html' %}
+{% block title %}Audit Log Detail - Edgway Security{% endblock %}
+
+{% block content %}
+<div class="edgway-topbar">
+    <h1 class="page-title">
+        <i class="fas fa-search"></i> Audit Log Detail
+    </h1>
+    <div class="topbar-actions">
+        <a href="{% url 'core:audit_logs' %}" class="edgway-btn edgway-btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Logs
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Main Log Details -->
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-info-circle"></i> Log Entry Details</h5>
+                <span class="badge 
+                    {% if log.action == 'CREATE' %}bg-success
+                    {% elif log.action == 'UPDATE' %}bg-warning
+                    {% elif log.action == 'DELETE' %}bg-danger
+                    {% elif log.action == 'APPROVE' %}bg-primary
+                    {% else %}bg-secondary{% endif %} px-3 py-2">
+                    {{ log.action }}
+                </span>
+            </div>
+            <div class="edgway-card-body">
+                <!-- Key Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Timestamp</label>
+                        <div class="fw-bold fs-5">{{ log.created_at|date:"F d, Y H:i:s.u" }}</div>
+                        <small class="text-muted">{{ log.created_at|timesince }} ago</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Log ID</label>
+                        <div><code>{{ log.id }}</code></div>
+                    </div>
+                </div>
+                
+                <!-- User Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="text-muted small">User</label>
+                        <div>
+                            {% if log.user %}
+                                <div class="d-flex align-items-center gap-3">
+                                    <i class="fas fa-user-circle fa-2x"></i>
+                                    <div>
+                                        <strong>{{ log.user.get_full_name|default:log.user.email }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ log.user.email }}</small>
+                                        <br>
+                                        <span class="badge bg-secondary">{{ log.user.get_role_display }}</span>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <span class="text-muted">
+                                    <i class="fas fa-robot"></i> System Action
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">IP Address</label>
+                        <div>
+                            <code class="fs-5">{{ log.ip_address }}</code>
+                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ log.ip_address }}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Resource Information -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label class="text-muted small">Resource Type</label>
+                        <div><span class="badge bg-info">{{ log.resource_type }}</span></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-muted small">Resource ID</label>
+                        <div><code>{{ log.resource_id|default:"N/A" }}</code></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-muted small">Resource Name</label>
+                        <div>{{ log.resource_name|default:"N/A" }}</div>
+                    </div>
+                </div>
+                
+                <!-- Session Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Session ID</label>
+                        <div><code>{{ log.session_id|default:"N/A" }}</code></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Request ID</label>
+                        <div><code>{{ log.request_id|default:"N/A" }}</code></div>
+                    </div>
+                </div>
+                
+                <!-- User Agent -->
+                <div class="mb-4">
+                    <label class="text-muted small">User Agent</label>
+                    <div class="edgway-code">{{ log.user_agent|default:"Not provided" }}</div>
+                </div>
+                
+                <!-- Changes (Before/After) -->
+                {% if log.changes %}
+                <div class="mb-4">
+                    <label class="text-muted small">Changes Made</label>
+                    <div class="edgway-code">
+                        <table class="table table-sm table-dark mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>Before</th>
+                                    <th>After</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for field, values in log.changes.items %}
+                                <tr>
+                                    <td><strong>{{ field }}</strong></td>
+                                    <td class="text-danger">{{ values.0|default:"(empty)"|truncatechars:50 }}</td>
+                                    <td class="text-success">{{ values.1|default:"(empty)"|truncatechars:50 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Metadata -->
+                {% if log.metadata %}
+                <div class="mb-4">
+                    <label class="text-muted small">Additional Metadata</label>
+                    <div class="edgway-code">
+                        <pre class="mb-0" style="color: #a5b4fc;">{{ log.metadata|pprint }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Related Logs - Same Resource -->
+        {% if resource_logs %}
+        <div class="edgway-card mt-4">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-link"></i> Activity on This Resource</h5>
+            </div>
+            <div class="edgway-card-body p-0">
+                <div class="table-responsive">
+                    <table class="edgway-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>IP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rl in resource_logs %}
+                            <tr>
+                                <td>{{ rl.created_at|date:"M d, H:i:s" }}</td>
+                                <td>{{ rl.user.email|default:"System"|truncatechars:25 }}</td>
+                                <td><span class="badge bg-secondary">{{ rl.action }}</span></td>
+                                <td><code>{{ rl.ip_address }}</code></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- User Activity Summary -->
+        {% if user_activity_summary %}
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-user-clock"></i> User Activity Summary</h5>
+            </div>
+            <div class="edgway-card-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-user-circle fa-3x mb-2" style="color: var(--edgway-accent);"></i>
+                    <h6>{{ log.user.get_full_name|default:log.user.email }}</h6>
+                </div>
+                
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <div class="fs-4 fw-bold">{{ user_activity_summary.total_actions }}</div>
+                        <small class="text-muted">Total</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fs-4 fw-bold text-success">{{ user_activity_summary.creates }}</div>
+                        <small class="text-muted">Creates</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fs-4 fw-bold text-warning">{{ user_activity_summary.updates }}</div>
+                        <small class="text-muted">Updates</small>
+                    </div>
+                </div>
+                
+                <hr style="border-color: var(--edgway-border);">
+                
+                <p><strong>First Seen:</strong> {{ user_activity_summary.first_seen|date:"M d, Y H:i" }}</p>
+                <p><strong>Last Seen:</strong> {{ user_activity_summary.last_seen|date:"M d, Y H:i" }}</p>
+                <p><strong>Unique IPs Used:</strong> {{ user_activity_summary.unique_ips }}</p>
+                
+                <a href="{% url 'core:audit_logs' %}?user={{ log.user.id }}" class="edgway-btn edgway-btn-outline btn-sm w-100 mt-2">
+                    <i class="fas fa-list"></i> View All User Logs
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- IP Activity Summary -->
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-globe"></i> IP Activity Summary</h5>
+            </div>
+            <div class="edgway-card-body">
+                <div class="text-center mb-3">
+                    <code class="fs-4">{{ log.ip_address }}</code>
+                </div>
+                
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="fs-4 fw-bold">{{ ip_activity_summary.total_requests }}</div>
+                        <small class="text-muted">Requests</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="fs-4 fw-bold">{{ ip_activity_summary.unique_users }}</div>
+                        <small class="text-muted">Unique Users</small>
+                    </div>
+                </div>
+                
+                <hr style="border-color: var(--edgway-border);">
+                
+                <p><strong>First Seen:</strong> {{ ip_activity_summary.first_seen|date:"M d, Y H:i" }}</p>
+                <p><strong>Last Seen:</strong> {{ ip_activity_summary.last_seen|date:"M d, Y H:i" }}</p>
+                
+                <div class="mt-3">
+                    <strong>Actions from this IP:</strong>
+                    <div class="mt-2">
+                        {% for action_stat in ip_activity_summary.actions %}
+                        <div class="d-flex justify-content-between">
+                            <span>{{ action_stat.action }}</span>
+                            <span class="badge bg-secondary">{{ action_stat.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{% url 'core:audit_logs' %}?ip={{ log.ip_address }}" class="edgway-btn edgway-btn-outline btn-sm">
+                        <i class="fas fa-list"></i> View All IP Logs
+                    </a>
+                    <button class="edgway-btn edgway-btn-danger btn-sm" onclick="blockIP('{{ log.ip_address }}')">
+                        <i class="fas fa-ban"></i> Block This IP
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Logs - Same User -->
+        {% if user_logs %}
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-history"></i> Recent User Activity</h5>
+            </div>
+            <div class="edgway-card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for ul in user_logs|slice:":10" %}
+                    <a href="{% url 'core:audit_log_detail' ul.id %}" class="list-group-item list-group-item-action" style="background: transparent; border-color: var(--edgway-border); color: #e2e8f0;">
+                        <div class="d-flex justify-content-between">
+                            <span>
+                                <span class="badge bg-secondary me-2">{{ ul.action }}</span>
+                                {{ ul.resource_type }}
+                            </span>
+                            <small class="text-muted">{{ ul.created_at|time:"H:i:s" }}</small>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied', 'Copied to clipboard', 'success');
+    });
+}
+
+function blockIP(ip) {
+    if (confirm(`Block IP address ${ip}? This will prevent all access from this IP.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{% url 'core:block_ip' %}";
+        form.innerHTML = `
+            {% csrf_token %}
+            <input type="hidden" name="ip_address" value="${ip}">
+            <input type="hidden" name="reason" value="Blocked from audit log review">
+            <input type="hidden" name="duration" value="86400">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

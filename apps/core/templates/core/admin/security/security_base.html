@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Edgway Security - {% block title %}SOC Dashboard{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <style>
+        :root {
+            --edgway-primary: #0f172a;
+            --edgway-secondary: #1e293b;
+            --edgway-accent: #3b82f6;
+            --edgway-success: #10b981;
+            --edgway-warning: #f59e0b;
+            --edgway-danger: #ef4444;
+            --edgway-info: #06b6d4;
+            --edgway-dark: #020617;
+            --edgway-border: #334155;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+        }
+        
+        /* Sidebar */
+        .edgway-sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 280px;
+            background: var(--edgway-dark);
+            border-right: 1px solid var(--edgway-border);
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--edgway-border);
+        }
+        
+        .sidebar-header h3 {
+            margin: 0;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .sidebar-header .badge {
+            background: var(--edgway-danger);
+            color: white;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            margin-left: 8px;
+        }
+        
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+        
+        .nav-section {
+            margin-bottom: 24px;
+        }
+        
+        .nav-section-title {
+            padding: 8px 20px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            font-weight: 600;
+        }
+        
+        .sidebar-nav .nav-link {
+            color: #94a3b8;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-nav .nav-link i {
+            width: 20px;
+            font-size: 1.1rem;
+        }
+        
+        .sidebar-nav .nav-link:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: white;
+            border-left-color: var(--edgway-accent);
+        }
+        
+        .sidebar-nav .nav-link.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            border-left-color: var(--edgway-accent);
+        }
+        
+        .sidebar-nav .nav-link.text-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: var(--edgway-danger);
+        }
+        
+        /* Main Content */
+        .edgway-main {
+            margin-left: 280px;
+            padding: 24px;
+            min-height: 100vh;
+        }
+        
+        /* Top Bar */
+        .edgway-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--edgway-border);
+        }
+        
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+        }
+        
+        .page-title i {
+            color: var(--edgway-accent);
+            margin-right: 12px;
+        }
+        
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .threat-level-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+        
+        .threat-level-badge.low {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--edgway-success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .threat-level-badge.medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--edgway-warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        .threat-level-badge.high {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--edgway-danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+        }
+        
+        .user-profile img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--edgway-accent);
+        }
+        
+        /* Cards */
+        .edgway-card {
+            background: var(--edgway-secondary);
+            border: 1px solid var(--edgway-border);
+            border-radius: 16px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        
+        .edgway-card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--edgway-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .edgway-card-header h5 {
+            margin: 0;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .edgway-card-header i {
+            color: var(--edgway-accent);
+            margin-right: 8px;
+        }
+        
+        .edgway-card-body {
+            padding: 20px;
+        }
+        
+        /* Stats Cards */
+        .stat-card {
+            background: var(--edgway-secondary);
+            border: 1px solid var(--edgway-border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            height: 100%;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            border-color: var(--edgway-accent);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-icon {
+            font-size: 2rem;
+            opacity: 0.7;
+        }
+        
+        /* Tables */
+        .edgway-table {
+            width: 100%;
+            color: #e2e8f0;
+        }
+        
+        .edgway-table thead th {
+            background: var(--edgway-primary);
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--edgway-border);
+        }
+        
+        .edgway-table tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--edgway-border);
+            vertical-align: middle;
+        }
+        
+        .edgway-table tbody tr:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+        
+        /* Badges */
+        .badge-critical {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+        
+        .badge-high {
+            background: #991b1b;
+            color: #f87171;
+        }
+        
+        .badge-medium {
+            background: #854d0e;
+            color: #fcd34d;
+        }
+        
+        .badge-low {
+            background: #14532d;
+            color: #86efac;
+        }
+        
+        /* Forms */
+        .edgway-form-control {
+            background: var(--edgway-primary);
+            border: 1px solid var(--edgway-border);
+            color: white;
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+        
+        .edgway-form-control:focus {
+            background: var(--edgway-primary);
+            border-color: var(--edgway-accent);
+            color: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            outline: none;
+        }
+        
+        .edgway-form-control::placeholder {
+            color: #64748b;
+        }
+        
+        .edgway-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .edgway-btn-primary {
+            background: var(--edgway-accent);
+            color: white;
+        }
+        
+        .edgway-btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .edgway-btn-danger {
+            background: var(--edgway-danger);
+            color: white;
+        }
+        
+        .edgway-btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .edgway-btn-outline {
+            background: transparent;
+            border: 1px solid var(--edgway-border);
+            color: #e2e8f0;
+        }
+        
+        .edgway-btn-outline:hover {
+            background: var(--edgway-primary);
+            border-color: var(--edgway-accent);
+            color: white;
+        }
+        
+        /* Progress */
+        .edgway-progress {
+            background: var(--edgway-primary);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .edgway-progress-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        
+        /* Modal */
+        .edgway-modal .modal-content {
+            background: var(--edgway-secondary);
+            border: 1px solid var(--edgway-border);
+            color: #e2e8f0;
+        }
+        
+        .edgway-modal .modal-header {
+            border-bottom: 1px solid var(--edgway-border);
+        }
+        
+        .edgway-modal .modal-footer {
+            border-top: 1px solid var(--edgway-border);
+        }
+        
+        /* Toast */
+        .edgway-toast {
+            background: var(--edgway-secondary);
+            border: 1px solid var(--edgway-border);
+            border-left: 4px solid var(--edgway-accent);
+            color: #e2e8f0;
+        }
+        
+        /* Mobile Toggle */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 1001;
+            background: var(--edgway-accent);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .edgway-sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .edgway-sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .edgway-main {
+                margin-left: 0;
+            }
+            
+            .sidebar-toggle {
+                display: block;
+            }
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Code/Pre */
+        .edgway-code {
+            background: var(--edgway-dark);
+            border: 1px solid var(--edgway-border);
+            border-radius: 8px;
+            padding: 12px;
+            color: #a5b4fc;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+        }
+        
+        /* Live Indicator */
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--edgway-success);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .live-indicator .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--edgway-success);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Back Link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            text-decoration: none;
+            margin-bottom: 16px;
+            transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+            color: var(--edgway-accent);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <!-- Sidebar -->
+    <aside class="edgway-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>
+                <i class="fas fa-shield-haltered"></i> 
+                Edgway Security
+                <span class="badge">SOC</span>
+            </h3>
+            <small class="text-muted">Enterprise Security Platform</small>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Overview</div>
+                <a href="{% url 'core:security_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'security_dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{% url 'core:live_monitoring' %}" class="nav-link {% if request.resolver_match.url_name == 'live_monitoring' %}active{% endif %}">
+                    <i class="fas fa-eye"></i> Live Monitoring
+                    <span class="live-indicator ms-auto">
+                        <span class="dot"></span> LIVE
+                    </span>
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Security Events</div>
+                <a href="{% url 'core:security_events' %}" class="nav-link {% if request.resolver_match.url_name == 'security_events' %}active{% endif %}">
+                    <i class="fas fa-list"></i> All Events
+                </a>
+                <a href="{% url 'core:security_events' %}?severity=CRITICAL" class="nav-link text-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Critical Events
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Threat Intelligence</div>
+                <a href="{% url 'core:threat_intelligence' %}" class="nav-link {% if request.resolver_match.url_name == 'threat_intelligence' %}active{% endif %}">
+                    <i class="fas fa-bug"></i> Threat Database
+                </a>
+                <a href="{% url 'core:add_threat_intel' %}" class="nav-link {% if request.resolver_match.url_name == 'add_threat_intel' %}active{% endif %}">
+                    <i class="fas fa-plus-circle"></i> Add Threat
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Compliance & Audit</div>
+                <a href="{% url 'core:audit_logs' %}" class="nav-link {% if request.resolver_match.url_name == 'audit_logs' %}active{% endif %}">
+                    <i class="fas fa-history"></i> Audit Logs
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Compliance & Audit</div>
+                <a href="{% url 'core:security_reports' %}" class="nav-link {% if request.resolver_match.url_name == 'security_reports' %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i> Security Reports
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Configuration</div>
+                <a href="{% url 'core:api_keys' %}" class="nav-link {% if request.resolver_match.url_name == 'api_keys' %}active{% endif %}">
+                    <i class="fas fa-key"></i> API Keys
+                </a>
+                <a href="{% url 'core:security_settings' %}" class="nav-link {% if request.resolver_match.url_name == 'security_settings' %}active{% endif %}">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Navigation</div>
+                <a href="{% url 'core:admin_dashboard' %}" class="nav-link">
+                    <i class="fas fa-arrow-left"></i> Back to Admin
+                </a>
+            </div>
+        </nav>
+        
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-shield text-success"></i>
+                <small class="text-muted">WAF Active</small>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-1">
+                <i class="fas fa-globe text-info"></i>
+                <small class="text-muted">Threat Intel: Online</small>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="edgway-main">
+        <!-- Back to Admin Link -->
+        <a href="{% url 'core:admin_dashboard' %}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Admin Dashboard
+        </a>
+        
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="edgwayToast" class="edgway-toast toast" role="alert">
+            <div class="toast-header" style="background: transparent; color: white;">
+                <i class="fas fa-info-circle me-2" style="color: var(--edgway-accent);"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Mobile sidebar toggle
+        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('show');
+        });
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            
+            if (window.innerWidth <= 992) {
+                if (!sidebar.contains(e.target) && !toggle.contains(e.target) && sidebar.classList.contains('show')) {
+                    sidebar.classList.remove('show');
+                }
+            }
+        });
+        
+        // Toast function
+        function showToast(title, message, type = 'info') {
+            const toastEl = document.getElementById('edgwayToast');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.querySelector('#edgwayToast .toast-header i');
+            
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            
+            toastIcon.className = 'fas me-2';
+            if (type === 'success') {
+                toastIcon.classList.add('fa-check-circle');
+                toastIcon.style.color = '#10b981';
+            } else if (type === 'error') {
+                toastIcon.classList.add('fa-exclamation-circle');
+                toastIcon.style.color = '#ef4444';
+            } else if (type === 'warning') {
+                toastIcon.classList.add('fa-exclamation-triangle');
+                toastIcon.style.color = '#f59e0b';
+            } else {
+                toastIcon.classList.add('fa-info-circle');
+                toastIcon.style.color = '#3b82f6';
+            }
+            
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+        
+        // Get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,231 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Commission Details - {{ commission.commission_number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:agent_commissions' %}">My Commissions</a></li>
+                    <li class="breadcrumb-item active">{{ commission.commission_number }}</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-hand-holding-usd"></i> Commission Details</h2>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:agent_commissions' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Commissions
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Commission Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Commission Number:</strong> {{ commission.commission_number }}</p>
+                            <p><strong>Type:</strong> {{ commission.get_commission_type_display }}</p>
+                            <p><strong>Status:</strong> 
+                                {% if commission.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif commission.status == 'approved' %}
+                                    <span class="badge bg-info">Approved</span>
+                                {% elif commission.status == 'paid' %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ commission.get_status_display }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Earned Date:</strong> {{ commission.earned_date|date:"F d, Y" }}</p>
+                            {% if commission.paid_date %}
+                            <p><strong>Paid Date:</strong> {{ commission.paid_date|date:"F d, Y" }}</p>
+                            {% endif %}
+                            {% if commission.approved_date %}
+                            <p><strong>Approved Date:</strong> {{ commission.approved_date|date:"F d, Y" }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calculator"></i> Amount Details</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th width="40%">Policy Premium</th>
+                            <td class="text-end">₦{{ commission.premium_amount|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Commission Rate</th>
+                            <td class="text-end">{{ commission.commission_rate }}%</td>
+                        </tr>
+                        <tr>
+                            <th>Base Commission</th>
+                            <td class="text-end">₦{{ commission.commission_amount|floatformat:2|intcomma }}</td>
+                        </tr>
+                        {% if commission.bonus_amount > 0 %}
+                        <tr>
+                            <th>Bonus Amount</th>
+                            <td class="text-end text-success">+ ₦{{ commission.bonus_amount|floatformat:2|intcomma }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr style="background-color: #f8f9fa;">
+                            <th>Total Commission</th>
+                            <td class="text-end"><h5 class="mb-0 text-success">₦{{ commission.total_commission|floatformat:2|intcomma }}</h5></td>
+                        </tr>
+                    </table>
+                    {% if commission.bonus_reason %}
+                    <p class="mt-3"><strong>Bonus Reason:</strong> {{ commission.bonus_reason }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if policy %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-contract"></i> Related Policy</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Policy Number:</strong> {{ policy.policy_number }}</p>
+                            <p><strong>Type:</strong> {{ policy.get_policy_type_display }}</p>
+                            <p><strong>Customer:</strong> {{ policy.user.get_full_name|default:policy.user.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Vehicle:</strong> {{ policy.vehicle.make }} {{ policy.vehicle.model }}</p>
+                            <p><strong>Registration:</strong> {{ policy.vehicle.registration_number }}</p>
+                            <p><strong>Status:</strong> 
+                                {% if policy.status == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ policy.get_status_display }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <a href="{% url 'core:agent_policy_detail' policy.id %}" class="btn btn-outline-primary btn-sm mt-3">
+                        <i class="fas fa-eye"></i> View Full Policy Details
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6>Commission Earned</h6>
+                                <small>{{ commission.earned_date|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                        {% if commission.status == 'approved' or commission.status == 'paid' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6>Commission Approved</h6>
+                                <small>{{ commission.approved_date|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if commission.status == 'paid' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6>Commission Paid</h6>
+                                <small>{{ commission.paid_date|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if commission.payment_reference %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Payment Details</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Payment Reference:</strong> {{ commission.payment_reference }}</p>
+                    <p><strong>Payment Method:</strong> {{ commission.payment_method|default:'Bank Transfer' }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.breadcrumb { background-color: transparent; padding: 0; }
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+.timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-item:not(:last-child):before {
+    content: '';
+    position: absolute;
+    left: -23px;
+    top: 12px;
+    width: 2px;
+    height: calc(100% - 12px);
+    background-color: #e9ecef;
+}
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+.timeline-content { padding-bottom: 5px; }
+.btn-outline-primary {
+    color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-outline-primary:hover {
+    background-color: #4169E1;
+    color: white;
+}
+</style>
+{% endblock %}

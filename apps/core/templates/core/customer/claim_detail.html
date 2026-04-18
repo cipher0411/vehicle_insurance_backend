@@ -1,4 +1,6 @@
 {% extends 'core/logon_base.html' %}
+{% load humanize %}
+
 {% block title %}Claim Details - {{ claim.claim_number }}{% endblock %}
 
 {% block content %}
@@ -35,22 +37,54 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <p><strong>Claim Type:</strong> {{ claim.get_claim_type_display }}</p>
-                                    <p><strong>Policy Number:</strong> {{ claim.policy.policy_number }}</p>
+                                    <p><strong>Policy Number:</strong> 
+                                        <a href="{% url 'core:policy_detail' claim.policy.id %}">
+                                            {{ claim.policy.policy_number }}
+                                        </a>
+                                    </p>
                                     <p><strong>Policy Type:</strong> {{ claim.policy.get_policy_type_display }}</p>
-                                    <p><strong>Vehicle:</strong> {{ claim.policy.vehicle.make }} {{ claim.policy.vehicle.model }} ({{ claim.policy.vehicle.year }})</p>
-                                    <p><strong>Registration:</strong> {{ claim.policy.vehicle.registration_number }}</p>
+                                    <p><strong>Claimed Amount:</strong> <span class="text-warning fw-bold">₦{{ claim.claimed_amount|floatformat:2|intcomma }}</span></p>
                                 </div>
                                 <div class="col-md-6">
-                                    <p><strong>Claimed Amount:</strong> <span class="text-warning fw-bold">₦{{ claim.claimed_amount|floatformat:2 }}</span></p>
                                     {% if claim.approved_amount %}
-                                        <p><strong>Approved Amount:</strong> <span class="text-success fw-bold">₦{{ claim.approved_amount|floatformat:2 }}</span></p>
+                                        <p><strong>Approved Amount:</strong> <span class="text-success fw-bold">₦{{ claim.approved_amount|floatformat:2|intcomma }}</span></p>
                                     {% endif %}
-                                    <p><strong>Coverage Amount:</strong> ₦{{ claim.policy.coverage_amount|floatformat:2 }}</p>
-                                    <p><strong>Deductible:</strong> ₦{{ claim.policy.deductible|floatformat:2 }}</p>
+                                    <p><strong>Coverage Amount:</strong> ₦{{ claim.policy.coverage_amount|floatformat:2|intcomma }}</p>
+                                    <p><strong>Deductible:</strong> ₦{{ claim.policy.deductible|floatformat:2|intcomma }}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Vehicle Information Card -->
+                    {% if vehicle_info %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-car"></i> Vehicle Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Vehicle:</strong> {{ vehicle_info.make }} {{ vehicle_info.model }}</p>
+                                    <p><strong>Year:</strong> {{ vehicle_info.year }}</p>
+                                    <p><strong>Color:</strong> {{ vehicle_info.color }}</p>
+                                    <p><strong>Registration:</strong> {{ vehicle_info.registration }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Engine Number:</strong> {{ vehicle_info.engine_number }}</p>
+                                    <p><strong>Chassis Number:</strong> {{ vehicle_info.chassis_number }}</p>
+                                    {% if claim.vehicle %}
+                                    <p class="mt-2">
+                                        <a href="{% url 'core:vehicles' %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> View My Vehicles
+                                        </a>
+                                    </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <!-- Incident Details Card -->
                     <div class="card mb-4">
@@ -135,7 +169,7 @@
                     <!-- Admin Response / Status Card -->
                     <div class="card mb-4">
                         <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-reply"></i> Admin Response</h5>
+                            <h5 class="mb-0"><i class="fas fa-reply"></i> Claim Status</h5>
                         </div>
                         <div class="card-body">
                             {% if claim.status == 'pending' %}
@@ -161,7 +195,7 @@
                                     <div class="text-center mb-3">
                                         <i class="fas fa-check-circle fa-3x"></i>
                                         <h5 class="mt-2">Claim Approved!</h5>
-                                        <p class="mb-0">Approved Amount: <strong>₦{{ claim.approved_amount|floatformat:2 }}</strong></p>
+                                        <p class="mb-0">Approved Amount: <strong>₦{{ claim.approved_amount|floatformat:2|intcomma }}</strong></p>
                                         <small>Approved on {{ claim.approval_date|date:"F d, Y" }}</small>
                                     </div>
                                     {% if claim.surveyor_notes %}
@@ -180,7 +214,7 @@
                                     <div class="text-center mb-3">
                                         <i class="fas fa-check-double fa-3x"></i>
                                         <h5 class="mt-2">Claim Settled</h5>
-                                        <p class="mb-0">Settled Amount: <strong>₦{{ claim.approved_amount|floatformat:2 }}</strong></p>
+                                        <p class="mb-0">Settled Amount: <strong>₦{{ claim.approved_amount|floatformat:2|intcomma }}</strong></p>
                                         <small>Settled on {{ claim.settlement_date|date:"F d, Y" }}</small>
                                     </div>
                                     {% if claim.surveyor_notes %}
@@ -210,6 +244,11 @@
                                         <strong>Additional Notes:</strong>
                                         <p class="mt-2">{{ claim.surveyor_notes }}</p>
                                     {% endif %}
+                                    <hr>
+                                    <div class="alert alert-danger mb-0">
+                                        <i class="fas fa-info-circle"></i>
+                                        If you have questions about this decision, please contact our support team.
+                                    </div>
                                 </div>
                             {% endif %}
                         </div>
@@ -234,6 +273,21 @@
                                         </div>
                                     </div>
                                 </li>
+                                
+                                {% if claim.status == 'under_review' or claim.status == 'approved' or claim.status == 'settled' or claim.status == 'rejected' %}
+                                <li class="mb-3">
+                                    <div class="d-flex">
+                                        <div class="timeline-icon bg-info">
+                                            <i class="fas fa-search"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <strong>Under Review</strong>
+                                            <br>
+                                            <small class="text-muted">{{ claim.updated_at|date:"F d, Y H:i" }}</small>
+                                        </div>
+                                    </div>
+                                </li>
+                                {% endif %}
                                 
                                 {% if claim.approval_date %}
                                 <li class="mb-3">
@@ -334,25 +388,21 @@
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     margin-bottom: 20px;
 }
-
 .card-header {
     background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
     color: white;
     border-radius: 12px 12px 0 0 !important;
     padding: 15px 20px;
 }
-
 .card-header h5 {
     margin: 0;
     font-weight: 600;
 }
-
 .badge {
     padding: 8px 16px;
     border-radius: 20px;
     font-weight: 500;
 }
-
 .timeline-icon {
     width: 36px;
     height: 36px;
@@ -362,46 +412,45 @@
     justify-content: center;
     color: white;
 }
-
 .timeline-icon.bg-primary {
     background-color: #4169E1;
 }
-
 .timeline-icon.bg-success {
     background-color: #28a745;
 }
-
+.timeline-icon.bg-info {
+    background-color: #0dcaf0;
+}
 .list-group-item {
     border-left: none;
     border-right: none;
     padding: 1rem;
 }
-
 .list-group-item:first-child {
     border-top: none;
 }
-
 .list-group-item:last-child {
     border-bottom: none;
 }
-
 .btn-outline-primary {
     color: #4169E1;
     border-color: #4169E1;
 }
-
 .btn-outline-primary:hover {
     background-color: #4169E1;
     color: white;
 }
-
 .alert {
     border-radius: 8px;
     border: none;
 }
-
 .bg-light {
     background-color: #f8f9fa !important;
 }
+.text-warning { color: #f59e0b !important; }
+.text-success { color: #10b981 !important; }
+.text-primary { color: #4169E1 !important; }
+.text-info { color: #0dcaf0 !important; }
+.text-danger { color: #dc3545 !important; }
 </style>
 {% endblock %}

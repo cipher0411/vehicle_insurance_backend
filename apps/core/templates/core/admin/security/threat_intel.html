@@ -1,0 +1,247 @@
+{% extends 'core/admin/security/security_base.html' %}
+{% block title %}Threat Intelligence - Edgway Security{% endblock %}
+
+{% block content %}
+<div class="edgway-topbar">
+    <h1 class="page-title">
+        <i class="fas fa-bug"></i> Threat Intelligence
+    </h1>
+    <div class="topbar-actions">
+        <a href="{% url 'core:add_threat_intel' %}" class="edgway-btn edgway-btn-primary">
+            <i class="fas fa-plus"></i> Add Threat
+        </a>
+        <button class="edgway-btn edgway-btn-outline" onclick="refreshFeeds()">
+            <i class="fas fa-sync-alt"></i> Refresh Feeds
+        </button>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value">{{ total_threats }}</div>
+                    <div class="stat-label">Total Threats</div>
+                </div>
+                <div class="stat-icon" style="color: var(--edgway-accent);">
+                    <i class="fas fa-database"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value text-success">{{ active_threats }}</div>
+                    <div class="stat-label">Active Threats</div>
+                </div>
+                <div class="stat-icon" style="color: var(--edgway-success);">
+                    <i class="fas fa-shield"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value text-danger">{{ high_score_threats }}</div>
+                    <div class="stat-label">High Score (70+)</div>
+                </div>
+                <div class="stat-icon" style="color: var(--edgway-danger);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="edgway-card">
+    <div class="edgway-card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <select class="edgway-form-control" name="intel_type">
+                    <option value="">All Types</option>
+                    <option value="ip" {% if intel_type_filter == 'ip' %}selected{% endif %}>IP Address</option>
+                    <option value="domain" {% if intel_type_filter == 'domain' %}selected{% endif %}>Domain</option>
+                    <option value="url" {% if intel_type_filter == 'url' %}selected{% endif %}>URL</option>
+                    <option value="hash" {% if intel_type_filter == 'hash' %}selected{% endif %}>File Hash</option>
+                    <option value="email" {% if intel_type_filter == 'email' %}selected{% endif %}>Email</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="edgway-form-control" name="source">
+                    <option value="">All Sources</option>
+                    <option value="manual" {% if source_filter == 'manual' %}selected{% endif %}>Manual Entry</option>
+                    <option value="virustotal" {% if source_filter == 'virustotal' %}selected{% endif %}>VirusTotal</option>
+                    <option value="abuseipdb" {% if source_filter == 'abuseipdb' %}selected{% endif %}>AbuseIPDB</option>
+                    <option value="internal" {% if source_filter == 'internal' %}selected{% endif %}>Internal Detection</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="edgway-form-control" name="is_active">
+                    <option value="">All Status</option>
+                    <option value="true" {% if is_active_filter == 'true' %}selected{% endif %}>Active</option>
+                    <option value="false" {% if is_active_filter == 'false' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="edgway-btn edgway-btn-primary w-100">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Threats Table -->
+<div class="edgway-card">
+    <div class="table-responsive">
+        <table class="edgway-table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>Score</th>
+                    <th>Category</th>
+                    <th>Source</th>
+                    <th>Last Seen</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for threat in threats %}
+                <tr>
+                    <td>
+                        <span class="badge bg-secondary">{{ threat.get_intel_type_display }}</span>
+                    </td>
+                    <td>
+                        <code>{{ threat.value }}</code>
+                        <button class="btn btn-sm btn-outline-secondary ms-1" onclick="copyToClipboard('{{ threat.value }}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="edgway-progress flex-grow-1" style="width: 80px;">
+                                <div class="edgway-progress-bar bg-{% if threat.threat_score >= 70 %}danger{% elif threat.threat_score >= 40 %}warning{% else %}success{% endif %}" 
+                                     style="width: {{ threat.threat_score }}%"></div>
+                            </div>
+                            <span class="fw-bold">{{ threat.threat_score }}</span>
+                        </div>
+                    </td>
+                    <td>{{ threat.category|default:"-" }}</td>
+                    <td>{{ threat.get_source_display }}</td>
+                    <td>{{ threat.last_seen|date:"M d, H:i" }}</td>
+                    <td>
+                        <span class="badge bg-{% if threat.is_active %}success{% else %}secondary{% endif %}">
+                            {{ threat.is_active|yesno:"Active,Inactive" }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="edgway-btn edgway-btn-outline btn-sm" onclick="toggleThreat('{{ threat.id }}')" title="Toggle Active">
+                                <i class="fas fa-power-off"></i>
+                            </button>
+                            <button class="edgway-btn edgway-btn-outline btn-sm" onclick="deleteThreat('{{ threat.id }}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        <i class="fas fa-shield-alt fa-3x mb-3"></i>
+                        <p>No threat intelligence entries found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if threats.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if threats.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ threats.previous_page_number }}&intel_type={{ intel_type_filter }}&source={{ source_filter }}&is_active={{ is_active_filter }}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+        {% endif %}
+        
+        {% for num in threats.paginator.page_range %}
+            {% if threats.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > threats.number|add:'-3' and num < threats.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}&intel_type={{ intel_type_filter }}&source={{ source_filter }}&is_active={{ is_active_filter }}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if threats.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ threats.next_page_number }}&intel_type={{ intel_type_filter }}&source={{ source_filter }}&is_active={{ is_active_filter }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied', 'Copied to clipboard', 'success');
+    });
+}
+
+function toggleThreat(threatId) {
+    const csrf = getCookie('csrftoken');
+    fetch(`/custom_admin/security/threats/${threatId}/toggle/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Success', 'Threat status updated', 'success');
+            setTimeout(() => location.reload(), 500);
+        }
+    });
+}
+
+function deleteThreat(threatId) {
+    if (confirm('Delete this threat intelligence entry?')) {
+        const csrf = getCookie('csrftoken');
+        fetch(`/custom_admin/security/threats/${threatId}/delete/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Deleted', 'Threat removed', 'success');
+                setTimeout(() => location.reload(), 500);
+            }
+        });
+    }
+}
+
+function refreshFeeds() {
+    showToast('Refreshing', 'Updating threat intelligence feeds...', 'info');
+    setTimeout(() => location.reload(), 2000);
+}
+</script>
+{% endblock %}

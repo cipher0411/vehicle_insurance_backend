@@ -1,4 +1,6 @@
 {% extends 'core/logon_base.html' %}
+{% load humanize %}
+
 {% block title %}Purchase Insurance Policy{% endblock %}
 
 {% block content %}
@@ -32,10 +34,10 @@
                                 <p><strong>Coverage Type:</strong> {{ quote.get_coverage_type_display }}</p>
                             </div>
                             <div class="col-md-6">
-                                <p><strong>Coverage Amount:</strong> ₦{{ quote.coverage_amount|floatformat:2 }}</p>
-                                <p><strong>Base Premium:</strong> ₦{{ quote.base_premium|floatformat:2 }}</p>
-                                <p><strong>Total Premium:</strong> <span class="fw-bold text-primary">₦{{ quote.total_premium|floatformat:2 }}</span></p>
-                                <p><strong>Deductible:</strong> ₦{{ quote.deductible|floatformat:2 }}</p>
+                                <p><strong>Coverage Amount:</strong> ₦{{ quote.coverage_amount|floatformat:2|intcomma }}</p>
+                                <p><strong>Base Premium:</strong> ₦{{ quote.base_premium|floatformat:2|intcomma }}</p>
+                                <p><strong>Total Premium:</strong> <span class="fw-bold text-primary">₦{{ quote.total_premium|floatformat:2|intcomma }}</span></p>
+                                <p><strong>Deductible:</strong> ₦{{ quote.deductible|floatformat:2|intcomma }}</p>
                             </div>
                         </div>
                         
@@ -56,7 +58,7 @@
                     
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i> 
-                        Please review your policy details and complete the payment to activate your coverage.
+                        Please review your policy details and select a payment option to complete your purchase.
                     </div>
                     
                     <form method="post" id="purchaseForm">
@@ -112,18 +114,153 @@
                         
                         <hr>
                         
+                        <h5 class="mb-3">Payment Options</h5>
+                        
+                        <!-- Payment Plan Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Select Payment Plan</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check card p-3 payment-option" id="fullPaymentOption">
+                                        <input class="form-check-input" type="radio" name="payment_plan" 
+                                               id="payment_full" value="full" checked>
+                                        <label class="form-check-label" for="payment_full">
+                                            <i class="fas fa-wallet text-success"></i> 
+                                            <strong>Pay in Full</strong>
+                                            <p class="text-muted small mb-0">Pay the entire premium upfront</p>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check card p-3 payment-option" id="installmentOption">
+                                        <input class="form-check-input" type="radio" name="payment_plan" 
+                                               id="payment_installment" value="installment">
+                                        <label class="form-check-label" for="payment_installment">
+                                            <i class="fas fa-calendar-alt text-primary"></i> 
+                                            <strong>Pay in Installments</strong>
+                                            <p class="text-muted small mb-0">Split payment over time</p>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Installment Settings (hidden by default) -->
+                        <div id="installmentSettings" style="display: none;">
+                            <div class="card bg-light p-3 mb-4">
+                                <h6 class="mb-3"><i class="fas fa-calculator"></i> Installment Calculator</h6>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Payment Frequency</label>
+                                        <select class="form-control" id="installment_frequency" name="installment_frequency">
+                                            <option value="monthly">Monthly</option>
+                                            <option value="quarterly">Quarterly</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Number of Installments</label>
+                                        <select class="form-control" id="num_installments" name="num_installments">
+                                            <option value="2">2 Installments</option>
+                                            <option value="3" selected>3 Installments</option>
+                                            <option value="4">4 Installments</option>
+                                            <option value="6">6 Installments</option>
+                                            <option value="12">12 Installments</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Down Payment Percentage</label>
+                                        <select class="form-control" id="down_payment_percentage" name="down_payment_percentage">
+                                            <option value="20">20%</option>
+                                            <option value="25">25%</option>
+                                            <option value="30" selected>30%</option>
+                                            <option value="40">40%</option>
+                                            <option value="50">50%</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Interest Rate</label>
+                                        <div class="form-control bg-white">
+                                            <strong>5%</strong> per annum
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Payment Mode Selection -->
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold">Payment Mode</label>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-check card p-3 payment-mode-option" id="manualPaymentOption">
+                                                    <input class="form-check-input" type="radio" name="payment_mode" 
+                                                           id="payment_manual" value="manual" checked>
+                                                    <label class="form-check-label" for="payment_manual">
+                                                        <i class="fas fa-hand-holding-usd text-primary"></i>
+                                                        <strong>Manual Payment</strong>
+                                                        <p class="text-muted small mb-0">You'll manually pay each installment before due date</p>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check card p-3 payment-mode-option" id="autoPaymentOption">
+                                                    <input class="form-check-input" type="radio" name="payment_mode" 
+                                                           id="payment_auto" value="auto">
+                                                    <label class="form-check-label" for="payment_auto">
+                                                        <i class="fas fa-sync-alt text-success"></i>
+                                                        <strong>Automatic Debit</strong>
+                                                        <p class="text-muted small mb-0">We'll automatically charge your card on due dates</p>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Auto-Debit Agreement (shown when auto is selected) -->
+                                <div id="autoDebitAgreement" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-shield-alt"></i> Auto-Debit Authorization</h6>
+                                        <p class="small mb-2">By enabling automatic debit, you authorize VehicleInsure to charge your card for each installment on the due date.</p>
+                                        <ul class="small mb-0">
+                                            <li>You'll receive a reminder 3 days before each debit</li>
+                                            <li>You can cancel auto-debit anytime from your dashboard</li>
+                                            <li>Failed payments will be retried up to 3 times</li>
+                                        </ul>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="auto_debit" name="auto_debit">
+                                            <label class="form-check-label" for="auto_debit">
+                                                I authorize VehicleInsure to automatically debit my card for installment payments on their due dates.
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="installmentBreakdown" class="mt-3 p-3 bg-white rounded">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
                         <h5 class="mb-3">Payment Summary</h5>
                         <table class="table">
                             <tr>
                                 <td>Base Premium:</td>
                                 <td class="text-end" id="summaryBasePremium">
-                                    ₦{{ quote.base_premium|floatformat:2|default:"0.00" }}
+                                    ₦{{ quote.base_premium|floatformat:2|intcomma|default:"0.00" }}
                                 </td>
                             </tr>
                             <tr>
                                 <td>Add-ons:</td>
                                 <td class="text-end" id="summaryAddons">
-                                    ₦{{ addons_cost|floatformat:2|default:"0.00" }}
+                                    ₦{{ addons_cost|floatformat:2|intcomma|default:"0.00" }}
                                 </td>
                             </tr>
                             <tr id="summaryDiscountRow" style="display: none;">
@@ -131,9 +268,9 @@
                                 <td class="text-end text-success" id="summaryDiscount">-₦0.00</td>
                             </tr>
                             <tr class="fw-bold">
-                                <td>Total Amount:</td>
+                                <td>Total Premium:</td>
                                 <td class="text-end text-primary" id="summaryTotal">
-                                    ₦{{ final_premium|floatformat:2|default:quote.total_premium|floatformat:2 }}
+                                    ₦{{ final_premium|floatformat:2|intcomma|default:quote.total_premium|floatformat:2|intcomma }}
                                 </td>
                             </tr>
                         </table>
@@ -179,7 +316,7 @@
     </div>
 </div>
 
-<!-- Terms Modal (simplified) -->
+<!-- Terms Modal -->
 <div class="modal fade" id="termsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -197,27 +334,117 @@
     </div>
 </div>
 
+<!-- Warning Modal for Validation -->
+<div class="modal fade" id="warningModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Attention Required</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-exclamation-triangle text-warning" style="font-size: 48px;"></i>
+                <h5 class="mt-3" id="warningModalMessage">Please complete all required fields.</h5>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 let currentTotalPremium = {{ quote.total_premium|default:0 }};
 let appliedPromoCode = null;
 let discountAmount = 0;
+let warningModal = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('purchaseForm');
+    
+    // Initialize warning modal
+    warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+    
+    // Toggle installment settings
+    const paymentFull = document.getElementById('payment_full');
+    const paymentInstallment = document.getElementById('payment_installment');
+    const installmentSettings = document.getElementById('installmentSettings');
+    
+    paymentFull.addEventListener('change', function() {
+        installmentSettings.style.display = 'none';
+    });
+    
+    paymentInstallment.addEventListener('change', function() {
+        installmentSettings.style.display = 'block';
+        calculateInstallmentBreakdown();
+    });
+    
+    // Toggle payment mode (manual vs auto)
+    const paymentManual = document.getElementById('payment_manual');
+    const paymentAuto = document.getElementById('payment_auto');
+    const autoDebitAgreement = document.getElementById('autoDebitAgreement');
+    const autoDebitCheckbox = document.getElementById('auto_debit');
+    
+    if (paymentManual && paymentAuto) {
+        paymentManual.addEventListener('change', function() {
+            autoDebitAgreement.style.display = 'none';
+            if (autoDebitCheckbox) {
+                autoDebitCheckbox.required = false;
+                autoDebitCheckbox.checked = false;
+            }
+        });
+        
+        paymentAuto.addEventListener('change', function() {
+            autoDebitAgreement.style.display = 'block';
+            if (autoDebitCheckbox) {
+                autoDebitCheckbox.required = true;
+            }
+        });
+    }
+    
+    // Add listeners for installment inputs
+    ['installment_frequency', 'num_installments', 'down_payment_percentage'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', calculateInstallmentBreakdown);
+    });
+    
     if (form) {
         form.addEventListener('submit', function(e) {
+            // Check terms accepted
             const termsAccepted = document.getElementById('terms_accepted');
             if (termsAccepted && !termsAccepted.checked) {
                 e.preventDefault();
-                alert('Please accept the terms and conditions');
+                showWarning('Please accept the terms and conditions to continue.');
                 return false;
             }
             
+            // Check payment method selected
             const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
             if (!paymentMethod) {
                 e.preventDefault();
-                alert('Please select a payment method');
+                showWarning('Please select a payment method to continue.');
                 return false;
+            }
+            
+            // Check auto-debit agreement if auto payment mode is selected
+            if (paymentAuto && paymentAuto.checked) {
+                if (!autoDebitCheckbox || !autoDebitCheckbox.checked) {
+                    e.preventDefault();
+                    showWarning('Please agree to the auto-debit authorization to continue with automatic payments.');
+                    return false;
+                }
+            }
+            
+            // If installment plan is selected, validate installment settings
+            if (paymentInstallment && paymentInstallment.checked) {
+                const frequency = document.getElementById('installment_frequency')?.value;
+                const numInstallments = document.getElementById('num_installments')?.value;
+                const downPayment = document.getElementById('down_payment_percentage')?.value;
+                
+                if (!frequency || !numInstallments || !downPayment) {
+                    e.preventDefault();
+                    showWarning('Please complete all installment settings.');
+                    return false;
+                }
             }
             
             const purchaseBtn = document.getElementById('purchaseBtn');
@@ -226,6 +453,94 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+function showWarning(message) {
+    document.getElementById('warningModalMessage').textContent = message;
+    warningModal.show();
+}
+
+function calculateInstallmentBreakdown() {
+    const totalPremium = currentTotalPremium;
+    const downPaymentPct = parseFloat(document.getElementById('down_payment_percentage').value) || 30;
+    const numInstallments = parseInt(document.getElementById('num_installments').value) || 3;
+    const frequency = document.getElementById('installment_frequency').value;
+    const paymentMode = document.querySelector('input[name="payment_mode"]:checked')?.value || 'manual';
+    
+    const downPayment = totalPremium * (downPaymentPct / 100);
+    const financedAmount = totalPremium - downPayment;
+    
+    // Interest rate 5% per annum
+    const interestRate = 0.05;
+    const months = frequency === 'monthly' ? 12 : 4;
+    const totalInterest = financedAmount * interestRate * (numInstallments / months);
+    
+    const totalPayable = financedAmount + totalInterest;
+    const installmentAmount = totalPayable / numInstallments;
+    
+    const firstPayment = downPayment + (paymentMode === 'manual' ? installmentAmount : 0);
+    const paymentModeText = paymentMode === 'auto' ? 
+        'Your card will be automatically charged on each due date.' : 
+        'You will need to make manual payments before each due date.';
+    
+    const breakdownDiv = document.getElementById('installmentBreakdown');
+    breakdownDiv.innerHTML = `
+        <h6 class="mb-3">Installment Breakdown</h6>
+        <table class="table table-sm">
+            <tr>
+                <td>Total Premium:</td>
+                <td class="text-end">${formatNaira(totalPremium)}</td>
+            </tr>
+            <tr>
+                <td>Down Payment (${downPaymentPct}%):</td>
+                <td class="text-end text-primary">${formatNaira(downPayment)}</td>
+            </tr>
+            <tr>
+                <td>Financed Amount:</td>
+                <td class="text-end">${formatNaira(financedAmount)}</td>
+            </tr>
+            <tr>
+                <td>Interest (5% p.a.):</td>
+                <td class="text-end text-warning">+${formatNaira(totalInterest)}</td>
+            </tr>
+            <tr class="fw-bold">
+                <td>Total Payable (Financed):</td>
+                <td class="text-end">${formatNaira(totalPayable)}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><hr class="my-2"></td>
+            </tr>
+            <tr class="fw-bold">
+                <td>${frequency === 'monthly' ? 'Monthly' : 'Quarterly'} Installment:</td>
+                <td class="text-end text-success">${formatNaira(installmentAmount)}</td>
+            </tr>
+            <tr>
+                <td>Number of Installments:</td>
+                <td class="text-end">${numInstallments} ${frequency}</td>
+            </tr>
+            <tr>
+                <td>Payment Mode:</td>
+                <td class="text-end">
+                    <span class="badge ${paymentMode === 'auto' ? 'bg-success' : 'bg-primary'}">
+                        ${paymentMode === 'auto' ? 'Automatic Debit' : 'Manual Payment'}
+                    </span>
+                </td>
+            </tr>
+            <tr class="fw-bold">
+                <td>Total Amount Payable:</td>
+                <td class="text-end text-primary">${formatNaira(downPayment + totalPayable)}</td>
+            </tr>
+        </table>
+        <div class="alert alert-info small mb-0">
+            <i class="fas fa-info-circle"></i> 
+            ${paymentMode === 'manual' ? 
+                `Your first payment of ${formatNaira(downPayment + installmentAmount)} is due today (down payment + first installment).` :
+                `Your down payment of ${formatNaira(downPayment)} is due today. Subsequent payments of ${formatNaira(installmentAmount)} will be automatically debited on due dates.`
+            }
+            <br>
+            <small class="text-muted">${paymentModeText}</small>
+        </div>
+    `;
+}
 
 function getCookie(name) {
     let cookieValue = null;
@@ -278,11 +593,17 @@ function applyPromoCode() {
             
             if (data.discount_type === 'percentage') {
                 discountAmount = currentTotalPremium * (data.discount_value / 100);
+                if (data.max_discount_amount) {
+                    discountAmount = Math.min(discountAmount, data.max_discount_amount);
+                }
             } else {
                 discountAmount = parseFloat(data.discount_value);
             }
             
             updatePaymentSummary();
+            if (document.getElementById('payment_installment').checked) {
+                calculateInstallmentBreakdown();
+            }
         } else {
             appliedPromoCode = null;
             discountAmount = 0;
@@ -328,6 +649,28 @@ function updatePaymentSummary() {
 .card-header h4 {
     margin: 0;
     font-weight: 600;
+}
+
+.payment-option, .payment-mode-option {
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid #e9ecef;
+}
+
+.payment-option:hover, .payment-mode-option:hover {
+    border-color: #4169E1;
+    background-color: #f8f9fa;
+}
+
+.payment-option:has(.form-check-input:checked),
+.payment-mode-option:has(.form-check-input:checked) {
+    border-color: #4169E1;
+    background-color: #eef2ff;
+}
+
+.payment-option input[type="radio"]:checked + label,
+.payment-mode-option input[type="radio"]:checked + label {
+    color: #4169E1;
 }
 
 .form-control:focus, .form-select:focus {
@@ -380,6 +723,22 @@ function updatePaymentSummary() {
 .form-check-input:checked {
     background-color: #4169E1;
     border-color: #4169E1;
+}
+
+#installmentBreakdown {
+    border: 1px solid #dee2e6;
+}
+
+#installmentBreakdown .table-sm td {
+    padding: 0.5rem;
+}
+
+#autoDebitAgreement {
+    transition: all 0.3s ease;
+}
+
+#autoDebitAgreement .alert {
+    margin-bottom: 15px;
 }
 </style>
 {% endblock %}

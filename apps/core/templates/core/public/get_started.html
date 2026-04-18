@@ -1,0 +1,323 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Get Started | VehicleInsure Nigeria{% endblock %}
+
+{% block extra_css %}
+<style>
+    .get-started-container {
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+        margin-top: -24px;
+    }
+    
+    .get-started-wrapper {
+        max-width: 1000px;
+        width: 100%;
+    }
+    
+    .section-header {
+        text-align: center;
+        margin-bottom: 40px;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .section-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 10px;
+    }
+    
+    .section-header p {
+        color: #64748b;
+        font-size: 1.1rem;
+    }
+    
+    .cards-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+    }
+    
+    .option-card {
+        background: white;
+        border-radius: 30px;
+        padding: 45px 35px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+        text-align: center;
+        transition: all 0.3s;
+        animation: fadeInUp 0.6s ease-out 0.1s forwards;
+        opacity: 0;
+    }
+    
+    .option-card:last-child {
+        animation-delay: 0.2s;
+    }
+    
+    .option-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.12);
+    }
+    
+    .card-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+    }
+    
+    .login-icon {
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--royal-blue-dark) 100%);
+    }
+    
+    .register-icon {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .card-icon i {
+        font-size: 2.2rem;
+        color: white;
+    }
+    
+    .option-card h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+    }
+    
+    .option-card p {
+        color: #64748b;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+    
+    .benefits-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 30px 0;
+        text-align: left;
+        display: inline-block;
+    }
+    
+    .benefits-list li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        color: #475569;
+        font-size: 0.95rem;
+    }
+    
+    .benefits-list li i {
+        color: #10b981;
+        font-size: 1rem;
+        min-width: 20px;
+    }
+    
+    .btn-card {
+        display: inline-block;
+        padding: 14px 35px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1.05rem;
+        text-decoration: none;
+        transition: all 0.3s;
+        width: 100%;
+        max-width: 250px;
+    }
+    
+    .btn-login {
+        background: var(--royal-blue);
+        color: white;
+        box-shadow: 0 4px 15px rgba(65, 105, 225, 0.3);
+    }
+    
+    .btn-login:hover {
+        background: var(--royal-blue-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(65, 105, 225, 0.4);
+        color: white;
+    }
+    
+    .btn-register {
+        background: #10b981;
+        color: white;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+    
+    .btn-register:hover {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+    
+    .footer-note {
+        text-align: center;
+        margin-top: 40px;
+        color: #64748b;
+        animation: fadeInUp 0.6s ease-out 0.3s forwards;
+        opacity: 0;
+    }
+    
+    .footer-note a {
+        color: var(--royal-blue);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    
+    .footer-note a:hover {
+        text-decoration: underline;
+    }
+    
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 0.9rem;
+        margin: 20px 0;
+    }
+    
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .divider span {
+        padding: 0 15px;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .cards-container {
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+        
+        .section-header h1 {
+            font-size: 2rem;
+        }
+        
+        .option-card {
+            padding: 35px 25px;
+        }
+        
+        .option-card h2 {
+            font-size: 1.5rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .get-started-container {
+            padding: 30px 15px;
+        }
+        
+        .option-card {
+            padding: 30px 20px;
+        }
+        
+        .btn-card {
+            max-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="get-started-container">
+    <div class="get-started-wrapper">
+        <div class="section-header">
+            <h1>Welcome to VehicleInsure</h1>
+            <p>Choose how you'd like to continue</p>
+        </div>
+        
+        <div class="cards-container">
+            <!-- Login Card -->
+            <div class="option-card">
+                <div class="card-icon login-icon">
+                    <i class="fas fa-sign-in-alt"></i>
+                </div>
+                <h2>Sign In</h2>
+                <p>Access your existing account to manage policies, file claims, and more.</p>
+                
+                <ul class="benefits-list">
+                    <li><i class="fas fa-check-circle"></i> View your policies</li>
+                    <li><i class="fas fa-check-circle"></i> Download certificates</li>
+                    <li><i class="fas fa-check-circle"></i> Track claims status</li>
+                    <li><i class="fas fa-check-circle"></i> Make payments</li>
+                </ul>
+                
+                <a href="{% url 'core:login' %}" class="btn-card btn-login">
+                    <i class="fas fa-sign-in-alt me-2"></i> Sign In
+                </a>
+                
+                <div class="divider">
+                    <span>or</span>
+                </div>
+                
+                <a href="{% url 'core:password_reset' %}" style="color: var(--royal-blue); text-decoration: none; font-size: 0.9rem;">
+                    <i class="fas fa-key me-1"></i> Forgot password?
+                </a>
+            </div>
+            
+            <!-- Register Card -->
+            <div class="option-card">
+                <div class="card-icon register-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <h2>Create Account</h2>
+                <p>Join VehicleInsure today and get comprehensive vehicle insurance coverage.</p>
+                
+                <ul class="benefits-list">
+                    <li><i class="fas fa-check-circle"></i> Instant quotes in minutes</li>
+                    <li><i class="fas fa-check-circle"></i> Digital certificates</li>
+                    <li><i class="fas fa-check-circle"></i> 24/7 claims support</li>
+                    <li><i class="fas fa-check-circle"></i> Secure online payments</li>
+                </ul>
+                
+                <a href="{% url 'core:register' %}" class="btn-card btn-register">
+                    <i class="fas fa-user-plus me-2"></i> Create Account
+                </a>
+                
+                <div class="divider">
+                    <span>benefits</span>
+                </div>
+                
+                <p style="color: #10b981; font-size: 0.9rem; margin: 0;">
+                    <i class="fas fa-gift me-1"></i> 
+                    New customers get 10% off first policy
+                </p>
+            </div>
+        </div>
+        
+        <div class="footer-note">
+            <i class="fas fa-shield-alt me-1" style="color: var(--royal-blue);"></i>
+            Secure & Trusted by thousands of Nigerian drivers
+            <br>
+            <a href="{% url 'core:contact' %}">Need help? Contact Support</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

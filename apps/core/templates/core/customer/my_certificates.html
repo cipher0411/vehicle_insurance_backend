@@ -1,0 +1,221 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}My Certificates{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-certificate"></i> My Insurance Certificates</h2>
+            <p class="text-muted">View and download your insurance certificates</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:my_policies' %}" class="btn btn-outline-primary">
+                <i class="fas fa-file-contract"></i> My Policies
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Certificates</h6>
+                            <h3>{{ total_certificates }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-certificate"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Active Certificates</h6>
+                            <h3 class="text-success">{{ active_certificates }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Expired</h6>
+                            <h3 class="text-danger">{{ expired_certificates }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-times text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <select class="form-control" id="statusFilter" onchange="filterCertificates()">
+                <option value="">All Certificates</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Policies Only</option>
+                <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired Policies</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Certificates List -->
+    <div class="row">
+        {% if certificates %}
+            {% for cert in certificates %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ cert.certificate_number }}</h5>
+                            <span class="badge {% if cert.policy.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ cert.policy.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-2"><strong>Policy:</strong> {{ cert.policy.policy_number }}</p>
+                                <p class="mb-2"><strong>Vehicle:</strong> {{ cert.policy.vehicle.make }} {{ cert.policy.vehicle.model }}</p>
+                                <p class="mb-2"><strong>Issued:</strong> {{ cert.issue_date|date:"M d, Y" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-2"><strong>Coverage:</strong> ₦{{ cert.policy.coverage_amount|floatformat:2 }}</p>
+                                <p class="mb-2"><strong>Valid Until:</strong> {{ cert.policy.end_date|date:"M d, Y" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'core:view_certificate' cert.id %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a href="{% url 'core:download_certificate' cert.id %}" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-download"></i> Download PDF
+                            </a>
+                            <a href="{% url 'core:policy_detail' cert.policy.id %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-file-contract"></i> View Policy
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-certificate fa-4x text-muted mb-3"></i>
+                        <h4>No Certificates Found</h4>
+                        <p class="text-muted">You don't have any insurance certificates yet.</p>
+                        <a href="{% url 'core:my_policies' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-file-contract"></i> View My Policies
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if certificates.has_other_pages %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if certificates.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ certificates.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% for num in certificates.paginator.page_range %}
+                {% if certificates.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > certificates.number|add:'-3' and num < certificates.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if certificates.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ certificates.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<script>
+function filterCertificates() {
+    const status = document.getElementById('statusFilter').value;
+    let url = window.location.pathname;
+    if (status) {
+        url += `?status=${status}`;
+    }
+    window.location.href = url;
+}
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
+.card-footer {
+    border-top: 1px solid #e9ecef;
+    border-radius: 0 0 12px 12px !important;
+    padding: 15px 20px;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.btn-outline-success { color: #28a745; border-color: #28a745; }
+.btn-outline-success:hover { background-color: #28a745; color: white; }
+.pagination .page-link { color: #4169E1; }
+.pagination .page-item.active .page-link { background-color: #4169E1; border-color: #4169E1; color: white; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+</style>
+{% endblock %}

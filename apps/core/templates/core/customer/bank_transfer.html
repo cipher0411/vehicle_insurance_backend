@@ -1,4 +1,6 @@
 {% extends 'core/logon_base.html' %}
+{% load humanize %}
+
 {% block title %}Bank Transfer Instructions{% endblock %}
 
 {% block content %}
@@ -7,115 +9,188 @@
         <div class="col-lg-7">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-university"></i> Bank Transfer Payment</h4>
+                    <h4 class="mb-0"><i class="fas fa-university"></i> Bank Transfer Instructions</h4>
                 </div>
                 <div class="card-body">
+                    <!-- Amount to Pay -->
                     <div class="text-center mb-4">
-                        <h5>Amount to Pay</h5>
-                        <h2 class="text-primary">₦{{ payment.amount|floatformat:2 }}</h2>
-                        <p class="text-muted">Policy #{{ payment.policy.policy_number }}</p>
+                        <h5 class="text-muted">Amount to Transfer</h5>
+                        <h2 class="text-primary">₦{{ payment.amount|floatformat:2|intcomma }}</h2>
+                        <p class="text-muted">Payment Reference: <strong>{{ payment.payment_reference }}</strong></p>
                     </div>
                     
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <strong>Important:</strong> Please use your Payment Reference as the transfer description.
-                    </div>
-                    
-                    <div class="card mb-4 border-primary">
-                        <div class="card-body">
-                            <h5 class="text-primary mb-3">Bank Account Details</h5>
-                            <table class="table table-borderless">
+                    <!-- Bank Account Details - ALWAYS VISIBLE -->
+                    <div class="bank-details-box mb-4">
+                        <div class="bank-details-header">
+                            <h5 class="mb-0"><i class="fas fa-building"></i> Bank Account Details</h5>
+                        </div>
+                        <div class="bank-details-body">
+                            <table class="table table-borderless mb-0">
                                 <tr>
-                                    <th width="40%">Bank Name:</th>
-                                    <td><strong>{{ bank_details.bank_name }}</strong></td>
+                                    <td width="40%"><strong>Bank Name:</strong></td>
+                                    <td class="fw-bold">{{ bank_details.bank_name }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Account Name:</th>
-                                    <td><strong>{{ bank_details.account_name }}</strong></td>
+                                    <td><strong>Account Name:</strong></td>
+                                    <td class="fw-bold">{{ bank_details.account_name }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Account Number:</th>
+                                    <td><strong>Account Number:</strong></td>
                                     <td>
-                                        <h4 class="text-primary mb-0">{{ bank_details.account_number }}</h4>
-                                        <button class="btn btn-sm btn-outline-primary mt-1" onclick="copyToClipboard('{{ bank_details.account_number }}')">
-                                            <i class="fas fa-copy"></i> Copy
-                                        </button>
+                                        <span class="account-number-display">{{ bank_details.account_number }}</span>
                                     </td>
                                 </tr>
                                 {% if bank_details.sort_code %}
                                 <tr>
-                                    <th>Sort Code:</th>
+                                    <td><strong>Sort Code:</strong></td>
                                     <td>{{ bank_details.sort_code }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if bank_details.swift_code %}
+                                <tr>
+                                    <td><strong>SWIFT Code:</strong></td>
+                                    <td>{{ bank_details.swift_code }}</td>
                                 </tr>
                                 {% endif %}
                             </table>
                         </div>
                     </div>
                     
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h6><i class="fas fa-info-circle text-primary"></i> Your Payment Reference</h6>
-                            <h4 class="text-primary">{{ payment.payment_reference }}</h4>
-                            <p class="text-muted small">Use this reference when making the transfer</p>
-                            <button class="btn btn-outline-primary btn-sm" onclick="copyToClipboard('{{ payment.payment_reference }}')">
-                                <i class="fas fa-copy"></i> Copy Reference
-                            </button>
+                    <!-- Copy Account Number Button -->
+                    <div class="text-center mb-4">
+                        <button class="btn btn-outline-primary btn-lg" onclick="copyAccountNumber()">
+                            <i class="fas fa-copy"></i> Copy Account Number
+                        </button>
+                    </div>
+                    
+                    <!-- Transfer Instructions -->
+                    <div class="instruction-box mb-4">
+                        <div class="instruction-header">
+                            <h6 class="mb-0"><i class="fas fa-list-ol"></i> How to Complete Your Transfer</h6>
+                        </div>
+                        <div class="instruction-body">
+                            <ol class="mb-0">
+                                <li>Log in to your bank's mobile app or internet banking</li>
+                                <li>Initiate a transfer to the bank account details above</li>
+                                <li>Enter the exact amount: <strong>₦{{ payment.amount|floatformat:2|intcomma }}</strong></li>
+                                <li>Use your payment reference as the narration: <strong>{{ payment.payment_reference }}</strong></li>
+                                <li>Complete the transfer and save the receipt</li>
+                                <li>Return to this page and fill the confirmation form below</li>
+                            </ol>
                         </div>
                     </div>
                     
-                    <hr>
+                    <!-- Important Notice -->
+                    <div class="important-notice mb-4">
+                        <div class="notice-header">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Important Payment Instructions</strong>
+                        </div>
+                        <div class="notice-body">
+                            <ul class="mb-0">
+                                <li>Use the exact payment reference <strong>{{ payment.payment_reference }}</strong> as the transfer narration.</li>
+                                <li>Ensure the name on your bank account matches your registered name or company name.</li>
+                                <li><strong>For individual policies:</strong> Use the name on your Government-issued ID.</li>
+                                <li><strong>For corporate policies:</strong> Use your registered Company name.</li>
+                                <li>Mismatched names may delay verification of your payment.</li>
+                            </ul>
+                        </div>
+                    </div>
                     
-                    <h5 class="mb-3">After Making Transfer</h5>
-                    <form method="post" action="{% url 'core:confirm_bank_transfer' payment.id %}" id="transferForm">
-                        {% csrf_token %}
+                    <!-- Confirm Transfer Form -->
+                    <div class="confirmation-form">
+                        <h5 class="mb-3">Confirm Your Transfer</h5>
                         
-                        <div class="mb-3">
-                            <label class="form-label">Bank You Transferred From</label>
-                            <input type="text" class="form-control" name="bank_name" placeholder="e.g., GTBank, First Bank" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Transfer Reference/Session ID</label>
-                            <input type="text" class="form-control" name="transfer_reference" placeholder="Enter the transfer reference number" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Transfer Date</label>
-                            <input type="date" class="form-control" name="transfer_date" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Additional Notes (Optional)</label>
-                            <textarea class="form-control" name="notes" rows="2" placeholder="Any additional information"></textarea>
-                        </div>
-                        
-                        <div class="alert alert-info">
-                            <i class="fas fa-clock"></i>
-                            Your payment will be verified within 24 hours. You will receive a notification once confirmed.
-                        </div>
-                        
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary" id="submitBtn">
-                                <i class="fas fa-check-circle"></i> I Have Made the Transfer
-                            </button>
-                            <a href="{% url 'core:my_policies' %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left"></i> Back to My Policies
-                            </a>
-                        </div>
-                    </form>
+                        <form method="post" action="{% url 'core:confirm_bank_transfer' payment.id %}" id="transferForm">
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="bank_name" class="form-label">Your Bank Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="bank_name" name="bank_name" 
+                                           placeholder="e.g., GTBank, First Bank, Zenith Bank" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="account_name" class="form-label">Your Account Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="account_name" name="account_name" 
+                                           placeholder="Name on your bank account" required>
+                                    <small class="text-muted">Must match your registered name or company name</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="account_number" class="form-label">Your Account Number <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="account_number" name="account_number" 
+                                           placeholder="Your 10-digit NUBAN account number" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="transfer_reference" class="form-label">Transaction Reference/ID <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="transfer_reference" name="transfer_reference" 
+                                           placeholder="Reference from your bank" required>
+                                    <small class="text-muted">The reference number your bank provides after transfer</small>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="transfer_date" class="form-label">Transfer Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="transfer_date" name="transfer_date" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Additional Notes (Optional)</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="2" 
+                                          placeholder="Any additional information about your transfer"></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="confirm_transfer" required>
+                                    <label class="form-check-label" for="confirm_transfer">
+                                        I confirm that I have transferred <strong>₦{{ payment.amount|floatformat:2|intcomma }}</strong> 
+                                        to the bank account details provided above, and the information I've provided is accurate.
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success btn-lg" id="confirmBtn">
+                                    <i class="fas fa-check-circle"></i> I Have Made This Transfer
+                                </button>
+                                <a href="{% url 'core:payment_page' payment.id %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Payment Options
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- What Happens Next -->
+                    <div class="next-steps">
+                        <h6 class="text-center"><i class="fas fa-clock"></i> What Happens Next?</h6>
+                        <p class="text-muted small text-center">
+                            After you confirm your transfer, our team will verify the payment within 1-24 hours. 
+                            Once verified, your policy will be activated and you'll receive a confirmation email.
+                        </p>
+                        <p class="text-muted small text-center">
+                            <strong>Note:</strong> Your policy will NOT be active until we verify and confirm your payment.
+                        </p>
+                    </div>
                 </div>
             </div>
             
+            <!-- Need Help Card -->
             <div class="card mt-4">
                 <div class="card-header">
                     <h5 class="mb-0"><i class="fas fa-question-circle"></i> Need Help?</h5>
                 </div>
                 <div class="card-body">
-                    <p>If you have any questions about making payment, please contact our support team:</p>
+                    <p>If you encounter any issues with your transfer, please contact us:</p>
                     <ul class="list-unstyled">
                         <li><i class="fas fa-phone text-primary me-2"></i> +234 800 456 7890</li>
                         <li><i class="fab fa-whatsapp text-success me-2"></i> +234 800 456 7890 (WhatsApp)</li>
-                        <li><i class="fas fa-envelope text-primary me-2"></i> payments@vehicleinsurance.ng</li>
+                        <li><i class="fas fa-envelope text-primary me-2"></i> payments@vehicleinsure.ng</li>
                     </ul>
                     <a href="{% url 'core:support_tickets' %}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-headset"></i> Create Support Ticket
@@ -126,54 +201,157 @@
     </div>
 </div>
 
-<!-- Toast Container -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3">
-    <div id="copyToast" class="toast" role="alert">
-        <div class="toast-header">
-            <i class="fas fa-check-circle text-success me-2"></i>
-            <strong class="me-auto">Copied!</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Success</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                <h5 class="mt-3" id="successModalMessage">Account number copied to clipboard!</h5>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+            </div>
         </div>
-        <div class="toast-body">Copied to clipboard</div>
+    </div>
+</div>
+
+<!-- Warning Modal -->
+<div class="modal fade" id="warningModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Warning</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-exclamation-triangle text-warning" style="font-size: 48px;"></i>
+                <h5 class="mt-3" id="warningModalMessage">Please confirm your transfer</h5>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-times-circle"></i> Error</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-times-circle text-danger" style="font-size: 48px;"></i>
+                <h5 class="mt-3" id="errorModalMessage">Failed to copy account number</h5>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-let toastInstance = null;
+// Modal instances
+let successModal, warningModal, errorModal;
 
 document.addEventListener('DOMContentLoaded', function() {
-    const toastEl = document.getElementById('copyToast');
-    if (toastEl) {
-        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 2000 });
-    }
+    // Initialize modals
+    successModal = new bootstrap.Modal(document.getElementById('successModal'));
+    warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+    errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
     
     // Set default transfer date to today
-    const dateInput = document.querySelector('input[name="transfer_date"]');
-    if (dateInput) {
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.value = today;
-        dateInput.max = today;
-    }
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('transfer_date').value = today;
     
-    // Form submission
+    // Handle form submission
     const form = document.getElementById('transferForm');
-    if (form) {
-        form.addEventListener('submit', function() {
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
-            submitBtn.disabled = true;
-        });
-    }
+    form.addEventListener('submit', function(e) {
+        const confirmCheckbox = document.getElementById('confirm_transfer');
+        if (!confirmCheckbox.checked) {
+            e.preventDefault();
+            showWarningModal('Please confirm that you have made the transfer and the information provided is accurate.');
+            return false;
+        }
+        
+        const confirmBtn = document.getElementById('confirmBtn');
+        confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+        confirmBtn.disabled = true;
+    });
+    
+    // Validate account number (Nigerian NUBAN - 10 digits)
+    document.getElementById('account_number').addEventListener('input', function(e) {
+        const value = e.target.value.replace(/\D/g, '');
+        e.target.value = value;
+        if (value.length > 10) {
+            e.target.value = value.slice(0, 10);
+        }
+    });
 });
 
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        toastInstance.show();
+function showSuccessModal(message) {
+    document.getElementById('successModalMessage').textContent = message;
+    successModal.show();
+}
+
+function showWarningModal(message) {
+    document.getElementById('warningModalMessage').textContent = message;
+    warningModal.show();
+}
+
+function showErrorModal(message) {
+    document.getElementById('errorModalMessage').textContent = message;
+    errorModal.show();
+}
+
+function copyAccountNumber() {
+    const accountNumber = '{{ bank_details.account_number }}';
+    
+    navigator.clipboard.writeText(accountNumber).then(function() {
+        // Update button temporarily
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-outline-primary');
+        
+        // Show success modal
+        showSuccessModal('Account number copied to clipboard!');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-primary');
+        }, 2000);
+    }).catch(function() {
+        // Fallback for older browsers
+        try {
+            const textArea = document.createElement('textarea');
+            textArea.value = accountNumber;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showSuccessModal('Account number copied to clipboard!');
+        } catch (err) {
+            showErrorModal('Failed to copy account number. Please copy it manually.');
+        }
     });
 }
 </script>
 
 <style>
+/* Card Styles */
 .card {
     border: none;
     border-radius: 12px;
@@ -193,28 +371,106 @@ function copyToClipboard(text) {
     font-weight: 600;
 }
 
-.border-primary {
-    border: 2px solid #4169E1 !important;
+/* Bank Details Box - ALWAYS VISIBLE */
+.bank-details-box {
+    border: 2px solid #10b981;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
 }
 
-.btn-primary {
-    background-color: #4169E1;
-    border-color: #4169E1;
-}
-
-.btn-primary:hover {
-    background-color: #3155b0;
-    border-color: #3155b0;
-}
-
-.btn-outline-primary {
-    color: #4169E1;
-    border-color: #4169E1;
-}
-
-.btn-outline-primary:hover {
-    background-color: #4169E1;
+.bank-details-header {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
+    padding: 12px 20px;
+}
+
+.bank-details-body {
+    padding: 20px;
+    background: #f0fdf4;
+}
+
+.account-number-display {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #10b981;
+    letter-spacing: 2px;
+    background: white;
+    padding: 8px 15px;
+    border-radius: 8px;
+    border: 1px dashed #10b981;
+}
+
+/* Instruction Box */
+.instruction-box {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+}
+
+.instruction-header {
+    background: #f8f9fa;
+    padding: 12px 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.instruction-body {
+    padding: 20px;
+}
+
+.instruction-body ol li {
+    margin-bottom: 8px;
+}
+
+/* Important Notice */
+.important-notice {
+    border: 1px solid #f59e0b;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+}
+
+.notice-header {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 12px 20px;
+    border-bottom: 1px solid #f59e0b;
+}
+
+.notice-body {
+    padding: 20px;
+    background: #fffbeb;
+}
+
+.notice-body ul li {
+    margin-bottom: 8px;
+}
+
+/* Confirmation Form */
+.confirmation-form {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+/* Next Steps */
+.next-steps {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+/* Button Styles */
+.btn-success {
+    background-color: #10b981;
+    border-color: #10b981;
+}
+
+.btn-success:hover {
+    background-color: #059669;
+    border-color: #059669;
 }
 
 .btn-outline-secondary {
@@ -227,25 +483,70 @@ function copyToClipboard(text) {
     color: white;
 }
 
+.btn-outline-primary {
+    color: #4169E1;
+    border-color: #4169E1;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4169E1;
+    color: white;
+}
+
+.btn-outline-primary.btn-lg {
+    padding: 10px 24px;
+    font-size: 1.1rem;
+}
+
+.btn-warning {
+    background-color: #f59e0b;
+    border-color: #f59e0b;
+    color: white;
+}
+
+.btn-warning:hover {
+    background-color: #d97706;
+    border-color: #d97706;
+    color: white;
+}
+
+/* Form Styles */
 .form-control:focus {
     border-color: #4169E1;
     box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
 }
 
-.alert-warning {
-    background-color: #fff3cd;
-    border-color: #ffecb5;
-    color: #856404;
+.form-check-input:checked {
+    background-color: #10b981;
+    border-color: #10b981;
 }
 
-.alert-info {
-    background-color: #eef2ff;
-    border-color: #4169E1;
-    color: #1e293b;
-}
-
+/* Table Styles */
 .table td {
-    vertical-align: middle;
+    padding: 10px 0;
+}
+
+/* Modal Styles */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+}
+
+.modal-header {
+    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+}
+
+.modal-footer {
+    border-top: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .account-number-display {
+        font-size: 1.2rem;
+        letter-spacing: 1px;
+    }
 }
 </style>
 {% endblock %}

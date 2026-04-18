@@ -1,0 +1,265 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Note Details - {{ note.note_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:admin_debit_credit_notes' %}">Debit/Credit Notes</a></li>
+                    <li class="breadcrumb-item active">{{ note.note_number }}</li>
+                </ol>
+            </nav>
+            <h2>
+                <i class="fas fa-exchange-alt"></i> 
+                {{ note.get_note_type_display }} - {{ note.note_number }}
+            </h2>
+        </div>
+        <div class="col-auto">
+            {% if note.status == 'draft' %}
+                <form method="POST" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="issue">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-paper-plane"></i> Issue Note
+                    </button>
+                </form>
+            {% elif note.status == 'issued' and note.note_type == 'debit' %}
+                <form method="POST" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="mark_paid">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Mark as Paid
+                    </button>
+                </form>
+            {% endif %}
+            {% if note.status in 'draft,issued' %}
+                <form method="POST" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="cancel">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this note?')">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </form>
+            {% endif %}
+            {% if note.note_document %}
+                <a href="{{ note.note_document.url }}" class="btn btn-outline-primary" target="_blank">
+                    <i class="fas fa-download"></i> Download PDF
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Note Details -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Note Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Note Number:</div>
+                        <div class="col-md-9">{{ note.note_number }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Type:</div>
+                        <div class="col-md-9">
+                            {% if note.note_type == 'debit' %}
+                                <span class="badge bg-danger">Debit Note</span>
+                            {% else %}
+                                <span class="badge bg-success">Credit Note</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Policy:</div>
+                        <div class="col-md-9">
+                            <a href="{% url 'core:admin_policy_detail' note.policy.id %}">
+                                {{ note.policy.policy_number }}
+                            </a>
+                            ({{ note.policy.get_policy_type_display }})
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Customer:</div>
+                        <div class="col-md-9">
+                            {{ note.user.get_full_name|default:note.user.email }}
+                            <br><small class="text-muted">{{ note.user.email }}</small>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Reason:</div>
+                        <div class="col-md-9">{{ note.get_reason_display }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Description:</div>
+                        <div class="col-md-9">{{ note.description|linebreaks }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Issue Date:</div>
+                        <div class="col-md-9">{{ note.issue_date|date:"F d, Y" }}</div>
+                    </div>
+                    {% if note.due_date %}
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Due Date:</div>
+                        <div class="col-md-9">{{ note.due_date|date:"F d, Y" }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Status:</div>
+                        <div class="col-md-9">
+                            {% if note.status == 'draft' %}
+                                <span class="badge bg-secondary">Draft</span>
+                            {% elif note.status == 'issued' %}
+                                <span class="badge bg-warning">Issued</span>
+                            {% elif note.status == 'paid' %}
+                                <span class="badge bg-success">Paid</span>
+                            {% elif note.status == 'cancelled' %}
+                                <span class="badge bg-danger">Cancelled</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if note.paid_date %}
+                    <div class="row mb-3">
+                        <div class="col-md-3 fw-bold">Paid Date:</div>
+                        <div class="col-md-9">{{ note.paid_date|date:"F d, Y H:i" }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Amount Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calculator"></i> Amount Details</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th width="40%">Base Amount</th>
+                            <td class="text-end">₦{{ note.base_amount|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tax Amount</th>
+                            <td class="text-end">₦{{ note.tax_amount|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Amount</th>
+                            <td class="text-end fw-bold">₦{{ note.total_amount|floatformat:2 }}</td>
+                        </tr>
+                        {% if note.outstanding_amount > 0 %}
+                        <tr>
+                            <th>Outstanding Amount</th>
+                            <td class="text-end text-danger fw-bold">₦{{ note.outstanding_amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Related Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-link"></i> Related</h5>
+                </div>
+                <div class="card-body">
+                    {% if note.related_endorsement %}
+                    <div class="mb-3">
+                        <label class="fw-bold">Endorsement:</label>
+                        <a href="{% url 'core:admin_endorsement_detail' note.related_endorsement.id %}">
+                            {{ note.related_endorsement.endorsement_number }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% if note.related_payment %}
+                    <div class="mb-3">
+                        <label class="fw-bold">Payment:</label>
+                        <a href="#">{{ note.related_payment.transaction_id }}</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Payments (for debit notes) -->
+            {% if note.note_type == 'debit' and payments %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Payments</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for np in payments %}
+                            <tr>
+                                <td>{{ np.created_at|date:"M d, Y" }}</td>
+                                <td>₦{{ np.amount|floatformat:2 }}</td>
+                                <td>{{ np.payment.transaction_id }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Audit Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Audit Trail</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <small class="text-muted">Created By:</small>
+                        <div>{{ note.created_by.get_full_name|default:note.created_by.email|default:'System' }}</div>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Created At:</small>
+                        <div>{{ note.created_at|date:"F d, Y H:i" }}</div>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Last Updated:</small>
+                        <div>{{ note.updated_at|date:"F d, Y H:i" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+}
+</style>
+{% endblock %}

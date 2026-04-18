@@ -1,4 +1,6 @@
 {% extends 'core/logon_base.html' %}
+{% load humanize %}
+
 {% block title %}Process Payment{% endblock %}
 
 {% block content %}
@@ -10,50 +12,52 @@
                     <h4 class="mb-0"><i class="fas fa-credit-card"></i> Complete Payment</h4>
                 </div>
                 <div class="card-body">
-                    <div class="text-center mb-4">
-                        <h5>Payment Amount</h5>
-                        <h2 class="text-primary">₦{{ payment.amount|floatformat:2 }}</h2>
-                        <p class="text-muted">Policy #{{ payment.policy.policy_number }}</p>
-                    </div>
-                    
+                    <!-- Payment Summary -->
                     <div class="alert alert-info">
-                        <i class="fas fa-shield-alt"></i>
-                        You will be redirected to Flutterwave's secure payment page.
+                        <h6>Payment Summary</h6>
+                        <hr>
+                        <p class="mb-1"><strong>Policy #:</strong> {{ payment.policy.policy_number }}</p>
+                        <p class="mb-1"><strong>Amount:</strong> <span class="text-primary fw-bold">₦{{ payment.amount|floatformat:2|intcomma }}</span></p>
+                        <p class="mb-0"><strong>Payment Method:</strong> Card Payment (Flutterwave)</p>
                     </div>
                     
-                    <button class="btn btn-primary btn-lg w-100" onclick="makePayment()" id="payBtn">
-                        <i class="fas fa-lock"></i> Pay with Flutterwave
-                    </button>
+                    <!-- Payment Form -->
+                    <form id="paymentForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="public_key" value="{{ public_key }}">
+                        <input type="hidden" id="tx_ref" value="{{ tx_ref }}">
+                        <input type="hidden" id="amount" value="{{ amount }}">
+                        <input type="hidden" id="email" value="{{ customer_email }}">
+                        <input type="hidden" id="name" value="{{ customer_name }}">
+                        <input type="hidden" id="phone" value="{{ customer_phone }}">
+                        <input type="hidden" id="currency" value="NGN">
+                        <input type="hidden" id="redirect_url" value="{{ redirect_url }}">
+                        <input type="hidden" id="payment_id" value="{{ payment.id }}">
+                        
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-primary btn-lg" id="payButton" onclick="makePayment()">
+                                <i class="fas fa-lock"></i> Pay ₦{{ payment.amount|floatformat:2|intcomma }}
+                            </button>
+                            <a href="{% url 'core:payment_status' payment.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </a>
+                        </div>
+                    </form>
                     
-                    <div class="text-center mt-3">
-                        <a href="{% url 'core:bank_transfer_instructions' payment.id %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-university"></i> Pay via Bank Transfer
-                        </a>
+                    <div id="paymentStatus" class="mt-3" style="display: none;">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Processing your payment...</p>
+                        </div>
                     </div>
                     
-                    <div class="text-center mt-3">
-                        <a href="{% url 'core:my_policies' %}" class="btn btn-link">
-                            <i class="fas fa-arrow-left"></i> Back to My Policies
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card mt-4">
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-4">
-                            <i class="fas fa-lock text-success"></i>
-                            <small class="d-block">Secure</small>
-                        </div>
-                        <div class="col-4">
-                            <i class="fas fa-shield-alt text-primary"></i>
-                            <small class="d-block">Encrypted</small>
-                        </div>
-                        <div class="col-4">
-                            <i class="fas fa-check-circle text-info"></i>
-                            <small class="d-block">Verified</small>
-                        </div>
+                    <hr>
+                    
+                    <div class="small text-muted">
+                        <p class="mb-1"><i class="fas fa-shield-alt"></i> Secured by Flutterwave</p>
+                        <p class="mb-0">Your payment information is encrypted and secure.</p>
                     </div>
                 </div>
             </div>
@@ -64,45 +68,78 @@
 <script src="https://checkout.flutterwave.com/v3.js"></script>
 <script>
 function makePayment() {
-    const payBtn = document.getElementById('payBtn');
-    payBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Redirecting...';
-    payBtn.disabled = true;
+    const payButton = document.getElementById('payButton');
+    const paymentStatus = document.getElementById('paymentStatus');
+    const paymentForm = document.getElementById('paymentForm');
+    
+    // Show loading state
+    payButton.disabled = true;
+    payButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+    paymentStatus.style.display = 'block';
+    
+    const publicKey = document.getElementById('public_key').value;
+    const tx_ref = document.getElementById('tx_ref').value;
+    const amount = parseFloat(document.getElementById('amount').value);
+    const email = document.getElementById('email').value;
+    const name = document.getElementById('name').value;
+    const phone = document.getElementById('phone').value;
+    const currency = document.getElementById('currency').value;
+    const redirect_url = document.getElementById('redirect_url').value;
+    const payment_id = document.getElementById('payment_id').value;
     
     FlutterwaveCheckout({
-        public_key: "{{ public_key }}",
-        tx_ref: "{{ tx_ref }}",
-        amount: {{ payment.amount }},
-        currency: "NGN",
-        payment_options: "card,ussd,account,banktransfer",
-        redirect_url: "{% url 'core:payment_callback' %}",
-        meta: {
-            payment_id: "{{ payment.id }}",
-            user_id: "{{ user.id }}"
-        },
+        public_key: publicKey,
+        tx_ref: tx_ref,
+        amount: amount,
+        currency: currency,
+        payment_options: 'card',
+        redirect_url: redirect_url,
         customer: {
-            email: "{{ user.email }}",
-            name: "{{ user.get_full_name }}",
-            phonenumber: "{{ user.phone_number|default:'' }}"
+            email: email,
+            name: name,
+            phonenumber: phone,
         },
         customizations: {
-            title: "Vehicle Insurance",
-            description: "Payment for Policy #{{ payment.policy.policy_number }}",
-            logo: ""
+            title: 'Vehicle Insurance Pro',
+            description: `Payment for policy`,
+            logo: 'https://yourdomain.com/static/images/logo.png',
         },
-        callback: function(response) {
-            console.log('Payment response:', response);
-            if (response.status === 'successful') {
-                window.location.href = "{% url 'core:payment_callback' %}?status=successful&tx_ref=" + response.tx_ref + "&transaction_id=" + response.transaction_id;
+        callback: function(data) {
+            // This is called after the payment modal closes
+            console.log('Payment callback:', data);
+            
+            if (data.status === 'successful') {
+                // Payment was successful, but we still need to verify on server
+                window.location.href = `/payment/${payment_id}/status/`;
             } else {
-                window.location.href = "{% url 'core:my_policies' %}";
+                // Payment failed or was cancelled
+                payButton.disabled = false;
+                payButton.innerHTML = '<i class="fas fa-lock"></i> Pay ₦' + amount.toLocaleString();
+                paymentStatus.style.display = 'none';
+                alert('Payment was not completed. Please try again.');
             }
         },
         onclose: function() {
-            payBtn.innerHTML = '<i class="fas fa-lock"></i> Pay with Flutterwave';
-            payBtn.disabled = false;
+            // Modal was closed without completing payment
+            payButton.disabled = false;
+            payButton.innerHTML = '<i class="fas fa-lock"></i> Pay ₦' + amount.toLocaleString();
+            paymentStatus.style.display = 'none';
         }
     });
 }
+
+// Check payment status periodically if coming back from redirect
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    const tx_ref = urlParams.get('tx_ref');
+    
+    if (status === 'successful' && tx_ref) {
+        // Payment was successful, redirect to status page
+        const payment_id = document.getElementById('payment_id').value;
+        window.location.href = `/payment/${payment_id}/status/`;
+    }
+});
 </script>
 
 <style>
@@ -110,7 +147,6 @@ function makePayment() {
     border: none;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    margin-bottom: 20px;
 }
 
 .card-header {
@@ -118,11 +154,6 @@ function makePayment() {
     color: white;
     border-radius: 12px 12px 0 0 !important;
     padding: 15px 20px;
-}
-
-.card-header h4 {
-    margin: 0;
-    font-weight: 600;
 }
 
 .btn-primary {
@@ -135,30 +166,10 @@ function makePayment() {
     border-color: #3155b0;
 }
 
-.btn-outline-secondary {
-    color: #6c757d;
-    border-color: #6c757d;
-}
-
-.btn-outline-secondary:hover {
-    background-color: #6c757d;
-    color: white;
-}
-
 .alert-info {
     background-color: #eef2ff;
     border-color: #4169E1;
     color: #1e293b;
-}
-
-.btn-link {
-    color: #4169E1;
-    text-decoration: none;
-}
-
-.btn-link:hover {
-    color: #3155b0;
-    text-decoration: underline;
 }
 </style>
 {% endblock %}

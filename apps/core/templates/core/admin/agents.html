@@ -1,0 +1,258 @@
+<!-- templates/core/admin/agents.html -->
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Manage Agents{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-user-tie"></i> Manage Agents</h2>
+            <p class="text-muted">View and manage all insurance agents</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_agent_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add New Agent
+            </a>
+            <a href="{% url 'core:admin_export_data' %}?model=agents&format=csv" class="btn btn-success">
+                <i class="fas fa-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Agents</h6>
+                            <h3>{{ total_agents }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Active Agents</h6>
+                            <h3 class="text-success">{{ active_agents }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Verified Agents</h6>
+                            <h3 class="text-info">{{ verified_agents }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-shield-alt text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Commission Paid</h6>
+                            <h3>₦{{ total_commission_paid|floatformat:2|intcomma }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-hand-holding-usd"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <form method="get" class="d-flex">
+                <input type="text" class="form-control me-2" name="search" placeholder="Search by name, email, or agent code..." value="{{ search_query }}">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                </button>
+                {% if search_query or is_active_filter or is_verified_filter %}
+                <a href="{% url 'core:admin_agents' %}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-times"></i>
+                </a>
+                {% endif %}
+            </form>
+        </div>
+        <div class="col-md-3">
+            <select class="form-control" onchange="filterStatus(this.value)">
+                <option value="">All Status</option>
+                <option value="true" {% if is_active_filter == 'true' %}selected{% endif %}>Active</option>
+                <option value="false" {% if is_active_filter == 'false' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-control" onchange="filterVerified(this.value)">
+                <option value="">All Verification</option>
+                <option value="true" {% if is_verified_filter == 'true' %}selected{% endif %}>Verified</option>
+                <option value="false" {% if is_verified_filter == 'false' %}selected{% endif %}>Unverified</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Agents Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #4169E1; color: white;">
+                        <tr>
+                            <th>Agent Code</th>
+                            <th>Agent</th>
+                            <th>Type</th>
+                            <th>Customers</th>
+                            <th>Sales</th>
+                            <th>Commission Earned</th>
+                            <th>Commission Rate</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for agent in agents %}
+                        <tr>
+                            <td><strong>{{ agent.agent_profile.agent_code|default:'N/A' }}</strong></td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user-tie me-2" style="color: #4169E1;"></i>
+                                    <div>
+                                        {{ agent.get_full_name|default:agent.email }}
+                                        <br><small class="text-muted">{{ agent.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ agent.agent_profile.get_agent_type_display|default:'Individual' }}</td>
+                            <td>{{ agent.customer_count }}</td>
+                            <td>{{ agent.total_sales }}</td>
+                            <td>₦{{ agent.total_commission|floatformat:2|intcomma }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ agent.agent_profile.commission_rate|default:'10.00' }}%</span>
+                                {% if agent.has_overrides %}
+                                    <span class="badge bg-warning" title="Has custom overrides">
+                                        <i class="fas fa-tag"></i>
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if agent.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                                {% if agent.agent_profile.is_verified %}
+                                    <span class="badge bg-info"><i class="fas fa-check"></i> Verified</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'core:admin_agent_detail' agent.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <i class="fas fa-user-tie fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No agents found</p>
+                                <a href="{% url 'core:admin_agent_create' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Add First Agent
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% include 'core/includes/pagination.html' with page_obj=agents %}
+</div>
+
+<script>
+function filterStatus(value) {
+    let url = new URL(window.location.href);
+    if (value) {
+        url.searchParams.set('is_active', value);
+    } else {
+        url.searchParams.delete('is_active');
+    }
+    window.location.href = url.toString();
+}
+
+function filterVerified(value) {
+    let url = new URL(window.location.href);
+    if (value) {
+        url.searchParams.set('is_verified', value);
+    } else {
+        url.searchParams.delete('is_verified');
+    }
+    window.location.href = url.toString();
+}
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+.table td {
+    vertical-align: middle;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+</style>
+{% endblock %}

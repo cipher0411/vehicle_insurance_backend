@@ -1,0 +1,621 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Policy Renewals{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-sync-alt"></i> Policy Renewals</h2>
+            <p class="text-muted">Manage policy renewals and reminders</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_export_data' %}?model=renewals&format=csv" class="btn btn-success">
+                <i class="fas fa-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Renewals</h6>
+                            <h3>{{ total_renewals|default:renewals.paginator.count }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Pending</h6>
+                            <h3 class="text-warning">{{ pending_count|default:'0' }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Renewed</h6>
+                            <h3 class="text-success">{{ renewed_count|default:'0' }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Lapsed</h6>
+                            <h3 class="text-danger">{{ lapsed_count|default:'0' }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-times-circle text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Renewals Alert -->
+    {% if upcoming_renewals %}
+    <div class="alert alert-warning mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-calendar-alt me-2"></i>
+                <strong>{{ upcoming_renewals.count }} policies</strong> are due for renewal in the next 30 days.
+            </div>
+            <button class="btn btn-sm btn-warning" type="button" data-bs-toggle="collapse" data-bs-target="#upcomingList">
+                <i class="fas fa-chevron-down"></i> View List
+            </button>
+        </div>
+        <div class="collapse mt-3" id="upcomingList">
+            <table class="table table-sm table-warning mb-0">
+                <thead>
+                    <tr>
+                        <th>Policy #</th>
+                        <th>Customer</th>
+                        <th>Expiry Date</th>
+                        <th>Renewal Premium</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for renewal in upcoming_renewals|slice:":10" %}
+                    <tr>
+                        <td>{{ renewal.original_policy.policy_number }}</td>
+                        <td>{{ renewal.user.get_full_name|default:renewal.user.email }}</td>
+                        <td>{{ renewal.expiry_date|date:"M d, Y" }}</td>
+                        <td>₦{{ renewal.renewal_premium|floatformat:2|intcomma }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-warning" onclick="openReminderModal('{{ renewal.id }}', '{{ renewal.user.email }}', '{{ renewal.original_policy.policy_number }}')">
+                                <i class="fas fa-bell"></i> Send Reminder
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <input type="text" class="form-control" id="searchInput" name="search" placeholder="Search by renewal #, policy # or email..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="statusFilter" name="status">
+                <option value="">All Status</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="quoted" {% if status_filter == 'quoted' %}selected{% endif %}>Quoted</option>
+                <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+                <option value="renewed" {% if status_filter == 'renewed' %}selected{% endif %}>Renewed</option>
+                <option value="lapsed" {% if status_filter == 'lapsed' %}selected{% endif %}>Lapsed</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary me-2" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Renewals Table -->
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead style="background-color: #4169E1; color: white;">
+                <tr>
+                    <th>Renewal #</th>
+                    <th>Original Policy</th>
+                    <th>Customer</th>
+                    <th>Original Premium</th>
+                    <th>Renewal Premium</th>
+                    <th>NCB Discount</th>
+                    <th>Expiry Date</th>
+                    <th>New Period</th>
+                    <th>Status</th>
+                    <th>Reminder</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for renewal in renewals %}
+                <tr>
+                    <td><strong>{{ renewal.renewal_number }}</strong></td>
+                    <td>
+                        <a href="{% url 'core:admin_policy_detail' renewal.original_policy.id %}">
+                            {{ renewal.original_policy.policy_number }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-circle me-2" style="color: #4169E1;"></i>
+                            <div>
+                                {{ renewal.user.get_full_name|default:renewal.user.email }}
+                                <br><small class="text-muted">{{ renewal.user.email }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>₦{{ renewal.original_premium|floatformat:2|intcomma }}</td>
+                    <td>₦{{ renewal.renewal_premium|floatformat:2|intcomma }}</td>
+                    <td>
+                        {% if renewal.ncb_discount > 0 %}
+                            <span class="text-success">-₦{{ renewal.ncb_discount|floatformat:2|intcomma }}</span>
+                        {% else %}
+                            <span class="text-muted">₦0.00</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ renewal.expiry_date|date:"M d, Y" }}</td>
+                    <td>
+                        {{ renewal.new_start_date|date:"M d, Y" }} -<br>
+                        {{ renewal.new_end_date|date:"M d, Y" }}
+                    </td>
+                    <td>
+                        {% if renewal.status == 'pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% elif renewal.status == 'quoted' %}
+                            <span class="badge bg-info">Quoted</span>
+                        {% elif renewal.status == 'accepted' %}
+                            <span class="badge bg-primary">Accepted</span>
+                        {% elif renewal.status == 'renewed' %}
+                            <span class="badge bg-success">Renewed</span>
+                        {% elif renewal.status == 'lapsed' %}
+                            <span class="badge bg-danger">Lapsed</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if renewal.reminder_sent %}
+                            <span class="badge bg-info" title="Sent on {{ renewal.reminder_sent_date|date:'M d, Y' }}">
+                                <i class="fas fa-check"></i> Sent
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">Not Sent</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            {% if renewal.status == 'pending' %}
+                            <button class="btn btn-sm btn-warning" onclick="openReminderModal('{{ renewal.id }}', '{{ renewal.user.email }}', '{{ renewal.original_policy.policy_number }}')" title="Send Reminder">
+                                <i class="fas fa-bell"></i>
+                            </button>
+                            {% endif %}
+                            {% if renewal.renewed_policy %}
+                            <a href="{% url 'core:admin_policy_detail' renewal.renewed_policy.id %}" class="btn btn-sm btn-primary" title="View New Policy">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="11" class="text-center py-4">
+                        <i class="fas fa-sync-alt fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No renewals found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% include 'core/includes/pagination.html' with page_obj=renewals %}
+</div>
+
+<!-- Reminder Modal -->
+<div class="modal fade" id="reminderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="fas fa-bell"></i> Send Renewal Reminder</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Customer</label>
+                        <input type="text" class="form-control" id="reminderCustomer" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Policy Number</label>
+                        <input type="text" class="form-control" id="reminderPolicy" readonly>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Subject</label>
+                    <input type="text" class="form-control" id="reminderSubject" value="Policy Renewal Reminder">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Message</label>
+                    <textarea class="form-control" id="reminderMessage" rows="8" placeholder="Enter your custom message...&#10;&#10;Use the template below or write your own message."></textarea>
+                    <small class="text-muted">You can customize this message. The default template is shown below.</small>
+                </div>
+                
+                <div class="mb-3">
+                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="useTemplate()">
+                        <i class="fas fa-file"></i> Use Default Template
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="insertVariables()">
+                        <i class="fas fa-code"></i> Insert Variables
+                    </button>
+                </div>
+                
+                <div class="alert alert-info small">
+                    <strong><i class="fas fa-info-circle"></i> Available Variables:</strong><br>
+                    <code>{customer_name}</code> - Customer's full name<br>
+                    <code>{policy_number}</code> - Policy number<br>
+                    <code>{renewal_date}</code> - Renewal due date<br>
+                    <code>{expiry_date}</code> - Policy expiry date<br>
+                    <code>{renewal_premium}</code> - Renewal premium amount
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="sendReminderBtn" onclick="sendReminderWithMessage()">
+                    <i class="fas fa-paper-plane"></i> Send Reminder
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Success</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                <h5 class="mt-3">Reminder Sent Successfully!</h5>
+                <p class="text-muted" id="successMessage">The renewal reminder has been sent to the customer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal" onclick="location.reload()">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-times-circle"></i> Error</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-times-circle text-danger" style="font-size: 48px;"></i>
+                <h5 class="mt-3">Failed to Send Reminder</h5>
+                <p class="text-muted" id="errorMessage">An error occurred while sending the reminder.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% csrf_token %}
+
+<script>
+let toastInstance = null;
+let currentRenewalId = null;
+let currentCustomerEmail = '';
+let currentPolicyNumber = '';
+let reminderModal, successModal, errorModal;
+
+// Template data for the current renewal
+let templateData = {
+    customer_name: '',
+    policy_number: '',
+    renewal_date: '',
+    expiry_date: '',
+    renewal_premium: ''
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('notificationToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    }
+    
+    reminderModal = new bootstrap.Modal(document.getElementById('reminderModal'));
+    successModal = new bootstrap.Modal(document.getElementById('successModal'));
+    errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+    
+    document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+});
+
+function showToast(title, message, type = 'info') {
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    toastIcon.className = 'fas me-2';
+    toastIcon.style.color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#4169E1';
+    toastIcon.classList.add(type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+    
+    toastInstance.show();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function applyFilters() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    let url = '?';
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    if (status) url += `status=${status}&`;
+    
+    window.location.href = url.slice(0, -1);
+}
+
+function clearFilters() {
+    window.location.href = window.location.pathname;
+}
+
+function openReminderModal(renewalId, customerEmail, policyNumber) {
+    currentRenewalId = renewalId;
+    currentCustomerEmail = customerEmail;
+    currentPolicyNumber = policyNumber;
+    
+    // Fetch renewal details to get template data
+    fetch(`/custom_admin/api/renewal/${renewalId}/details/`)
+        .then(response => response.json())
+        .then(data => {
+            templateData = {
+                customer_name: data.customer_name,
+                policy_number: data.policy_number,
+                renewal_date: data.renewal_date,
+                expiry_date: data.expiry_date,
+                renewal_premium: data.renewal_premium
+            };
+            
+            // Set default template message
+            useTemplate();
+        })
+        .catch(error => {
+            console.error('Error fetching renewal details:', error);
+            // Set basic template data
+            templateData = {
+                customer_name: 'Customer',
+                policy_number: policyNumber,
+                renewal_date: 'N/A',
+                expiry_date: 'N/A',
+                renewal_premium: 'N/A'
+            };
+            useTemplate();
+        });
+    
+    document.getElementById('reminderCustomer').value = customerEmail;
+    document.getElementById('reminderPolicy').value = policyNumber;
+    document.getElementById('reminderSubject').value = `Policy Renewal Reminder - ${policyNumber}`;
+    
+    reminderModal.show();
+}
+
+function useTemplate() {
+    const defaultMessage = `Dear {customer_name},
+
+Your insurance policy #{policy_number} is due for renewal.
+
+Renewal Date: {renewal_date}
+Expiry Date: {expiry_date}
+Renewal Premium: ₦{renewal_premium}
+
+Please login to your account to renew your policy and continue enjoying uninterrupted coverage.
+
+If you have already renewed, please disregard this message.
+
+Best regards,
+Vehicle Insurance Pro Team`;
+
+    let message = defaultMessage;
+    
+    // Replace variables if data is available
+    message = message.replace(/{customer_name}/g, templateData.customer_name || 'Customer');
+    message = message.replace(/{policy_number}/g, templateData.policy_number || currentPolicyNumber);
+    message = message.replace(/{renewal_date}/g, templateData.renewal_date || 'N/A');
+    message = message.replace(/{expiry_date}/g, templateData.expiry_date || 'N/A');
+    message = message.replace(/{renewal_premium}/g, templateData.renewal_premium || 'N/A');
+    
+    document.getElementById('reminderMessage').value = message;
+}
+
+function insertVariables() {
+    const messageField = document.getElementById('reminderMessage');
+    const cursorPos = messageField.selectionStart;
+    const textBefore = messageField.value.substring(0, cursorPos);
+    const textAfter = messageField.value.substring(cursorPos);
+    
+    // Create variable selection dropdown
+    const variables = ['{customer_name}', '{policy_number}', '{renewal_date}', '{expiry_date}', '{renewal_premium}'];
+    
+    // Simple prompt for variable selection
+    const selected = prompt('Enter variable to insert:\n{customer_name}\n{policy_number}\n{renewal_date}\n{expiry_date}\n{renewal_premium}', '{customer_name}');
+    
+    if (selected && variables.includes(selected)) {
+        messageField.value = textBefore + selected + textAfter;
+        messageField.focus();
+        messageField.setSelectionRange(cursorPos + selected.length, cursorPos + selected.length);
+    }
+}
+
+function sendReminderWithMessage() {
+    const subject = document.getElementById('reminderSubject').value.trim();
+    const message = document.getElementById('reminderMessage').value.trim();
+    
+    if (!subject) {
+        showToast('Error', 'Please enter a subject', 'error');
+        return;
+    }
+    
+    if (!message) {
+        showToast('Error', 'Please enter a message', 'error');
+        return;
+    }
+    
+    const sendBtn = document.getElementById('sendReminderBtn');
+    sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
+    sendBtn.disabled = true;
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/custom_admin/renewal/${currentRenewalId}/send-reminder/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            subject: subject,
+            message: message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        reminderModal.hide();
+        
+        if (data.success) {
+            document.getElementById('successMessage').textContent = data.message;
+            successModal.show();
+        } else {
+            document.getElementById('errorMessage').textContent = data.message;
+            errorModal.show();
+        }
+    })
+    .catch(error => {
+        reminderModal.hide();
+        document.getElementById('errorMessage').textContent = 'An error occurred while sending the reminder.';
+        errorModal.show();
+    })
+    .finally(() => {
+        sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reminder';
+        sendBtn.disabled = false;
+    });
+}
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.table th { font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
+.table td { vertical-align: middle; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.modal-header.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+}
+.modal-header.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+.modal-header.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+}
+#reminderMessage {
+    font-family: monospace;
+    resize: vertical;
+}
+code {
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #4169E1;
+}
+</style>
+{% endblock %}

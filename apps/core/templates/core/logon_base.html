@@ -838,55 +838,143 @@
                         {% if user.role == 'admin' %}
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" 
-                                   href="{% url 'core:admin_dashboard' %}">
+                                href="{% url 'core:admin_dashboard' %}">
                                     <i class="fas fa-tachometer-alt"></i> Dashboard
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'admin_users' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:admin_users' %}">
+                                href="{% url 'core:admin_users' %}">
                                     <i class="fas fa-users"></i> Users
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link {% if 'admin_vehicles' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:admin_vehicles' %}">
+                                    <i class="fas fa-car"></i> Vehicles
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link {% if 'admin_policies' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:admin_policies' %}">
+                                href="{% url 'core:admin_policies' %}">
                                     <i class="fas fa-file-contract"></i> Policies
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'admin_claims' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:admin_claims' %}">
+                                href="{% url 'core:admin_claims' %}">
                                     <i class="fas fa-clipboard-list"></i> Claims
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'admin_payments' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:admin_payments' %}">
+                                href="{% url 'core:admin_payments' %}">
                                     <i class="fas fa-credit-card"></i> Payments
                                 </a>
                             </li>
+                            
+                            <!-- Financial Management Section -->
+                            <li class="nav-item mt-3">
+                                <span class="nav-link text-muted" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">
+                                    <i class="fas fa-chart-line me-1"></i> FINANCIAL
+                                </span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'admin_debit_credit_notes' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:admin_debit_credit_notes' %}">
+                                    <i class="fas fa-exchange-alt"></i> Debit/Credit Notes
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'admin_installment_plans' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:admin_installment_plans' %}">
+                                    <i class="fas fa-calendar-alt"></i> Installment Plans
+                                </a>
+                            </li>
+                            
+                            <!-- Policy Management Section -->
+                            <li class="nav-item mt-3">
+                                <span class="nav-link text-muted" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">
+                                    <i class="fas fa-shield-alt me-1"></i> POLICY MANAGEMENT
+                                </span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'admin_endorsements' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:admin_endorsements' %}">
+                                    <i class="fas fa-pen"></i> Endorsements
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'admin_renewals' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:admin_renewals' %}">
+                                    <i class="fas fa-sync-alt"></i> Renewals
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'admin_cancellations' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:admin_cancellations' %}">
+                                    <i class="fas fa-ban"></i> Cancellations
+                                </a>
+                            </li>
+
+                            <!-- For Admin Role - Add these under the existing admin links -->
+                            <li class="nav-item mt-3">
+                                <span class="nav-link text-muted" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">
+                                    <i class="fas fa-user-tie me-1"></i> AGENT MANAGEMENT
+                                </span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'admin_agents' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:admin_agents' %}">
+                                    <i class="fas fa-users"></i> Agents
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'admin_agent_commissions' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:admin_agent_commissions' %}">
+                                    <i class="fas fa-hand-holding-usd"></i> Agent Commissions
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'admin_commissions' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:admin_commissions' %}">
+                                    <i class="fas fa-hand-holding-usd"></i> Commissions
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'admin_commission_structures' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:admin_commission_structures' %}">
+                                    <i class="fas fa-percentage"></i> Commission Structures
+                                </a>
+                            </li>
+                            
+                            <!-- Other Management -->
+                            <li class="nav-item mt-3">
+                                <span class="nav-link text-muted" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">
+                                    <i class="fas fa-cog me-1"></i> OTHER
+                                </span>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'admin_promo_codes' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:admin_promo_codes' %}">
+                                href="{% url 'core:admin_promo_codes' %}">
                                     <i class="fas fa-tag"></i> Promo Codes
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'admin_support_tickets' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:admin_support_tickets' %}">
+                                href="{% url 'core:admin_support_tickets' %}">
                                     <i class="fas fa-headset"></i> Support Tickets
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'admin_reports' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:admin_reports' %}">
+                                href="{% url 'core:admin_reports' %}">
                                     <i class="fas fa-chart-bar"></i> Reports
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'admin_send_notification' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:admin_send_notification' %}">
+                                href="{% url 'core:admin_send_notification' %}">
                                     <i class="fas fa-bell"></i> Send Notification
                                 </a>
                             </li>
@@ -897,76 +985,130 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if 'admin_vehicles' in request.resolver_match.url_name %}active{% endif %}" 
-                                href="{% url 'core:admin_vehicles' %}">
-                                    <i class="fas fa-car"></i> Vehicles
+                                <a class="nav-link {% if 'security_dashboard' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:security_dashboard' %}">
+                                    <i class="fas fa-shield-virus"></i> Security
                                 </a>
                             </li>
                             
-                        {% elif user.role in 'agent,underwriter,claims_adjuster,support' %}
+                        {% elif user.role == 'agent' %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'agent_dashboard' %}active{% endif %}" 
+                                href="{% url 'core:agent_dashboard' %}">
+                                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'agent_customers' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:agent_customers' %}">
+                                    <i class="fas fa-users"></i> My Customers
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'agent_policies' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:agent_policies' %}">
+                                    <i class="fas fa-file-contract"></i> Policies
+                                </a>
+                            </li>
+                            <!-- Add this new Claims link -->
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'agent_claims' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:agent_claims' %}">
+                                    <i class="fas fa-clipboard-list"></i> Customer Claims
+                                    {% if pending_claims_count > 0 %}
+                                        <span class="badge bg-warning ms-2">{{ pending_claims_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'agent_commissions' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:agent_commissions' %}">
+                                    <i class="fas fa-hand-holding-usd"></i> My Commissions
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'agent_referral_link' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:agent_referral_link' %}">
+                                    <i class="fas fa-link"></i> Referral Link
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'agent_profile' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:agent_profile' %}">
+                                    <i class="fas fa-user-cog"></i> Profile Settings
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'support_tickets' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:support_tickets' %}">
+                                    <i class="fas fa-headset"></i> Support
+                                </a>
+                            </li>
+                            
+                        {% elif user.role in 'underwriter,claims_adjuster,support' %}
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'staff_dashboard' %}active{% endif %}" 
-                                   href="{% url 'core:staff_dashboard' %}">
+                                href="{% url 'core:staff_dashboard' %}">
                                     <i class="fas fa-tachometer-alt"></i> Dashboard
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'staff_claims' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:staff_claims' %}">
+                                href="{% url 'core:staff_claims' %}">
                                     <i class="fas fa-clipboard-list"></i> Claims
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'staff_policies' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:staff_policies' %}">
+                                href="{% url 'core:staff_policies' %}">
                                     <i class="fas fa-file-contract"></i> Policies
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'staff_tickets' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:staff_tickets' %}">
+                                href="{% url 'core:staff_tickets' %}">
                                     <i class="fas fa-headset"></i> Support Tickets
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'staff_customers' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:staff_customers' %}">
+                                href="{% url 'core:staff_customers' %}">
                                     <i class="fas fa-users"></i> Customers
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'blog_manage' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:blog_manage' %}">
-                                    <i class="fas fa-newspaper me-2"></i> Blog Posts
+                                href="{% url 'core:blog_manage' %}">
+                                    <i class="fas fa-newspaper"></i> Blog Posts
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'newsletter_subscribers_manage' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:newsletter_subscribers_manage' %}">
-                                    <i class="fas fa-newspaper me-2"></i> Newsletter Subscribers
+                                href="{% url 'core:newsletter_subscribers_manage' %}">
+                                    <i class="fas fa-envelope"></i> Newsletter
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'press_manage' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:press_manage' %}">
-                                    <i class="fas fa-newspaper me-2"></i> Press Releases
+                                href="{% url 'core:press_manage' %}">
+                                    <i class="fas fa-bullhorn"></i> Press Releases
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'jobs_manage' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:jobs_manage' %}">
-                                    <i class="fas fa-newspaper me-2"></i> Jobs
+                                href="{% url 'core:jobs_manage' %}">
+                                    <i class="fas fa-briefcase"></i> Jobs
                                 </a>
                             </li>
-                             <li class="nav-item">
+                            <li class="nav-item">
                                 <a class="nav-link {% if 'documents_manage' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:documents_manage' %}">
-                                    <i class="fas fa-newspaper me-2"></i> Documents
+                                href="{% url 'core:documents_manage' %}">
+                                    <i class="fas fa-folder"></i> Documents
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'inquiries_manage' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:inquiries_manage' %}">
+                                href="{% url 'core:inquiries_manage' %}">
                                     <i class="fas fa-headset"></i> Contact Inquiries
                                 </a>
                             </li>
@@ -974,55 +1116,73 @@
                         {% else %}
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
-                                   href="{% url 'core:dashboard' %}">
+                                href="{% url 'core:dashboard' %}">
                                     <i class="fas fa-tachometer-alt"></i> Dashboard
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'vehicles' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:vehicles' %}">
+                                href="{% url 'core:vehicles' %}">
                                     <i class="fas fa-car"></i> My Vehicles
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'get_quote' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:get_quote' %}">
+                                href="{% url 'core:get_quote' %}">
                                     <i class="fas fa-calculator"></i> Get Quote
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link {% if 'my_installments' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:my_installments' %}">
+                                    <i class="fas fa-calendar-alt"></i> My Installment
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link {% if 'my_policies' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:my_policies' %}">
+                                href="{% url 'core:my_policies' %}">
                                     <i class="fas fa-file-contract"></i> My Policies
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'my_claims' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:my_claims' %}">
+                                href="{% url 'core:my_claims' %}">
                                     <i class="fas fa-clipboard-list"></i> My Claims
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link {% if 'my_ncb' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:my_ncb' %}">
+                                    <i class="fas fa-star"></i> No Claim Bonus
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link {% if 'support_tickets' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:support_tickets' %}">
+                                href="{% url 'core:support_tickets' %}">
                                     <i class="fas fa-headset"></i> Support
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'promotions' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:promotions' %}">
+                                href="{% url 'core:promotions' %}">
                                     <i class="fas fa-tags"></i> Promotions
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'digital_documents' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:digital_documents' %}">
-                                    <i class="fas fa-newspaper me-2"></i> Documents
+                                href="{% url 'core:digital_documents' %}">
+                                    <i class="fas fa-folder-open"></i> Documents
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'my_certificates' in request.resolver_match.url_name %}active{% endif %}" 
+                                href="{% url 'core:my_certificates' %}">
+                                    <i class="fas fa-certificate"></i> Certificates
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if 'notifications' in request.resolver_match.url_name %}active{% endif %}" 
-                                   href="{% url 'core:notifications' %}">
+                                href="{% url 'core:notifications' %}">
                                     <i class="fas fa-bell"></i> Notifications
                                     {% if unread_notifications_count > 0 %}
                                         <span class="badge bg-danger ms-2">{{ unread_notifications_count }}</span>

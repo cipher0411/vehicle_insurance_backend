@@ -1,0 +1,503 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Create Debit/Credit Note{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:admin_debit_credit_notes' %}">Debit/Credit Notes</a></li>
+                    <li class="breadcrumb-item active">Create Note</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-exchange-alt"></i> Create Debit/Credit Note</h2>
+            <p class="text-muted">Create a new debit or credit note for policy adjustment</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-invoice"></i> Note Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="noteForm">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> Please correct the errors below.
+                            <ul class="mb-0 mt-2">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li><strong>{{ field }}:</strong> {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.policy.id_for_label }}" class="form-label">
+                                    Policy <span class="text-danger">*</span>
+                                </label>
+                                <select name="{{ form.policy.name }}" id="{{ form.policy.id_for_label }}" class="form-select" required>
+                                    <option value="">-- Select Policy --</option>
+                                    {% for policy in policies %}
+                                        <option value="{{ policy.id }}" 
+                                                data-user-id="{{ policy.user.id }}"
+                                                data-user-name="{{ policy.user.get_full_name|default:policy.user.email }}"
+                                                data-user-email="{{ policy.user.email }}"
+                                                data-premium="{{ policy.premium_amount }}"
+                                                data-coverage="{{ policy.coverage_amount }}"
+                                                data-status="{{ policy.status }}"
+                                                data-start="{{ policy.start_date|date:'M d, Y' }}"
+                                                data-end="{{ policy.end_date|date:'M d, Y' }}"
+                                                {% if form.policy.value|stringformat:"s" == policy.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ policy.policy_number }} - {{ policy.user.get_full_name|default:policy.user.email }} ({{ policy.get_policy_type_display }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.policy.errors %}
+                                <div class="text-danger">{{ form.policy.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.note_type.id_for_label }}" class="form-label">
+                                    Note Type <span class="text-danger">*</span>
+                                </label>
+                                <select name="{{ form.note_type.name }}" id="{{ form.note_type.id_for_label }}" class="form-select" required>
+                                    <option value="">-- Select Type --</option>
+                                    <option value="debit" {% if form.note_type.value == 'debit' %}selected{% endif %}>Debit Note (Increase Amount Owed)</option>
+                                    <option value="credit" {% if form.note_type.value == 'credit' %}selected{% endif %}>Credit Note (Reduce Amount Owed)</option>
+                                </select>
+                                {% if form.note_type.errors %}
+                                <div class="text-danger">{{ form.note_type.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.base_amount.id_for_label }}" class="form-label">
+                                    Base Amount (₦) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₦</span>
+                                    <input type="number" 
+                                           name="{{ form.base_amount.name }}" 
+                                           id="{{ form.base_amount.id_for_label }}" 
+                                           class="form-control" 
+                                           step="0.01" 
+                                           min="0"
+                                           value="{{ form.base_amount.value|default:'' }}"
+                                           required>
+                                </div>
+                                {% if form.base_amount.errors %}
+                                <div class="text-danger">{{ form.base_amount.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.tax_amount.id_for_label }}" class="form-label">
+                                    Tax Amount (₦)
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₦</span>
+                                    <input type="number" 
+                                           name="{{ form.tax_amount.name }}" 
+                                           id="{{ form.tax_amount.id_for_label }}" 
+                                           class="form-control" 
+                                           step="0.01" 
+                                           min="0"
+                                           value="{{ form.tax_amount.value|default:'0.00' }}">
+                                </div>
+                                <small class="text-muted">Optional, defaults to 0</small>
+                                {% if form.tax_amount.errors %}
+                                <div class="text-danger">{{ form.tax_amount.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.reason.id_for_label }}" class="form-label">
+                                    Reason <span class="text-danger">*</span>
+                                </label>
+                                <select name="{{ form.reason.name }}" id="{{ form.reason.id_for_label }}" class="form-select" required>
+                                    <option value="">-- Select Reason --</option>
+                                    <option value="premium_adjustment" {% if form.reason.value == 'premium_adjustment' %}selected{% endif %}>Premium Adjustment</option>
+                                    <option value="endorsement" {% if form.reason.value == 'endorsement' %}selected{% endif %}>Policy Endorsement</option>
+                                    <option value="cancellation" {% if form.reason.value == 'cancellation' %}selected{% endif %}>Policy Cancellation</option>
+                                    <option value="refund" {% if form.reason.value == 'refund' %}selected{% endif %}>Premium Refund</option>
+                                    <option value="additional_coverage" {% if form.reason.value == 'additional_coverage' %}selected{% endif %}>Additional Coverage</option>
+                                    <option value="tax_adjustment" {% if form.reason.value == 'tax_adjustment' %}selected{% endif %}>Tax Adjustment</option>
+                                    <option value="fee_waiver" {% if form.reason.value == 'fee_waiver' %}selected{% endif %}>Fee Waiver</option>
+                                    <option value="other" {% if form.reason.value == 'other' %}selected{% endif %}>Other</option>
+                                </select>
+                                {% if form.reason.errors %}
+                                <div class="text-danger">{{ form.reason.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="bg-light p-3 rounded">
+                                    <label class="form-label">Total Amount</label>
+                                    <h3 class="mb-0" id="totalAmount">₦0.00</h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                Description <span class="text-danger">*</span>
+                            </label>
+                            <textarea name="{{ form.description.name }}" 
+                                      id="{{ form.description.id_for_label }}" 
+                                      class="form-control" 
+                                      rows="3" 
+                                      placeholder="Provide details about this note..."
+                                      required>{{ form.description.value|default:'' }}</textarea>
+                            {% if form.description.errors %}
+                            <div class="text-danger">{{ form.description.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.issue_date.id_for_label }}" class="form-label">
+                                    Issue Date <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" 
+                                       name="{{ form.issue_date.name }}" 
+                                       id="{{ form.issue_date.id_for_label }}" 
+                                       class="form-control" 
+                                       value="{{ form.issue_date.value|date:'Y-m-d'|default:'' }}"
+                                       required>
+                                {% if form.issue_date.errors %}
+                                <div class="text-danger">{{ form.issue_date.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.due_date.id_for_label }}" class="form-label">
+                                    Due Date
+                                </label>
+                                <input type="date" 
+                                       name="{{ form.due_date.name }}" 
+                                       id="{{ form.due_date.id_for_label }}" 
+                                       class="form-control" 
+                                       value="{{ form.due_date.value|date:'Y-m-d'|default:'' }}">
+                                <small class="text-muted">Optional</small>
+                                {% if form.due_date.errors %}
+                                <div class="text-danger">{{ form.due_date.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">
+                                    Status
+                                </label>
+                                <select name="{{ form.status.name }}" id="{{ form.status.id_for_label }}" class="form-select">
+                                    <option value="draft" {% if form.status.value == 'draft' %}selected{% endif %}>Draft (Save without issuing)</option>
+                                    <option value="issued" {% if form.status.value == 'issued' %}selected{% endif %}>Issued (Apply immediately)</option>
+                                </select>
+                                <small class="text-muted">Issued notes will be applied to the policy immediately</small>
+                                {% if form.status.errors %}
+                                <div class="text-danger">{{ form.status.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <a href="{% url 'core:admin_debit_credit_notes' %}" class="btn btn-secondary me-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-save"></i> Create Note
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Help Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> Help</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Debit Note</h6>
+                    <p class="text-muted small">A debit note increases the amount owed by the customer. Use this for additional charges or premium increases.</p>
+                    
+                    <h6 class="mt-3">Credit Note</h6>
+                    <p class="text-muted small">A credit note reduces the amount owed or creates a refund. Use this for premium refunds, cancellations, or discounts.</p>
+                    
+                    <hr>
+                    
+                    <h6>Common Reasons</h6>
+                    <ul class="small text-muted">
+                        <li><strong>Premium Adjustment:</strong> Change in premium due to endorsement</li>
+                        <li><strong>Endorsement:</strong> Policy change resulting in premium difference</li>
+                        <li><strong>Cancellation:</strong> Policy cancellation refund</li>
+                        <li><strong>Refund:</strong> General refund</li>
+                        <li><strong>Additional Coverage:</strong> Added coverage mid-term</li>
+                        <li><strong>Tax Adjustment:</strong> Tax recalculation</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Policy Summary (shown when policy is selected) -->
+            <div class="card" id="policySummary" style="display: none;">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-contract"></i> Policy Summary</h5>
+                </div>
+                <div class="card-body" id="policySummaryContent">
+                    <!-- Will be populated via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <h5>Creating Note...</h5>
+                <p class="text-muted">Please wait while we process your request.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let loadingModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize loading modal
+    loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    
+    // Calculate total amount
+    const baseAmountInput = document.getElementById('{{ form.base_amount.id_for_label }}');
+    const taxAmountInput = document.getElementById('{{ form.tax_amount.id_for_label }}');
+    
+    function updateTotal() {
+        const baseAmount = parseFloat(baseAmountInput.value) || 0;
+        const taxAmount = parseFloat(taxAmountInput.value) || 0;
+        const total = baseAmount + taxAmount;
+        document.getElementById('totalAmount').textContent = '₦' + total.toLocaleString('en-NG', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+    
+    baseAmountInput.addEventListener('input', updateTotal);
+    taxAmountInput.addEventListener('input', updateTotal);
+    
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    const issueDateInput = document.getElementById('{{ form.issue_date.id_for_label }}');
+    const dueDateInput = document.getElementById('{{ form.due_date.id_for_label }}');
+    
+    if (!issueDateInput.value) {
+        issueDateInput.value = today;
+    }
+    
+    if (!dueDateInput.value) {
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 30);
+        dueDateInput.value = dueDate.toISOString().split('T')[0];
+    }
+    
+    // Fetch policy details when selected
+    const policySelect = document.getElementById('{{ form.policy.id_for_label }}');
+    
+    policySelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const policyId = this.value;
+        
+        if (policyId) {
+            // Show loading state
+            document.getElementById('policySummaryContent').innerHTML = `
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">Loading policy details...</p>
+                </div>
+            `;
+            document.getElementById('policySummary').style.display = 'block';
+            
+            // Fetch from API
+            fetch(`/custom_admin/api/policy/${policyId}/summary/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Policy not found');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const summaryDiv = document.getElementById('policySummaryContent');
+                    const balanceClass = data.outstanding_balance > 0 ? 'text-danger' : (data.outstanding_balance < 0 ? 'text-success' : 'text-muted');
+                    
+                    summaryDiv.innerHTML = `
+                        <div class="mb-3">
+                            <strong>Policy Number:</strong><br>
+                            <span class="badge bg-primary">${data.policy_number}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Customer:</strong><br>
+                            ${data.customer_name}<br>
+                            <small class="text-muted">${data.customer_email}</small>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Premium:</strong><br>
+                            ₦${parseFloat(data.premium_amount).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Coverage:</strong><br>
+                            ₦${parseFloat(data.coverage_amount).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Total Paid:</strong><br>
+                            <span class="text-success">₦${parseFloat(data.total_paid).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Current Balance:</strong><br>
+                            <span class="${balanceClass} fw-bold">₦${parseFloat(data.outstanding_balance).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <br>
+                            <small class="text-muted">
+                                ${data.outstanding_balance > 0 ? 'Customer owes this amount' : (data.outstanding_balance < 0 ? 'Customer has credit' : 'Account is settled')}
+                            </small>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Period:</strong><br>
+                            ${data.start_date} - ${data.end_date}
+                        </div>
+                        <div>
+                            <strong>Status:</strong><br>
+                            <span class="badge bg-${data.status === 'active' ? 'success' : data.status === 'pending' ? 'warning' : 'secondary'}">${data.status_display}</span>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error fetching policy:', error);
+                    document.getElementById('policySummaryContent').innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Could not load policy details. Please try again.
+                        </div>
+                    `;
+                });
+        } else {
+            document.getElementById('policySummary').style.display = 'none';
+        }
+    });
+    
+    // Handle form submission
+    const form = document.getElementById('noteForm');
+    form.addEventListener('submit', function(e) {
+        const noteType = document.getElementById('{{ form.note_type.id_for_label }}').value;
+        const baseAmount = parseFloat(baseAmountInput.value) || 0;
+        
+        // Validate note type and amount
+        if (!noteType) {
+            e.preventDefault();
+            alert('Please select a note type.');
+            return false;
+        }
+        
+        if (baseAmount <= 0) {
+            e.preventDefault();
+            alert('Base amount must be greater than zero.');
+            return false;
+        }
+        
+        // Show loading modal
+        loadingModal.show();
+        
+        // Disable submit button
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creating...';
+    });
+    
+    // Initial total calculation
+    updateTotal();
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+    padding: 15px 20px;
+}
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    padding: 10px 12px;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+    padding: 10px 20px;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+.btn-secondary {
+    padding: 10px 20px;
+}
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.input-group-text {
+    background-color: #f8f9fa;
+    border-radius: 8px 0 0 8px;
+}
+.input-group .form-control {
+    border-radius: 0 8px 8px 0;
+}
+#policySummary {
+    position: sticky;
+    top: 20px;
+}
+#totalAmount {
+    color: #4169E1;
+    font-weight: 700;
+}
+.text-danger {
+    color: #dc3545 !important;
+}
+.text-success {
+    color: #10b981 !important;
+}
+</style>
+{% endblock %}

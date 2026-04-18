@@ -1,0 +1,81 @@
+<!-- templates/core/emails/bank_transfer_confirmation.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #4169E1, #3155b0); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8f9fa; padding: 20px; border-radius: 0 0 10px 10px; }
+        .details { background: white; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .amount { font-size: 24px; color: #4169E1; font-weight: bold; }
+        .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 12px; }
+        .btn { display: inline-block; background: #4169E1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        .status { background: #f59e0b; color: white; padding: 5px 15px; border-radius: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Bank Transfer Submitted</h1>
+            <p>Your payment is being verified</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ user.get_full_name|default:user.email }},</p>
+            <p>Thank you for submitting your bank transfer payment. Your payment is now awaiting verification.</p>
+            
+            <div style="text-align: center;">
+                <span class="status">⏳ Pending Verification</span>
+            </div>
+            
+            <div class="details">
+                <h3>Payment Summary</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 8px 0;"><strong>Policy Number:</strong></td>
+                        <td style="padding: 8px 0;">{{ policy.policy_number }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0;"><strong>Amount:</strong></td>
+                        <td style="padding: 8px 0;"><span class="amount">₦{{ amount|floatformat:2 }}</span></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0;"><strong>Payment Reference:</strong></td>
+                        <td style="padding: 8px 0;">{{ reference }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0;"><strong>Transaction Reference:</strong></td>
+                        <td style="padding: 8px 0;">{{ transfer_reference }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0;"><strong>Submitted:</strong></td>
+                        <td style="padding: 8px 0;">{{ submitted_at|date:"F d, Y H:i" }}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="details">
+                <h3>What Happens Next?</h3>
+                <ol style="margin-bottom: 0;">
+                    <li>Our team will verify your payment (usually within 1-24 hours)</li>
+                    <li>Once verified, your policy will be activated</li>
+                    <li>You'll receive a confirmation email with your policy documents</li>
+                </ol>
+            </div>
+            
+            <p><strong>Note:</strong> Your policy will NOT be active until we verify and confirm your payment.</p>
+            
+            <center>
+                <a href="{{ site_url }}/dashboard/" class="btn">View Dashboard</a>
+            </center>
+            
+            <p style="margin-top: 20px;">If you have any questions, please contact our support team.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; {% now "Y" %} {{ site_name }}. All rights reserved.</p>
+            <p>This is an automated message, please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

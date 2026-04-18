@@ -1,0 +1,164 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Verify Bank Transfer{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:admin_payments' %}">Payments</a></li>
+                    <li class="breadcrumb-item active">Verify Bank Transfer</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-check-circle"></i> Verify Bank Transfer</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Payment Details</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th width="30%">Payment Reference</th>
+                            <td>{{ payment.payment_reference }}</td>
+                        </tr>
+                        <tr>
+                            <th>Amount</th>
+                            <td class="fw-bold">₦{{ payment.amount|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Customer</th>
+                            <td>{{ payment.user.get_full_name|default:payment.user.email }}</td>
+                        </tr>
+                        <tr>
+                            <th>Customer Email</th>
+                            <td>{{ payment.user.email }}</td>
+                        </tr>
+                        <tr>
+                            <th>Policy Number</th>
+                            <td>{{ policy.policy_number }}</td>
+                        </tr>
+                        <tr>
+                            <th>Submitted At</th>
+                            <td>{{ payment.payment_details.submitted_at }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Transfer Details Provided by Customer</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th width="30%">Bank Name</th>
+                            <td>{{ payment.payment_details.bank_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Transfer Reference</th>
+                            <td class="fw-bold">{{ payment.payment_details.transfer_reference }}</td>
+                        </tr>
+                        <tr>
+                            <th>Transfer Date</th>
+                            <td>{{ payment.payment_details.transfer_date }}</td>
+                        </tr>
+                        {% if payment.payment_details.notes %}
+                        <tr>
+                            <th>Notes</th>
+                            <td>{{ payment.payment_details.notes }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="verifyForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="verify">
+                        
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check-circle"></i> Verify Payment
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <button class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                        <i class="fas fa-times-circle"></i> Reject Payment
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Bank Account Details</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Bank:</strong> {{ settings.bank_name }}</p>
+                    <p><strong>Account Name:</strong> {{ settings.bank_account_name }}</p>
+                    <p><strong>Account Number:</strong> {{ settings.bank_account_number }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reject">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Rejection Reason</label>
+                        <textarea class="form-control" name="rejection_reason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+}
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+}
+</style>
+{% endblock %}

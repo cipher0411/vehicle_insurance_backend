@@ -1,0 +1,554 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Certificate Verification Result | VehicleInsure Nigeria{% endblock %}
+
+{% block extra_css %}
+<style>
+    .verify-container {
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+        margin-top: -24px;
+    }
+    
+    .verify-card {
+        background: white;
+        border-radius: 30px;
+        padding: 45px 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+        max-width: 700px;
+        width: 100%;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .verify-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+    }
+    
+    .verify-icon.valid {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .verify-icon.warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    
+    .verify-icon.invalid {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+    
+    .verify-icon i {
+        font-size: 2rem;
+        color: white;
+    }
+    
+    .verify-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        text-align: center;
+        margin-bottom: 8px;
+    }
+    
+    .verify-subtitle {
+        color: #64748b;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    
+    .status-banner {
+        border-radius: 16px;
+        padding: 20px 25px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .status-banner.valid {
+        background: #d1fae5;
+        border-left: 5px solid #10b981;
+    }
+    
+    .status-banner.warning {
+        background: #fef3c7;
+        border-left: 5px solid #f59e0b;
+    }
+    
+    .status-banner.invalid {
+        background: #fee2e2;
+        border-left: 5px solid #ef4444;
+    }
+    
+    .status-banner i {
+        font-size: 2.5rem;
+    }
+    
+    .status-banner.valid i { color: #059669; }
+    .status-banner.warning i { color: #d97706; }
+    .status-banner.invalid i { color: #dc2626; }
+    
+    .status-content h4 {
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .status-banner.valid .status-content h4 { color: #065f46; }
+    .status-banner.warning .status-content h4 { color: #92400e; }
+    .status-banner.invalid .status-content h4 { color: #991b1b; }
+    
+    .status-content p {
+        margin-bottom: 0;
+        color: #475569;
+        font-size: 0.95rem;
+    }
+    
+    .detail-section {
+        margin-bottom: 30px;
+    }
+    
+    .section-title {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 18px;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .section-title i {
+        color: var(--royal-blue);
+        width: 24px;
+    }
+    
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px 25px;
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 20px 25px;
+    }
+    
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .detail-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    
+    .detail-value {
+        font-weight: 600;
+        color: var(--navy-dark);
+        font-size: 1rem;
+    }
+    
+    .detail-value code {
+        background: #e2e8f0;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .badge-danger {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .badge-warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    
+    .verification-footer {
+        margin-top: 25px;
+        padding-top: 25px;
+        border-top: 1px solid var(--gray-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .verification-timestamp {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    
+    .verification-timestamp i {
+        margin-right: 6px;
+        color: var(--royal-blue);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+    }
+    
+    .btn-outline-primary {
+        background: transparent;
+        border: 2px solid var(--royal-blue);
+        color: var(--royal-blue);
+        padding: 10px 20px;
+        border-radius: 40px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-outline-primary:hover {
+        background: var(--royal-blue);
+        color: white;
+    }
+    
+    .btn-primary {
+        background: var(--royal-blue);
+        border: 2px solid var(--royal-blue);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 40px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-primary:hover {
+        background: var(--royal-blue-dark);
+        border-color: var(--royal-blue-dark);
+        transform: translateY(-2px);
+    }
+    
+    .alert {
+        border-radius: 14px;
+        border: none;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+    }
+    
+    .alert-danger {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .error-container {
+        text-align: center;
+        padding: 20px 0;
+    }
+    
+    .error-container i {
+        font-size: 4rem;
+        color: #ef4444;
+        margin-bottom: 20px;
+    }
+    
+    .security-notice {
+        background: #f0f9ff;
+        border-radius: 12px;
+        padding: 15px;
+        margin-top: 25px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .security-notice i {
+        color: #0284c7;
+        font-size: 1.5rem;
+    }
+    
+    .security-notice p {
+        margin: 0;
+        color: #0369a1;
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+    
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @media (max-width: 576px) {
+        .verify-card {
+            padding: 35px 25px;
+        }
+        
+        .verify-title {
+            font-size: 1.5rem;
+        }
+        
+        .detail-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .verification-footer {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .action-buttons {
+            width: 100%;
+        }
+        
+        .action-buttons .btn {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="verify-container">
+    <div class="verify-card">
+        {% if error %}
+            <!-- Error State -->
+            <div class="verify-icon invalid">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            
+            <h1 class="verify-title">Verification Failed</h1>
+            <p class="verify-subtitle">We couldn't verify this certificate</p>
+            
+            <div class="status-banner invalid">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div class="status-content">
+                    <h4>Certificate Not Found</h4>
+                    <p>The certificate number you entered could not be found in our system.</p>
+                </div>
+            </div>
+            
+            <div class="error-container">
+                <p class="text-muted mb-4">
+                    Certificate Number: <code style="background: #f1f5f9; padding: 4px 10px; border-radius: 6px;">{{ certificate_number }}</code>
+                </p>
+                <p class="text-muted">
+                    Please check the number and try again. If you believe this is an error, 
+                    please contact our support team.
+                </p>
+            </div>
+            
+            <div class="action-buttons" style="justify-content: center; margin-top: 30px;">
+                <a href="{% url 'core:verify_certificate_form' %}" class="btn-primary">
+                    <i class="fas fa-redo-alt"></i> Try Again
+                </a>
+                <a href="{% url 'core:contact' %}" class="btn-outline-primary">
+                    <i class="fas fa-headset"></i> Contact Support
+                </a>
+            </div>
+            
+        {% else %}
+            <!-- Success State - Certificate Found -->
+            {% if is_valid and is_authentic %}
+                <div class="verify-icon valid">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h1 class="verify-title">Certificate Verified</h1>
+                <p class="verify-subtitle">This certificate is authentic and valid</p>
+                
+                <div class="status-banner valid">
+                    <i class="fas fa-shield-check"></i>
+                    <div class="status-content">
+                        <h4>✓ Valid & Authentic Certificate</h4>
+                        <p>This certificate has been verified and is currently active.</p>
+                    </div>
+                </div>
+                
+            {% elif is_authentic and not is_valid %}
+                <div class="verify-icon warning">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <h1 class="verify-title">Certificate Expired</h1>
+                <p class="verify-subtitle">This certificate is authentic but has expired</p>
+                
+                <div class="status-banner warning">
+                    <i class="fas fa-clock"></i>
+                    <div class="status-content">
+                        <h4>⚠ Authentic but Expired</h4>
+                        <p>This certificate is genuine but the policy is no longer active.</p>
+                    </div>
+                </div>
+                
+            {% else %}
+                <div class="verify-icon invalid">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <h1 class="verify-title">Invalid Certificate</h1>
+                <p class="verify-subtitle">This certificate could not be authenticated</p>
+                
+                <div class="status-banner invalid">
+                    <i class="fas fa-ban"></i>
+                    <div class="status-content">
+                        <h4>✗ Verification Failed</h4>
+                        <p>The verification hash does not match our records.</p>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Certificate Details -->
+            <div class="detail-section">
+                <h3 class="section-title">
+                    <i class="fas fa-certificate"></i>
+                    Certificate Information
+                </h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Certificate Number</span>
+                        <span class="detail-value"><code>{{ certificate.certificate_number }}</code></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Policy Number</span>
+                        <span class="detail-value">{{ policy.policy_number }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Issue Date</span>
+                        <span class="detail-value">{{ certificate.issue_date|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value">
+                            {% if is_valid %}
+                                <span class="badge badge-success"><i class="fas fa-check-circle"></i> Active</span>
+                            {% else %}
+                                <span class="badge badge-danger"><i class="fas fa-times-circle"></i> Expired</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Policy Holder Information -->
+            <div class="detail-section">
+                <h3 class="section-title">
+                    <i class="fas fa-user"></i>
+                    Policy Holder
+                </h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Name</span>
+                        <span class="detail-value">
+                            {% if policy.user.get_full_name %}
+                                {{ policy.user.get_full_name }}
+                            {% else %}
+                                {{ policy.user.email|default:"N/A" }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Coverage Type</span>
+                        <span class="detail-value">{{ policy.get_policy_type_display }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Coverage Amount</span>
+                        <span class="detail-value">₦{{ policy.coverage_amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Valid Until</span>
+                        <span class="detail-value">{{ policy.end_date|date:"F d, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Vehicle Information -->
+            {% if policy.vehicle %}
+            <div class="detail-section">
+                <h3 class="section-title">
+                    <i class="fas fa-car"></i>
+                    Vehicle Information
+                </h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Vehicle</span>
+                        <span class="detail-value">{{ policy.vehicle.make }} {{ policy.vehicle.model }} ({{ policy.vehicle.year }})</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Registration</span>
+                        <span class="detail-value">{{ policy.vehicle.registration_number }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Vehicle Type</span>
+                        <span class="detail-value">{{ policy.vehicle.get_vehicle_type_display }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Color</span>
+                        <span class="detail-value">{{ policy.vehicle.color }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Footer -->
+            <div class="verification-footer">
+                <div class="verification-timestamp">
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                    Verified on {{ verification_date|date:"F d, Y" }} at {{ verification_date|date:"H:i:s" }}
+                    {% if is_authentic %}
+                    <br><i class="fas fa-fingerprint" style="color: var(--royal-blue);"></i>
+                    Hash verified: {{ certificate.verification_hash|slice:":8" }}...
+                    {% endif %}
+                </div>
+                <div class="action-buttons">
+                    <a href="{% url 'core:verify_certificate_form' %}" class="btn-outline-primary">
+                        <i class="fas fa-search"></i> Verify Another
+                    </a>
+                    <a href="{% url 'core:home' %}" class="btn-primary">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Security Notice -->
+            <div class="security-notice">
+                <i class="fas fa-lock"></i>
+                <p>
+                    <strong>Secure Verification</strong><br>
+                    This verification is cryptographically secured. The information displayed is retrieved 
+                    directly from our secure database in real-time.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

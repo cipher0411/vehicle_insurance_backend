@@ -1,0 +1,335 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Manage Auto-Debit{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-sync-alt"></i> Manage Auto-Debit Settings</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Plan Summary -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-calendar-alt"></i> Plan Information</h6>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Plan Number:</strong> {{ plan.plan_number }}</p>
+                                <p class="mb-1"><strong>Policy:</strong> {{ plan.policy.policy_number }}</p>
+                                <p class="mb-0"><strong>Vehicle:</strong> {{ plan.policy.vehicle.make }} {{ plan.policy.vehicle.model }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Total Premium:</strong> ₦{{ plan.total_premium|floatformat:2|intcomma }}</p>
+                                <p class="mb-1"><strong>Remaining:</strong> ₦{{ plan.get_remaining_amount|floatformat:2|intcomma }}</p>
+                                <p class="mb-0"><strong>Next Due:</strong> {{ plan.next_due_date|date:"M d, Y"|default:"N/A" }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Status -->
+                    <div class="current-status mb-4">
+                        <h5>Current Payment Mode</h5>
+                        <div class="status-card {% if plan.auto_debit_enabled %}status-active{% else %}status-manual{% endif %}">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    {% if plan.auto_debit_enabled %}
+                                        <i class="fas fa-check-circle text-success fa-2x me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1">Auto-Debit is Active</h6>
+                                            <p class="mb-0 text-muted small">Your card will be automatically charged on due dates</p>
+                                        </div>
+                                    {% else %}
+                                        <i class="fas fa-hand-holding-usd text-primary fa-2x me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1">Manual Payment Mode</h6>
+                                            <p class="mb-0 text-muted small">You need to manually pay each installment</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% if plan.auto_debit_enabled %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if plan.auto_debit_enabled %}
+                    <!-- Card Information (if auto-debit is active) -->
+                    <div class="card-info mb-4">
+                        <h5><i class="fas fa-credit-card"></i> Saved Card</h5>
+                        <div class="card-details">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-credit-card fa-2x me-3" style="color: #4169E1;"></i>
+                                <div>
+                                    <p class="mb-1">
+                                        <strong>
+                                            {% if plan.card_token %}
+                                                •••• •••• •••• {{ plan.card_token|slice:"-4:" }}
+                                            {% else %}
+                                                Card ending in ••••
+                                            {% endif %}
+                                        </strong>
+                                    </p>
+                                    <p class="mb-0 text-muted small">
+                                        <i class="fas fa-calendar"></i> Next auto-debit: {{ plan.next_auto_debit_date|date:"M d, Y"|default:"N/A" }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Auto-Debit Schedule -->
+                    <div class="schedule-info mb-4">
+                        <h5><i class="fas fa-clock"></i> Upcoming Auto-Debits</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Installment</th>
+                                        <th>Due Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for inst in plan.installments.all %}
+                                        {% if inst.status == 'pending' %}
+                                        <tr>
+                                            <td>#{{ inst.installment_number }} of {{ plan.number_of_installments }}</td>
+                                            <td>{{ inst.due_date|date:"M d, Y" }}</td>
+                                            <td>₦{{ inst.total_amount|floatformat:2|intcomma }}</td>
+                                            <td><span class="badge bg-warning">Scheduled</span></td>
+                                        </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Important Notes -->
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Important Notes:</strong>
+                        <ul class="mb-0 mt-2 small">
+                            <li>Auto-debits occur at 8:00 AM on the due date</li>
+                            <li>You'll receive email reminders 3 days before each debit</li>
+                            <li>Failed debits will be retried up to 3 times</li>
+                            <li>You can cancel auto-debit anytime</li>
+                            <li>Ensure sufficient funds are available on due dates</li>
+                        </ul>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <form method="POST" id="autoDebitForm">
+                        {% csrf_token %}
+                        
+                        <div class="d-grid gap-2">
+                            {% if plan.auto_debit_enabled %}
+                                <!-- Actions when auto-debit is active -->
+                                <button type="submit" name="action" value="update_card" class="btn btn-primary">
+                                    <i class="fas fa-credit-card"></i> Update Payment Card
+                                </button>
+                                <button type="submit" name="action" value="disable" class="btn btn-outline-danger" onclick="return confirmDisable()">
+                                    <i class="fas fa-pause-circle"></i> Disable Auto-Debit
+                                </button>
+                            {% else %}
+                                <!-- Actions when auto-debit is inactive -->
+                                <button type="submit" name="action" value="enable" class="btn btn-success">
+                                    <i class="fas fa-play-circle"></i> Enable Auto-Debit
+                                </button>
+                            {% endif %}
+                            
+                            <a href="{% url 'core:my_installments' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Installments
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> Frequently Asked Questions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    How does auto-debit work?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    Auto-debit automatically charges your saved card for each installment on its due date. You'll receive reminders before each charge, and receipts after successful payments.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    Can I cancel auto-debit?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    Yes, you can disable auto-debit at any time. After disabling, you'll need to make manual payments before each due date.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    What if a payment fails?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    Failed payments are retried up to 3 times. You'll be notified after each attempt. If all attempts fail, you'll need to pay manually to avoid policy cancellation.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                    Is my card information secure?
+                                </button>
+                            </h2>
+                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    Yes, we use Flutterwave's secure payment gateway. Your card details are tokenized and we never store your full card information on our servers.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmDisableModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Disable Auto-Debit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to disable auto-debit?</p>
+                <p class="text-muted small">You will need to manually pay each installment before its due date to keep your policy active.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="confirmDisableBtn">Disable Auto-Debit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let confirmModal = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    confirmModal = new bootstrap.Modal(document.getElementById('confirmDisableModal'));
+});
+
+function confirmDisable() {
+    confirmModal.show();
+    
+    document.getElementById('confirmDisableBtn').onclick = function() {
+        const form = document.getElementById('autoDebitForm');
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'action';
+        input.value = 'disable';
+        form.appendChild(input);
+        form.submit();
+    };
+    
+    return false;
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.status-card {
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+}
+.status-card.status-active {
+    border-color: #10b981;
+    background: #f0fdf4;
+}
+.status-card.status-manual {
+    border-color: #4169E1;
+    background: #eef2ff;
+}
+.card-details {
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+.btn-success {
+    background-color: #10b981;
+    border-color: #10b981;
+}
+.btn-success:hover {
+    background-color: #059669;
+    border-color: #059669;
+}
+.btn-outline-danger {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: white;
+}
+.alert-info {
+    background-color: #eef2ff;
+    border-color: #4169E1;
+    color: #1e293b;
+}
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffecb5;
+    color: #856404;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.accordion-button:not(.collapsed) {
+    background-color: #eef2ff;
+    color: #4169E1;
+}
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+</style>
+{% endblock %}

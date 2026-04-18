@@ -1,0 +1,436 @@
+<!-- templates/core/customer/request_reinsurance.html -->
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Request Reinsurance - {{ policy.policy_number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-shield-virus"></i> Request Reinsurance</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Policy Summary -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-file-contract"></i> Policy Information</h6>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Policy #:</strong> {{ policy.policy_number }}</p>
+                                <p class="mb-1"><strong>Vehicle:</strong> {{ policy.vehicle.make }} {{ policy.vehicle.model }}</p>
+                                <p class="mb-0"><strong>Registration:</strong> {{ policy.vehicle.registration_number }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Coverage Amount:</strong> ₦{{ policy.coverage_amount|floatformat:2|intcomma }}</p>
+                                <p class="mb-1"><strong>Premium:</strong> ₦{{ policy.premium_amount|floatformat:2|intcomma }}</p>
+                                <p class="mb-0">
+                                    <strong>Status:</strong> 
+                                    <span class="badge {% if policy.status == 'active' %}bg-success{% elif policy.status == 'cancelled' %}bg-dark{% else %}bg-secondary{% endif %}">
+                                        {{ policy.get_status_display }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status-specific Messages -->
+                    {% if policy.status == 'cancelled' %}
+                    <div class="alert alert-warning mb-4">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Policy Reactivation:</strong> This policy is currently cancelled. 
+                        Reinsuring this policy will reactivate your coverage with additional protection.
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Reinsurance Explanation -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h6><i class="fas fa-info-circle"></i> What is Reinsurance?</h6>
+                            <p class="small text-muted mb-2">
+                                Reinsurance provides additional protection by sharing the risk with a reinsurer. 
+                                This ensures your claim will be paid even in cases of catastrophic events or large claims.
+                            </p>
+                            <h6 class="mt-3"><i class="fas fa-shield"></i> Benefits of Reinsurance:</h6>
+                            <ul class="small text-muted mb-0">
+                                <li>Increased claim payment security</li>
+                                <li>Protection against large catastrophic losses</li>
+                                <li>Enhanced policy stability</li>
+                                <li>Access to global reinsurance capacity</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Available Treaties -->
+                    {% if active_treaties %}
+                    <form method="POST" id="reinsuranceForm">
+                        {% csrf_token %}
+                        
+                        <h5 class="mb-3">Select Reinsurer</h5>
+                        
+                        {% for treaty in active_treaties %}
+                        <div class="form-check card p-3 mb-3 payment-option">
+                            <input class="form-check-input" type="radio" name="treaty_id" 
+                                   id="treaty_{{ treaty.id }}" value="{{ treaty.id }}" 
+                                   {% if forloop.first %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="treaty_{{ treaty.id }}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ treaty.reinsurer_name }}</strong>
+                                        <p class="mb-1 small text-muted">{{ treaty.get_treaty_type_display }}</p>
+                                        <span class="badge bg-info">Commission: {{ treaty.reinsurance_commission }}%</span>
+                                        {% if treaty.treaty_type == 'quota_share' %}
+                                        <span class="badge bg-primary ms-1">Cession: {{ treaty.cession_percentage }}%</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted">
+                                            Valid until: {{ treaty.expiry_date|date:"M d, Y" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        {% endfor %}
+                        
+                        <!-- Cession Preview -->
+                        <div class="alert alert-primary mt-3">
+                            <h6><i class="fas fa-calculator"></i> Estimated Reinsurance Details</h6>
+                            <hr>
+                            <table class="table table-sm table-borderless mb-0">
+                                <tr>
+                                    <td width="50%">Sum Insured (Coverage Amount):</td>
+                                    <td class="text-end fw-bold">₦{{ policy.coverage_amount|floatformat:2|intcomma }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Ceded Amount (to Reinsurer):</td>
+                                    <td class="text-end" id="cededAmount">₦0.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Retention Amount (Your Insurer):</td>
+                                    <td class="text-end" id="retentionAmount">₦0.00</td>
+                                </tr>
+                                <tr style="border-top: 1px solid #dee2e6;">
+                                    <td><strong>Reinsurance Premium:</strong></td>
+                                    <td class="text-end fw-bold text-primary" id="cededPremium">₦0.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Commission Earned:</td>
+                                    <td class="text-end text-success" id="commissionAmount">₦0.00</td>
+                                </tr>
+                            </table>
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-info-circle"></i> The reinsurance premium will be added to your outstanding balance as a debit note.
+                            </small>
+                        </div>
+                        
+                        <!-- Terms Agreement -->
+                        <div class="mb-3 mt-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="termsAccepted" required>
+                                <label class="form-check-label" for="termsAccepted">
+                                    I understand that reinsurance provides additional protection and agree to the 
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">terms and conditions</a>.
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="fas fa-shield-virus"></i> Confirm Reinsurance
+                            </button>
+                            <a href="{% url 'core:policy_detail' policy.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Policy
+                            </a>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>No Active Reinsurance Treaties:</strong> There are no active reinsurance treaties available at this time. 
+                        Please contact support for assistance.
+                    </div>
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{% url 'core:support_tickets' %}" class="btn btn-primary">
+                            <i class="fas fa-headset"></i> Contact Support
+                        </a>
+                        <a href="{% url 'core:policy_detail' policy.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Policy
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- FAQ Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> Frequently Asked Questions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    How does reinsurance affect my premium?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    Reinsurance adds a small additional premium based on the ceded amount. 
+                                    This premium is calculated as a percentage of the coverage amount ceded to the reinsurer.
+                                    You'll earn commission on the reinsurance placement.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    Can I cancel reinsurance later?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    Reinsurance is typically bound for the policy period. If you need to make changes, 
+                                    please contact our support team to discuss your options.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    Will my claim be paid faster with reinsurance?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small">
+                                    Reinsurance ensures that funds are available for large claims, which can help expedite 
+                                    the claims process. Your claim handling remains with us, and we coordinate with the 
+                                    reinsurer behind the scenes.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #4169E1; color: white;">
+                <h5 class="modal-title"><i class="fas fa-file-contract"></i> Reinsurance Terms</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Reinsurance Agreement</h6>
+                <p class="small">By requesting reinsurance, you acknowledge and agree that:</p>
+                <ul class="small">
+                    <li>The reinsurance premium will be added to your outstanding balance</li>
+                    <li>Reinsurance coverage is subject to the terms of the reinsurance treaty</li>
+                    <li>Claims will be handled by your primary insurer with reinsurer participation</li>
+                    <li>Reinsurance may affect policy renewal terms</li>
+                    <li>Commission earned will be credited to your account</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <h5>Processing Reinsurance...</h5>
+                <p class="text-muted">Please wait while we process your request.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let loadingModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    
+    const coverageAmount = {{ policy.coverage_amount }};
+    const premiumAmount = {{ policy.premium_amount }};
+    const treaties = {
+        {% for treaty in active_treaties %}
+        '{{ treaty.id }}': {
+            cession_percentage: {{ treaty.cession_percentage }},
+            commission_rate: {{ treaty.reinsurance_commission }},
+            treaty_type: '{{ treaty.treaty_type }}',
+            retention_limit: {{ treaty.retention_limit|default:0 }},
+            treaty_limit: {{ treaty.treaty_limit|default:0 }}
+        },
+        {% endfor %}
+    };
+    
+    function updatePreview() {
+        const selected = document.querySelector('input[name="treaty_id"]:checked');
+        if (selected) {
+            const treaty = treaties[selected.value];
+            let cededAmount = 0;
+            let retentionAmount = coverageAmount;
+            
+            if (treaty.treaty_type === 'quota_share') {
+                cededAmount = coverageAmount * (treaty.cession_percentage / 100);
+                retentionAmount = coverageAmount - cededAmount;
+            } else if (treaty.treaty_type === 'surplus') {
+                if (coverageAmount > treaty.retention_limit) {
+                    retentionAmount = treaty.retention_limit;
+                    cededAmount = Math.min(
+                        coverageAmount - retentionAmount,
+                        treaty.treaty_limit
+                    );
+                } else {
+                    retentionAmount = coverageAmount;
+                    cededAmount = 0;
+                }
+            }
+            
+            // Calculate ceded premium
+            const cessionRatio = coverageAmount > 0 ? cededAmount / coverageAmount : 0;
+            const cededPremium = premiumAmount * cessionRatio;
+            const commission = cededPremium * (treaty.commission_rate / 100);
+            
+            document.getElementById('cededAmount').textContent = '₦' + cededAmount.toLocaleString('en-NG', {minimumFractionDigits: 2});
+            document.getElementById('retentionAmount').textContent = '₦' + retentionAmount.toLocaleString('en-NG', {minimumFractionDigits: 2});
+            document.getElementById('cededPremium').textContent = '₦' + cededPremium.toLocaleString('en-NG', {minimumFractionDigits: 2});
+            document.getElementById('commissionAmount').textContent = '₦' + commission.toLocaleString('en-NG', {minimumFractionDigits: 2});
+        }
+    }
+    
+    // Add event listeners to radio buttons
+    document.querySelectorAll('input[name="treaty_id"]').forEach(radio => {
+        radio.addEventListener('change', updatePreview);
+    });
+    
+    // Initial preview update
+    updatePreview();
+    
+    // Handle form submission
+    const form = document.getElementById('reinsuranceForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const termsAccepted = document.getElementById('termsAccepted');
+            if (!termsAccepted.checked) {
+                e.preventDefault();
+                alert('Please accept the terms and conditions to continue.');
+                return false;
+            }
+            
+            // Show loading modal
+            loadingModal.show();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+        });
+    }
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h4, .card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+.payment-option {
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid #e9ecef;
+}
+.payment-option:hover {
+    border-color: #4169E1;
+    background-color: #f8f9fa;
+}
+.payment-option:has(.form-check-input:checked) {
+    border-color: #4169E1;
+    background-color: #eef2ff;
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
+}
+.alert-info {
+    background-color: #eef2ff;
+    border-color: #4169E1;
+    color: #1e293b;
+}
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffecb5;
+    color: #856404;
+}
+.alert-primary {
+    background-color: #e0e7ff;
+    border-color: #4169E1;
+    color: #1e293b;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.bg-dark {
+    background-color: #1f2937 !important;
+}
+.form-check-input:checked {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+.accordion-button:not(.collapsed) {
+    background-color: #eef2ff;
+    color: #4169E1;
+}
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+.table td {
+    padding: 0.5rem 0;
+}
+#cededPremium {
+    color: #4169E1;
+}
+#commissionAmount {
+    color: #10b981;
+}
+</style>
+{% endblock %}

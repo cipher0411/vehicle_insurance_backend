@@ -1,4 +1,6 @@
 {% extends 'core/logon_base.html' %}
+{% load humanize %}
+
 {% block title %}Manage Policies{% endblock %}
 
 {% block content %}
@@ -53,7 +55,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted">Total Premium</h6>
-                            <h3>₦{{ total_premium|floatformat:2|default:'0.00' }}</h3>
+                            <h3>₦{{ total_premium|floatformat:2|intcomma|default:'0.00' }}</h3>
                         </div>
                         <div class="stat-icon">
                             <i class="fas fa-money-bill"></i>
@@ -67,7 +69,28 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted">Expiring Soon</h6>
+                            <h6 class="text-muted">Outstanding Balance</h6>
+                            <h3 class="{% if total_outstanding > 0 %}text-danger{% elif total_outstanding < 0 %}text-success{% else %}text-muted{% endif %}">
+                                ₦{{ total_outstanding|floatformat:2|intcomma }}
+                            </h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second Row Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Expiring Soon (30 days)</h6>
                             <h3 class="text-warning">{{ expiring_count|default:'0' }}</h3>
                         </div>
                         <div class="stat-icon">
@@ -82,13 +105,14 @@
     <!-- Filters -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <input type="text" class="form-control" id="searchInput" name="search" placeholder="Search by policy # or user..." value="{{ search_query }}">
+            <input type="text" class="form-control" id="searchInput" name="search" placeholder="Search by policy #, user, or vehicle..." value="{{ search_query }}">
         </div>
         <div class="col-md-2">
             <select class="form-control" id="statusFilter" name="status">
                 <option value="">All Status</option>
-                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
                 <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
                 <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
                 <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
             </select>
@@ -125,7 +149,7 @@
                     <th>Vehicle</th>
                     <th>Type</th>
                     <th>Premium (₦)</th>
-                    <th>Coverage (₦)</th>
+                    <th>Balance (₦)</th>
                     <th>Start Date</th>
                     <th>End Date</th>
                     <th>Status</th>
@@ -154,8 +178,14 @@
                         {% endif %}
                     </td>
                     <td>{{ policy.get_policy_type_display }}</td>
-                    <td>₦{{ policy.premium_amount|floatformat:2 }}</td>
-                    <td>₦{{ policy.coverage_amount|floatformat:2 }}</td>
+                    <td>₦{{ policy.premium_amount|floatformat:2|intcomma }}</td>
+                    <td>
+                        {% with balance=policy.get_outstanding_balance %}
+                        <span class="{% if balance > 0 %}text-danger{% elif balance < 0 %}text-success{% else %}text-muted{% endif %} fw-bold">
+                            ₦{{ balance|floatformat:2|intcomma }}
+                        </span>
+                        {% endwith %}
+                    </td>
                     <td>{{ policy.start_date|date:"M d, Y" }}</td>
                     <td>
                         {{ policy.end_date|date:"M d, Y" }}
@@ -166,10 +196,12 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if policy.status == 'active' %}
-                            <span class="badge bg-success">Active</span>
+                        {% if policy.status == 'draft' %}
+                            <span class="badge bg-secondary">Draft</span>
                         {% elif policy.status == 'pending' %}
                             <span class="badge bg-warning">Pending</span>
+                        {% elif policy.status == 'active' %}
+                            <span class="badge bg-success">Active</span>
                         {% elif policy.status == 'expired' %}
                             <span class="badge bg-danger">Expired</span>
                         {% elif policy.status == 'cancelled' %}
@@ -289,5 +321,7 @@ document.getElementById('searchInput')?.addEventListener('keypress', function(e)
 .pagination .page-item.active .page-link { background-color: #4169E1; border-color: #4169E1; color: white; }
 .btn-primary { background-color: #4169E1; border-color: #4169E1; }
 .btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.text-danger { color: #dc3545 !important; }
+.text-success { color: #10b981 !important; }
 </style>
 {% endblock %}

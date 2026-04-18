@@ -1,4 +1,6 @@
 {% extends 'core/logon_base.html' %}
+{% load humanize %}
+
 {% block title %}Policy Details - {{ policy.policy_number }}{% endblock %}
 
 {% block content %}
@@ -33,8 +35,9 @@
     </div>
 
     <div class="row">
-        <!-- Policy Information -->
+        <!-- Main Content -->
         <div class="col-md-8">
+            <!-- Policy Information -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0"><i class="fas fa-info-circle"></i> Policy Information</h5>
@@ -94,46 +97,6 @@
                             </div>
                         </div>
                         
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Created At</label>
-                                <input type="text" class="form-control" value="{{ policy.created_at|date:'M d, Y H:i' }}" readonly>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Last Updated</label>
-                                <input type="text" class="form-control" value="{{ policy.updated_at|date:'M d, Y H:i' }}" readonly>
-                            </div>
-                        </div>
-                        
-                        {% if policy.additional_benefits %}
-                        <div class="mb-3">
-                            <label class="form-label">Additional Benefits</label>
-                            <div class="bg-light p-3 rounded">
-                                <ul class="list-unstyled mb-0">
-                                    {% for benefit in policy.additional_benefits %}
-                                        <li><i class="fas fa-check-circle text-success me-2"></i>{{ benefit }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                        {% endif %}
-                        
-                        {% if policy.custom_coverage %}
-                        <div class="mb-3">
-                            <label class="form-label">Coverage Details</label>
-                            <div class="bg-light p-3 rounded">
-                                <ul class="list-unstyled mb-0">
-                                    {% for key, value in policy.custom_coverage.items %}
-                                        <li>
-                                            <i class="fas fa-{% if value %}check-circle text-success{% else %}times-circle text-danger{% endif %} me-2"></i>
-                                            {{ key|title }}
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                        {% endif %}
-                        
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary" id="saveBtn">
                                 <i class="fas fa-save"></i> Save Changes
@@ -141,7 +104,7 @@
                             <button type="button" class="btn btn-warning" onclick="regenerateDocument()">
                                 <i class="fas fa-file-pdf"></i> Regenerate Document
                             </button>
-                            {% if policy.status == 'pending' %}
+                            {% if policy.status == 'pending' or policy.status == 'draft' %}
                             <button type="button" class="btn btn-success" onclick="activatePolicy()">
                                 <i class="fas fa-check-circle"></i> Activate Policy
                             </button>
@@ -156,10 +119,197 @@
                 </div>
             </div>
             
+            <!-- Financial Summary Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calculator"></i> Financial Summary</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td width="40%"><strong>Premium Amount:</strong></td>
+                            <td class="text-end">₦{{ policy.premium_amount|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Payments Made:</strong></td>
+                            <td class="text-end text-success">- ₦{{ total_paid|floatformat:2|intcomma }}</td>
+                        </tr>
+                        {% if total_debit_notes > 0 %}
+                        <tr>
+                            <td><strong>Debit Notes (Additional Charges):</strong></td>
+                            <td class="text-end text-danger">+ ₦{{ total_debit_notes|floatformat:2|intcomma }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if total_credit_notes > 0 %}
+                        <tr>
+                            <td><strong>Credit Notes (Refunds/Adjustments):</strong></td>
+                            <td class="text-end text-success">- ₦{{ total_credit_notes|floatformat:2|intcomma }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if total_credits_applied > 0 %}
+                        <tr>
+                            <td><strong>Credits Applied:</strong></td>
+                            <td class="text-end text-success">+ ₦{{ total_credits_applied|floatformat:2|intcomma }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr style="border-top: 2px solid #dee2e6;">
+                            <td><strong>Outstanding Balance:</strong></td>
+                            <td class="text-end">
+                                <span class="fw-bold fs-5 
+                                    {% if outstanding_balance > 0 %}text-danger
+                                    {% elif outstanding_balance < 0 %}text-success
+                                    {% else %}text-muted{% endif %}">
+                                    ₦{{ outstanding_balance|floatformat:2|intcomma }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Payment Status:</strong></td>
+                            <td class="text-end">
+                                {% if payment_status == 'paid' %}
+                                    <span class="badge bg-success">Fully Paid</span>
+                                {% elif payment_status == 'partial' %}
+                                    <span class="badge bg-warning">Partially Paid</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Unpaid</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% if pending_amount > 0 %}
+                        <tr>
+                            <td><strong>Pending Payments:</strong></td>
+                            <td class="text-end text-warning">₦{{ pending_amount|floatformat:2|intcomma }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                    
+                    {% if outstanding_balance > 0 %}
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Outstanding Balance:</strong> Customer owes ₦{{ outstanding_balance|floatformat:2|intcomma }}.
+                    </div>
+                    {% elif outstanding_balance < 0 %}
+                    <div class="alert alert-success mt-3 mb-0">
+                        <i class="fas fa-check-circle"></i>
+                        <strong>Credit Balance:</strong> Customer has a credit of ₦{{ outstanding_balance|stringformat:".2f"|slice:"1:"|floatformat:2|intcomma }}.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Debit/Credit Notes Card -->
+            {% if debit_credit_notes %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-exchange-alt"></i> Debit/Credit Notes</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Note #</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Reason</th>
+                                    <th>Issue Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for note in debit_credit_notes %}
+                                <tr>
+                                    <td>{{ note.note_number }}</td>
+                                    <td>
+                                        {% if note.note_type == 'debit' %}
+                                            <span class="badge bg-danger">Debit</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Credit</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong class="{% if note.note_type == 'debit' %}text-danger{% else %}text-success{% endif %}">
+                                            {% if note.note_type == 'debit' %}+{% else %}-{% endif %}₦{{ note.total_amount|floatformat:2|intcomma }}
+                                        </strong>
+                                    </td>
+                                    <td>{{ note.get_reason_display }}</td>
+                                    <td>{{ note.issue_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if note.status == 'draft' %}
+                                            <span class="badge bg-secondary">Draft</span>
+                                        {% elif note.status == 'issued' %}
+                                            <span class="badge bg-warning">Issued</span>
+                                        {% elif note.status == 'paid' %}
+                                            <span class="badge bg-success">Paid</span>
+                                        {% elif note.status == 'cancelled' %}
+                                            <span class="badge bg-danger">Cancelled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'core:admin_note_detail' note.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Certificate Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-certificate"></i> Insurance Certificate</h5>
+                </div>
+                <div class="card-body">
+                    {% if certificate and certificate.status == 'generated' %}
+                        <div class="text-center mb-3">
+                            <i class="fas fa-certificate fa-3x" style="color: #4169E1;"></i>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Certificate Number:</strong></p>
+                                    <p><code>{{ certificate.certificate_number }}</code></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Issued Date:</strong></p>
+                                    <p>{{ certificate.issue_date|date:"F d, Y H:i" }}</p>
+                                </div>
+                            </div>
+                            <div class="btn-group w-100">
+                                <a href="{{ certificate.certificate_file.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                    <i class="fas fa-download"></i> Download Certificate
+                                </a>
+                                <button type="button" class="btn btn-sm btn-warning" onclick="regenerateCertificate()">
+                                    <i class="fas fa-sync-alt"></i> Regenerate
+                                </button>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-file-alt fa-4x text-muted mb-3"></i>
+                            <p class="text-muted">No certificate generated for this policy yet.</p>
+                            {% if policy.status == 'active' %}
+                                <button type="button" class="btn btn-primary" onclick="generateCertificate()">
+                                    <i class="fas fa-plus-circle"></i> Generate Certificate
+                                </button>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> Certificate will be generated automatically when the policy is activated.
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
             <!-- Payments Section -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Payments</h5>
+                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Payment History</h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -169,6 +319,7 @@
                                     <th>Transaction ID</th>
                                     <th>Amount</th>
                                     <th>Method</th>
+                                    <th>Type</th>
                                     <th>Date</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -177,9 +328,26 @@
                             <tbody>
                                 {% for payment in payments %}
                                 <tr>
-                                    <td>{{ payment.transaction_id }}</td>
-                                    <td>₦{{ payment.amount|floatformat:2 }}</td>
+                                    <td><small>{{ payment.transaction_id|truncatechars:16 }}</small></td>
+                                    <td>
+                                        <span class="{% if payment.amount < 0 %}text-success{% else %}text-primary{% endif %} fw-bold">
+                                            {% if payment.amount < 0 %}-{% endif %}₦{{ payment.amount|floatformat:2|intcomma }}
+                                        </span>
+                                    </td>
                                     <td>{{ payment.get_payment_method_display }}</td>
+                                    <td>
+                                        {% if payment.payment_details.type == 'debit_note' %}
+                                            <span class="badge bg-danger">Debit</span>
+                                        {% elif payment.payment_details.type == 'credit_note' %}
+                                            <span class="badge bg-success">Credit</span>
+                                        {% elif payment.payment_details.type == 'down_payment' %}
+                                            <span class="badge bg-info">Down Payment</span>
+                                        {% elif payment.payment_details.type == 'installment' %}
+                                            <span class="badge bg-primary">Installment</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Full</span>
+                                        {% endif %}
+                                    </td>
                                     <td>{{ payment.created_at|date:"M d, Y" }}</td>
                                     <td>
                                         {% if payment.status == 'completed' %}
@@ -202,7 +370,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="6" class="text-center py-3 text-muted">No payments found</td>
+                                    <td colspan="7" class="text-center py-3 text-muted">No payments found</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -234,7 +402,7 @@
                                 <tr>
                                     <td>{{ claim.claim_number }}</td>
                                     <td>{{ claim.get_claim_type_display }}</td>
-                                    <td>₦{{ claim.claimed_amount|floatformat:2 }}</td>
+                                    <td>₦{{ claim.claimed_amount|floatformat:2|intcomma }}</td>
                                     <td>{{ claim.created_at|date:"M d, Y" }}</td>
                                     <td>
                                         {% if claim.status == 'approved' %}
@@ -327,6 +495,41 @@
                 </div>
             </div>
             
+            <!-- Balance Summary Card -->
+            <div class="card mb-4">
+                <div class="card-header {% if outstanding_balance > 0 %}bg-warning{% elif outstanding_balance < 0 %}bg-success{% else %}bg-primary{% endif %} text-white">
+                    <h5 class="mb-0"><i class="fas fa-balance-scale"></i> Account Balance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <h2 class="mb-2 {% if outstanding_balance > 0 %}text-warning{% elif outstanding_balance < 0 %}text-success{% else %}text-primary{% endif %}">
+                            ₦{{ outstanding_balance|floatformat:2|intcomma }}
+                        </h2>
+                        <p class="mb-3">
+                            {% if outstanding_balance > 0 %}
+                                <span class="badge bg-warning text-dark">Amount Due</span>
+                            {% elif outstanding_balance < 0 %}
+                                <span class="badge bg-success">Credit Available</span>
+                            {% else %}
+                                <span class="badge bg-primary">Fully Paid</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    {% if outstanding_balance > 0 %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle"></i>
+                            Customer owes this amount.
+                        </div>
+                    {% elif outstanding_balance < 0 %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            Customer has credit balance.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
             <!-- Policy Stats -->
             <div class="card">
                 <div class="card-header">
@@ -342,11 +545,17 @@
                             <h4 class="text-warning">{{ claims.count }}</h4>
                             <small class="text-muted">Claims</small>
                         </div>
+                        <div class="col-6 mb-3">
+                            <h4 class="text-info">{{ debit_credit_notes.count }}</h4>
+                            <small class="text-muted">Adjustments</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h4 class="text-success">{{ installment_plans.count }}</h4>
+                            <small class="text-muted">Installment Plans</small>
+                        </div>
                         <div class="col-12">
-                            <div class="progress" style="height: 8px;">
-                                {% with days_passed=policy.start_date|timesince:policy.end_date %}
+                            <div class="progress mb-2" style="height: 8px;">
                                 <div class="progress-bar" role="progressbar" style="width: {{ policy.coverage_percentage|default:0 }}%"></div>
-                                {% endwith %}
                             </div>
                             <small class="text-muted">
                                 {% if policy.is_active %}
@@ -412,16 +621,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response.redirected) {
                     window.location.href = response.url;
                 } else {
-                    return response.json();
+                    return response.text();
                 }
             })
-            .then(data => {
-                if (data && data.success) {
-                    showToast('Success', 'Policy updated successfully', 'success');
-                    setTimeout(() => location.reload(), 1500);
-                } else if (data && data.error) {
-                    showToast('Error', data.error, 'error');
-                }
+            .then(() => {
+                showToast('Success', 'Policy updated successfully', 'success');
+                setTimeout(() => location.reload(), 1500);
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -447,7 +652,7 @@ function showToast(title, message, type = 'info') {
     toastIcon.style.color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#4169E1';
     toastIcon.classList.add(type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
     
-    toastInstance.show();
+    if (toastInstance) toastInstance.show();
 }
 
 function getCookie(name) {
@@ -470,16 +675,21 @@ function showConfirmModal(title, message, onConfirm) {
     document.getElementById('confirmModalBody').textContent = message;
     
     const confirmBtn = document.getElementById('confirmModalBtn');
-    confirmBtn.onclick = function() {
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    
+    newConfirmBtn.onclick = function() {
         onConfirm();
-        bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+        if (modal) modal.hide();
     };
     
-    new bootstrap.Modal(document.getElementById('confirmModal')).show();
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
 }
 
 function activatePolicy() {
-    showConfirmModal('Activate Policy', 'Are you sure you want to activate this policy?', function() {
+    showConfirmModal('Activate Policy', 'Are you sure you want to activate this policy? This will generate an insurance certificate automatically.', function() {
         const csrftoken = getCookie('csrftoken');
         
         fetch(`/custom_admin/policy/{{ policy.id }}/activate/`, {
@@ -492,17 +702,20 @@ function activatePolicy() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showToast('Success', 'Policy activated successfully', 'success');
-                setTimeout(() => location.reload(), 1500);
+                showToast('Success', 'Policy activated successfully!', 'success');
+                setTimeout(() => location.reload(), 2000);
             } else {
                 showToast('Error', data.message || 'Failed to activate policy', 'error');
             }
+        })
+        .catch(error => {
+            showToast('Error', 'An error occurred', 'error');
         });
     });
 }
 
 function cancelPolicy() {
-    showConfirmModal('Cancel Policy', 'Are you sure you want to cancel this policy? This action cannot be undone.', function() {
+    showConfirmModal('Cancel Policy', 'Are you sure you want to cancel this policy? This will create a cancellation request for processing.', function() {
         const csrftoken = getCookie('csrftoken');
         
         fetch(`/custom_admin/policy/{{ policy.id }}/cancel/`, {
@@ -520,6 +733,9 @@ function cancelPolicy() {
             } else {
                 showToast('Error', data.message || 'Failed to cancel policy', 'error');
             }
+        })
+        .catch(error => {
+            showToast('Error', 'An error occurred', 'error');
         });
     });
 }
@@ -543,6 +759,61 @@ function regenerateDocument() {
             } else {
                 showToast('Error', data.message || 'Failed to regenerate document', 'error');
             }
+        })
+        .catch(error => {
+            showToast('Error', 'An error occurred', 'error');
+        });
+    });
+}
+
+function generateCertificate() {
+    showConfirmModal('Generate Certificate', 'Generate insurance certificate for this policy?', function() {
+        const csrftoken = getCookie('csrftoken');
+        
+        fetch(`/custom_admin/policy/{{ policy.id }}/generate-certificate/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', 'Certificate generated successfully!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('Error', data.message || 'Failed to generate certificate', 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error', 'An error occurred', 'error');
+        });
+    });
+}
+
+function regenerateCertificate() {
+    showConfirmModal('Regenerate Certificate', 'This will replace the existing certificate. Continue?', function() {
+        const csrftoken = getCookie('csrftoken');
+        
+        fetch(`/custom_admin/policy/{{ policy.id }}/regenerate-certificate/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', data.message || 'Certificate regenerated!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('Error', data.message || 'Failed to regenerate certificate', 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error', 'An error occurred', 'error');
         });
     });
 }
@@ -555,66 +826,38 @@ function regenerateDocument() {
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     margin-bottom: 20px;
 }
-
 .card-header {
     background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
     color: white;
     border-radius: 12px 12px 0 0 !important;
     padding: 15px 20px;
 }
-
-.card-header h5 {
-    margin: 0;
-    font-weight: 600;
+.card-header.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
 }
-
+.card-header.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
 .form-control:focus, .form-select:focus {
     border-color: #4169E1;
     box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
 }
-
-.form-control[readonly] {
-    background-color: #f8f9fa;
-    cursor: not-allowed;
-}
-
-.btn-primary {
-    background-color: #4169E1;
-    border-color: #4169E1;
-}
-
-.btn-primary:hover {
-    background-color: #3155b0;
-    border-color: #3155b0;
-}
-
-.btn-outline-primary {
-    color: #4169E1;
-    border-color: #4169E1;
-}
-
-.btn-outline-primary:hover {
-    background-color: #4169E1;
-    color: white;
-}
-
-.toast {
-    background: white;
-    border-left: 4px solid #4169E1;
-}
-
-.badge {
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-weight: 500;
-}
-
-.table th {
-    font-weight: 600;
-}
-
-.progress-bar {
-    background-color: #4169E1;
-}
+.form-control[readonly] { background-color: #f8f9fa; cursor: not-allowed; }
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.btn-outline-primary { color: #4169E1; border-color: #4169E1; }
+.btn-outline-primary:hover { background-color: #4169E1; color: white; }
+.toast { background: white; border-left: 4px solid #4169E1; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.table th { font-weight: 600; }
+.progress-bar { background-color: #4169E1; }
+code { background-color: #f8f9fa; padding: 2px 6px; border-radius: 4px; }
+.btn-group .btn { border-radius: 4px; }
+.text-danger { color: #dc3545 !important; }
+.text-success { color: #10b981 !important; }
+.text-warning { color: #f59e0b !important; }
+.alert-warning { background-color: #fff3cd; border-color: #ffecb5; color: #856404; }
+.alert-success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
 </style>
 {% endblock %}

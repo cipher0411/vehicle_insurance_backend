@@ -12,15 +12,20 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from decimal import Decimal
+from django.db.models import Sum
 import json
 import uuid
+from django.core.mail import send_mail
 from django.db import models
 from django.utils import timezone
 
 from apps.core.models import (
     User, Vehicle, InsurancePolicy, Claim, Payment, 
     InsuranceQuote, Notification, Document, SupportTicket, 
-    TicketReply, PromoCode, UserActivityLog, InsuranceSettings
+    TicketReply, PromoCode, UserActivityLog, InsuranceSettings, 
+    PolicyCertificate, PolicyEndorsement, PolicyRenewal, NoClaimBonus, 
+    CommissionStructure, Commission, DebitCreditNote, InstallmentPlan, Installment, ReinsuranceTreaty,
+    AgentProfile, AgentReferral, 
 )
 
 from apps.core.forms import (
@@ -38,35 +43,153 @@ from .Utils.utils import (
 
 
 
-def register(request):
-    """User registration view"""
+
+def get_started(request):
+    """Get Started page with login and registration options"""
+    
+    # If user is already authenticated, redirect to dashboard
     if request.user.is_authenticated:
         return redirect('core:dashboard')
+    
+    context = {
+        'page_title': 'Get Started with VehicleInsure',
+        'features': [
+            {
+                'icon': 'fa-shield-alt',
+                'title': 'Comprehensive Coverage',
+                'description': 'Full protection for your vehicle against accidents, theft, and third-party liability.'
+            },
+            {
+                'icon': 'fa-bolt',
+                'title': 'Instant Quotes',
+                'description': 'Get personalized insurance quotes in minutes with our easy-to-use calculator.'
+            },
+            {
+                'icon': 'fa-file-invoice',
+                'title': 'Digital Certificates',
+                'description': 'Receive your insurance certificate instantly via email and access it anytime.'
+            },
+            {
+                'icon': 'fa-headset',
+                'title': '24/7 Support',
+                'description': 'Our dedicated support team is always available to assist you.'
+            },
+        ],
+        'benefits': [
+            'No hidden fees or charges',
+            'Flexible payment options',
+            'Quick claims processing',
+            'Multi-vehicle discounts',
+            'Free roadside assistance',
+            'Easy policy renewal',
+        ],
+        'stats': [
+            {'value': '50K+', 'label': 'Happy Customers'},
+            {'value': '₦2B+', 'label': 'Claims Paid'},
+            {'value': '98%', 'label': 'Satisfaction Rate'},
+            {'value': '24/7', 'label': 'Support Available'},
+        ]
+    }
+    
+    return render(request, 'core/public/get_started.html', context)
+
+
+
+def register(request):
+    """User registration view with agent referral support"""
+    if request.user.is_authenticated:
+        return redirect('core:dashboard')
+    
+    # Get referral code from URL
+    ref_code = request.GET.get('ref', '')
+    referred_by = None
+    
+    if ref_code:
+        try:
+            agent_profile = AgentProfile.objects.select_related('user').get(agent_code=ref_code, is_active=True)
+            referred_by = agent_profile.user
+        except AgentProfile.DoesNotExist:
+            pass
     
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password'])
-            user.email = form.cleaned_data['email']
-            user.save()
-            
-            # Log registration
-            log_user_activity(user, 'register', request)
-            
-            # Send welcome email
-            send_email_notification(
-                user.email,
-                'Welcome to Vehicle Insurance',
-                f'Welcome {user.get_full_name()}, thank you for registering!'
-            )
-            
-            messages.success(request, 'Registration successful! Please login.')
-            return redirect('core:login')
+            try:
+                user = form.save(commit=False)
+                
+                # Set referred_by from URL parameter (stored in session or hidden field)
+                ref_code_post = request.POST.get('referral_code', '')
+                if ref_code_post:
+                    try:
+                        agent_profile = AgentProfile.objects.select_related('user').get(
+                            agent_code=ref_code_post, 
+                            is_active=True
+                        )
+                        user.referred_by = agent_profile.user
+                        user.referral_code = ref_code_post
+                    except AgentProfile.DoesNotExist:
+                        pass
+                elif referred_by:
+                    user.referred_by = referred_by
+                    user.referral_code = ref_code
+                
+                user.save()
+                
+                # Create AgentReferral record if user was referred by an agent
+                if user.referred_by and user.referred_by.role == 'agent':
+                    AgentReferral.objects.get_or_create(
+                        agent=user.referred_by,
+                        customer=user,
+                        defaults={
+                            'referral_code': user.referral_code,
+                            'referral_source': 'registration'
+                        }
+                    )
+                    
+                    # Notify the agent
+                    Notification.objects.create(
+                        user=user.referred_by,
+                        title='New Customer Registered',
+                        message=f'{user.get_full_name() or user.email} registered using your referral link!',
+                        notification_type='system_alert',
+                        data={'customer_id': str(user.id)}
+                    )
+                
+                # Log registration
+                log_user_activity(user, 'register', request)
+                
+                # Send welcome email
+                try:
+                    send_email_notification(
+                        user.email,
+                        'Welcome to Vehicle Insurance',
+                        f'Welcome {user.get_full_name() or user.email}, thank you for registering!'
+                    )
+                except Exception as e:
+                    print(f"Welcome email failed: {e}")
+                
+                messages.success(request, 'Registration successful! Please login.')
+                return redirect('core:login')
+                
+            except Exception as e:
+                messages.error(request, f'Registration failed: {str(e)}')
+                print(f"Registration error: {e}")
+        else:
+            # Show form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = UserRegistrationForm()
     
-    return render(request, 'core/register.html', {'form': form})
+    context = {
+        'form': form,
+        'referred_by': referred_by,
+        'ref_code': ref_code,
+    }
+    
+    return render(request, 'core/register.html', context)
+
 
 def user_login(request):
     """User login view"""
@@ -85,17 +208,19 @@ def user_login(request):
                 
                 # Update last login IP
                 user.last_login_ip = get_client_ip(request)
-                user.save()
+                user.save(update_fields=['last_login_ip'])
                 
                 # Log login activity
                 log_user_activity(user, 'login', request)
                 
-                messages.success(request, f'Welcome back, {user.get_full_name()}!')
+                messages.success(request, f'Welcome back, {user.get_full_name() or user.email}!')
                 
                 # Redirect based on role
                 if user.role == 'admin':
                     return redirect('core:admin_dashboard')
-                elif user.role in ['agent', 'underwriter', 'claims_adjuster', 'support']:
+                elif user.role == 'agent':
+                    return redirect('core:agent_dashboard')
+                elif user.role in ['underwriter', 'claims_adjuster', 'support']:
                     return redirect('core:staff_dashboard')
                 else:
                     return redirect('core:dashboard')
@@ -520,10 +645,51 @@ def promotions(request):
     
     
     
+# apps/core/views.py - Complete payment-related views
 
+from datetime import timedelta
+from decimal import Decimal
+import uuid
+import json
+import hashlib
+import hmac
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
+from django.db.models import Sum, Q
+from django.core.paginator import Paginator
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings as django_settings
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.urls import reverse
+from django.contrib.admin.views.decorators import staff_member_required
+import requests
+import logging
+
+from .models import (
+    User, Vehicle, InsurancePolicy, Payment, InsuranceQuote, 
+    PromoCode, Notification, InsuranceSettings, InstallmentPlan, Installment,
+    PolicyCertificate, 
+)
+from .forms import PolicyPurchaseForm
+from .Utils.utils import generate_policy_document, log_user_activity, generate_policy_certificate
+from .decorators import admin_required
+
+logger = logging.getLogger(__name__)
+
+
+# ============================================
+# POLICY PURCHASE VIEW
+# ============================================
 @login_required
 def purchase_policy(request, quote_id=None):
-    """Purchase insurance policy"""
+    """Purchase insurance policy - Creates draft policy, redirects to payment"""
+    from decimal import Decimal
+    
     quote = None
     if quote_id:
         quote = get_object_or_404(InsuranceQuote, id=quote_id, user=request.user)
@@ -531,11 +697,8 @@ def purchase_policy(request, quote_id=None):
     settings = InsuranceSettings.get_settings()
     
     if request.method == 'POST':
-        # Only validate form fields if not coming from a quote
-        if quote:
-            # Skip form validation when coming from quote
-            form = PolicyPurchaseForm(request.POST)
-            # We don't need to check is_valid() for quote purchases
+        # Initialize form
+        if quote:            form = PolicyPurchaseForm(request.POST)
         else:
             form = PolicyPurchaseForm(request.POST)
             if not form.is_valid():
@@ -545,8 +708,8 @@ def purchase_policy(request, quote_id=None):
                 return redirect(request.path)
         
         try:
+            # Get policy data from quote or form
             if quote:
-                # Use quote data
                 vehicle = quote.vehicle
                 coverage_type = quote.coverage_type
                 coverage_amount = quote.coverage_amount
@@ -556,7 +719,6 @@ def purchase_policy(request, quote_id=None):
                 add_ons = quote.add_ons
                 coverage_details = quote.coverage_details
             else:
-                # Get data from form
                 vehicle_id = request.POST.get('vehicle_id')
                 coverage_type = request.POST.get('coverage_type')
                 coverage_amount = request.POST.get('coverage_amount')
@@ -566,6 +728,8 @@ def purchase_policy(request, quote_id=None):
                     return redirect(request.path)
                 
                 vehicle = get_object_or_404(Vehicle, id=vehicle_id, user=request.user)
+                
+                from .Utils.utils import calculate_premium
                 premium_data = calculate_premium(vehicle, coverage_type, coverage_amount)
                 base_premium = premium_data['base_premium']
                 total_premium = premium_data['total_premium']
@@ -573,7 +737,7 @@ def purchase_policy(request, quote_id=None):
                 add_ons = premium_data['add_ons']
                 coverage_details = premium_data['coverage_details']
             
-            # Get promo code from either form or POST data
+            # Process promo code
             promo_code = request.POST.get('promo_code', '').strip()
             discount = Decimal('0')
             promo_applied = None
@@ -586,12 +750,15 @@ def purchase_policy(request, quote_id=None):
                         valid_from__lte=timezone.now(),
                         valid_to__gte=timezone.now()
                     )
-                    if promo.used_count < promo.max_uses:
+                    if promo.used_count < promo.max_uses and promo.is_valid_for_user(request.user):
                         if promo.discount_type == 'percentage':
                             discount = total_premium * (promo.discount_value / Decimal('100'))
+                            if promo.max_discount_amount:
+                                discount = min(discount, promo.max_discount_amount)
                         else:
                             discount = promo.discount_value
                         promo_applied = promo
+                        request.session['pending_promo'] = promo.code
                         messages.success(request, f'Promo code applied! Discount: ₦{discount:,.2f}')
                 except PromoCode.DoesNotExist:
                     messages.warning(request, 'Invalid or expired promo code')
@@ -599,8 +766,9 @@ def purchase_policy(request, quote_id=None):
             final_premium = total_premium - discount
             final_premium = max(final_premium, Decimal('0'))
             
-            # Get payment method
+            # Get payment details
             payment_method = request.POST.get('payment_method', 'card')
+            payment_plan = request.POST.get('payment_plan', 'full')
             
             # Check terms accepted
             terms_accepted = request.POST.get('terms_accepted') == 'on'
@@ -608,7 +776,7 @@ def purchase_policy(request, quote_id=None):
                 messages.error(request, 'You must accept the terms and conditions')
                 return redirect(request.path)
             
-            # Create policy
+            # Create policy with DRAFT status - NOT ACTIVE YET
             policy = InsurancePolicy.objects.create(
                 user=request.user,
                 vehicle=vehicle,
@@ -621,7 +789,7 @@ def purchase_policy(request, quote_id=None):
                 additional_benefits=add_ons,
                 custom_coverage=coverage_details,
                 terms_accepted=True,
-                status='pending'
+                status='draft'  # IMPORTANT: Start as draft, not pending
             )
             
             # Generate policy document
@@ -632,48 +800,76 @@ def purchase_policy(request, quote_id=None):
             except Exception as e:
                 print(f"Error generating policy document: {e}")
             
-            # Create payment record
-            transaction_id = f"TXN-{uuid.uuid4().hex[:8].upper()}"
-            payment_reference = f"PAY-{uuid.uuid4().hex[:8].upper()}"
-            
-            payment = Payment.objects.create(
-                policy=policy,
-                user=request.user,
-                amount=final_premium,
-                payment_method=payment_method,
-                transaction_id=transaction_id,
-                payment_reference=payment_reference,
-                status='pending'
-            )
-            
-            # Increment promo usage
+            # Store promo applied flag for after payment
             if promo_applied:
-                promo_applied.used_count += 1
-                promo_applied.save()
+                request.session['pending_promo_id'] = str(promo_applied.id)
             
-            # Log activity
-            log_user_activity(request.user, 'purchase_policy', request, {
-                'policy_id': str(policy.id),
-                'premium': str(final_premium),
-                'payment_method': payment_method
-            })
+            # Handle installment payment
+            if payment_plan == 'installment':
+                result = setup_installment_payment(request, policy, final_premium, payment_method)
+                if result['success']:
+                    # Increment promo usage
+                    if promo_applied:
+                        promo_applied.used_count += 1
+                        promo_applied.save()
+                        if 'pending_promo' in request.session:
+                            del request.session['pending_promo']
+                        if 'pending_promo_id' in request.session:
+                            del request.session['pending_promo_id']
+                    
+                    messages.success(request, 'Installment plan created! Please complete your down payment to activate your policy.')
+                    return redirect('core:pay_installment', installment_id=result['installment_id'])
+                else:
+                    # Rollback policy creation
+                    policy.delete()
+                    messages.error(request, result['message'])
+                    return redirect(request.path)
             
-            # Send notification
-            Notification.objects.create(
-                user=request.user,
-                title='Policy Created - Payment Pending',
-                message=f'Your {policy.get_policy_type_display()} policy (#{policy.policy_number}) has been created. Please complete payment to activate.',
-                notification_type='payment_confirmation',
-                data={'policy_id': str(policy.id), 'payment_id': str(payment.id)}
-            )
-            
-            messages.success(request, f'Policy #{policy.policy_number} created! Proceed to payment.')
-            
-            # Redirect based on payment method
-            if payment_method == 'card':
-                return redirect('core:process_card_payment', payment_id=payment.id)
+            # Handle full payment
             else:
-                return redirect('core:bank_transfer_instructions', payment_id=payment.id)
+                # Use the model's class method to generate unique references
+                transaction_id = Payment.generate_unique_transaction_id('TXN')
+                payment_reference = Payment.generate_unique_reference('PAY')
+                
+                payment = Payment.objects.create(
+                    policy=policy,
+                    user=request.user,
+                    amount=final_premium,
+                    payment_method=payment_method,
+                    transaction_id=transaction_id,
+                    payment_reference=payment_reference,
+                    status='pending'
+                )
+                
+                # Increment promo usage
+                if promo_applied:
+                    promo_applied.used_count += 1
+                    promo_applied.save()
+                    if 'pending_promo' in request.session:
+                        del request.session['pending_promo']
+                    if 'pending_promo_id' in request.session:
+                        del request.session['pending_promo_id']
+                
+                # Log activity
+                log_user_activity(request.user, 'initiate_policy_purchase', request, {
+                    'policy_id': str(policy.id),
+                    'premium': str(final_premium),
+                    'payment_method': payment_method,
+                    'payment_plan': 'full'
+                })
+                
+                # NO NOTIFICATION HERE - Only after successful payment
+                # NO POLICY ACTIVATION HERE - Only after successful payment
+                
+                messages.info(request, 'Please complete your payment to activate your policy.')
+                
+                # Redirect based on payment method
+                if payment_method == 'card':
+                    return redirect('core:process_card_payment', payment_id=payment.id)
+                elif payment_method == 'bank_transfer':
+                    return redirect('core:bank_transfer_instructions', payment_id=payment.id)
+                else:
+                    return redirect('core:payment_page', payment_id=payment.id)
                 
         except Exception as e:
             import traceback
@@ -692,11 +888,20 @@ def purchase_policy(request, quote_id=None):
     
     vehicles = request.user.vehicles.all()
     
+    # Get installment settings
+    installment_settings = {
+        'min_down_payment_percentage': Decimal('30'),
+        'interest_rate': Decimal('5'),
+        'max_installments': 12,
+        'allowed_frequencies': ['monthly', 'quarterly'],
+    }
+    
     context = {
         'form': form,
         'vehicles': vehicles,
         'quote': quote,
         'settings': settings,
+        'installment_settings': installment_settings,
     }
     
     if quote:
@@ -708,10 +913,35 @@ def purchase_policy(request, quote_id=None):
     return render(request, 'core/customer/purchase_policy.html', context)
 
 
+# ============================================
+# PAYMENT PAGE VIEWS
+# ============================================
 
-import requests
-import hashlib
-from django.views.decorators.csrf import csrf_exempt
+@login_required
+def payment_page(request, payment_id):
+    """Main payment page - shows payment options (Card or Bank Transfer)"""
+    payment = get_object_or_404(Payment, id=payment_id, user=request.user)
+    
+    if payment.status == 'completed':
+        return redirect('core:payment_success', payment_id=payment.id)
+    
+    if request.method == 'POST':
+        payment_method = request.POST.get('payment_method')
+        
+        if payment_method == 'card':
+            return redirect('core:process_card_payment', payment_id=payment.id)
+        elif payment_method == 'bank_transfer':
+            return redirect('core:bank_transfer_instructions', payment_id=payment.id)
+        else:
+            messages.error(request, 'Please select a valid payment method')
+            return redirect('core:payment_page', payment_id=payment.id)
+    
+    context = {
+        'payment': payment,
+    }
+    
+    return render(request, 'core/customer/payment_page.html', context)
+
 
 @login_required
 def process_card_payment(request, payment_id):
@@ -719,165 +949,87 @@ def process_card_payment(request, payment_id):
     payment = get_object_or_404(Payment, id=payment_id, user=request.user)
     settings = InsuranceSettings.get_settings()
     
-    # Check if payment is already completed
     if payment.status == 'completed':
         messages.info(request, 'This payment has already been completed.')
-        return redirect('core:policy_detail', policy_id=payment.policy.id)
+        return redirect('core:payment_success', payment_id=payment.id)
     
-    # Generate unique transaction reference
+    if payment.status == 'failed':
+        messages.warning(request, 'This payment previously failed. Please try again.')
+    
     tx_ref = f"VI-{payment.transaction_id}-{uuid.uuid4().hex[:6].upper()}"
     
-    # Store tx_ref in payment details
-    payment.payment_details = {'tx_ref': tx_ref}
+    if not payment.payment_details:
+        payment.payment_details = {}
+    payment.payment_details['tx_ref'] = tx_ref
+    payment.status = 'pending'
     payment.save()
+    
+    user = request.user
+    customer_email = user.email
+    customer_name = user.get_full_name() or user.email
+    customer_phone = str(user.phone_number) if user.phone_number else ""
     
     context = {
         'payment': payment,
         'settings': settings,
         'public_key': settings.flutterwave_public_key,
         'tx_ref': tx_ref,
+        'customer_email': customer_email,
+        'customer_name': customer_name,
+        'customer_phone': customer_phone,
+        'amount': float(payment.amount),
+        'currency': 'NGN',
+        'redirect_url': request.build_absolute_uri(reverse('core:payment_callback')),
+        'payment_id': payment_id,
     }
     
     return render(request, 'core/customer/process_payment.html', context)
 
 
-@csrf_exempt
-def payment_callback(request):
-    """Handle Flutterwave payment callback"""
-    if request.method == 'GET':
-        tx_ref = request.GET.get('tx_ref')
-        transaction_id = request.GET.get('transaction_id')
-        status = request.GET.get('status')
-        
-        # Find the payment
-        try:
-            payment = Payment.objects.get(transaction_id__startswith=tx_ref.split('-')[1])
-        except Payment.DoesNotExist:
-            messages.error(request, 'Payment record not found.')
-            return redirect('core:dashboard')
-        
-        if status == 'successful':
-            # Verify transaction with Flutterwave
-            settings = InsuranceSettings.get_settings()
-            verify_url = f"https://api.flutterwave.com/v3/transactions/{transaction_id}/verify"
-            
-            headers = {
-                'Authorization': f'Bearer {settings.flutterwave_secret_key}'
-            }
-            
-            try:
-                response = requests.get(verify_url, headers=headers)
-                data = response.json()
-                
-                if data['status'] == 'success' and data['data']['status'] == 'successful':
-                    # Update payment
-                    payment.status = 'completed'
-                    payment.paid_at = timezone.now()
-                    payment.payment_details = data['data']
-                    payment.save()
-                    
-                    # Update policy status
-                    payment.policy.status = 'active'
-                    payment.policy.save()
-                    
-                    # Increment promo code usage if applicable
-                    pending_promo = request.session.get('pending_promo')
-                    if pending_promo:
-                        try:
-                            promo = PromoCode.objects.get(code=pending_promo)
-                            promo.used_count += 1
-                            promo.save()
-                        except PromoCode.DoesNotExist:
-                            pass
-                        del request.session['pending_promo']
-                    
-                    # Send success notification
-                    Notification.objects.create(
-                        user=payment.user,
-                        title='Payment Successful',
-                        message=f'Your payment of ₦{payment.amount:,.2f} for policy #{payment.policy.policy_number} was successful.',
-                        notification_type='payment_confirmation',
-                        data={'policy_id': str(payment.policy.id)}
-                    )
-                    
-                    messages.success(request, 'Payment successful! Your policy is now active.')
-                    return redirect('core:policy_detail', policy_id=payment.policy.id)
-                else:
-                    payment.status = 'failed'
-                    payment.payment_details = {'error': 'Verification failed'}
-                    payment.save()
-                    messages.error(request, 'Payment verification failed. Please contact support.')
-                    
-            except Exception as e:
-                payment.status = 'failed'
-                payment.payment_details = {'error': str(e)}
-                payment.save()
-                messages.error(request, 'Payment verification error. Please contact support.')
-        else:
-            payment.status = 'failed'
-            payment.save()
-            messages.error(request, 'Payment was not successful. Please try again.')
-        
-        return redirect('core:payment', payment_id=payment.id)
-    
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+# apps/core/views.py - Updated views
+
+import logging
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.conf import settings as django_settings
+
+logger = logging.getLogger(__name__)
 
 
-@login_required
-def verify_payment(request, payment_id):
-    """Manual payment verification endpoint"""
-    payment = get_object_or_404(Payment, id=payment_id, user=request.user)
-    settings = InsuranceSettings.get_settings()
-    
-    # Check if payment has transaction ID
-    if not payment.payment_details.get('transaction_id'):
-        return JsonResponse({'success': False, 'message': 'No transaction found'})
-    
-    transaction_id = payment.payment_details['transaction_id']
-    verify_url = f"https://api.flutterwave.com/v3/transactions/{transaction_id}/verify"
-    
-    headers = {
-        'Authorization': f'Bearer {settings.flutterwave_secret_key}'
-    }
-    
-    try:
-        response = requests.get(verify_url, headers=headers)
-        data = response.json()
-        
-        if data['status'] == 'success' and data['data']['status'] == 'successful':
-            payment.status = 'completed'
-            payment.paid_at = timezone.now()
-            payment.payment_details = data['data']
-            payment.save()
-            
-            payment.policy.status = 'active'
-            payment.policy.save()
-            
-            return JsonResponse({'success': True, 'message': 'Payment verified successfully'})
-        else:
-            return JsonResponse({'success': False, 'message': 'Payment not found or failed'})
-            
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)})
-    
-    
-    
-    
 @login_required
 def bank_transfer_instructions(request, payment_id):
     """Display bank transfer instructions"""
     payment = get_object_or_404(Payment, id=payment_id, user=request.user)
     settings = InsuranceSettings.get_settings()
     
+    # Check if payment is already completed or pending verification
+    if payment.status == 'completed':
+        messages.info(request, 'This payment has already been completed.')
+        return redirect('core:payment_success', payment_id=payment.id)
+    
+    if payment.status == 'pending_verification':
+        messages.info(request, 'Your bank transfer is currently under verification.')
+        return redirect('core:payment_status', payment_id=payment.id)
+    
+    # Update payment method to bank transfer if not already set
+    if payment.payment_method != 'bank_transfer':
+        payment.payment_method = 'bank_transfer'
+        payment.save()
+    
+    # Use settings from database or fallback to django settings
+    bank_details = {
+        'bank_name': settings.bank_name or getattr(django_settings, 'BANK_TRANSFER_SETTINGS', {}).get('bank_name', 'Access Bank'),
+        'account_name': settings.bank_account_name or getattr(django_settings, 'BANK_TRANSFER_SETTINGS', {}).get('account_name', 'VehicleInsure Ltd'),
+        'account_number': settings.bank_account_number or getattr(django_settings, 'BANK_TRANSFER_SETTINGS', {}).get('account_number', '0592787269'),
+        'sort_code': settings.bank_sort_code or getattr(django_settings, 'BANK_TRANSFER_SETTINGS', {}).get('sort_code', '044152567'),
+        'swift_code': settings.bank_swift_code or getattr(django_settings, 'BANK_TRANSFER_SETTINGS', {}).get('swift_code', ''),
+    }
+    
     context = {
         'payment': payment,
         'settings': settings,
-        'bank_details': {
-            'bank_name': settings.bank_name,
-            'account_name': settings.bank_account_name,
-            'account_number': settings.bank_account_number,
-            'sort_code': settings.bank_sort_code,
-        }
+        'bank_details': bank_details,
     }
     
     return render(request, 'core/customer/bank_transfer.html', context)
@@ -885,41 +1037,526 @@ def bank_transfer_instructions(request, payment_id):
 
 @login_required
 def confirm_bank_transfer(request, payment_id):
-    """Confirm bank transfer made"""
-    if request.method == 'POST':
-        payment = get_object_or_404(Payment, id=payment_id, user=request.user)
+    """Confirm bank transfer made - Submit for admin verification"""
+    if request.method != 'POST':
+        return redirect('core:bank_transfer_instructions', payment_id=payment_id)
+    
+    payment = get_object_or_404(Payment, id=payment_id, user=request.user)
+    
+    # Check if payment can be processed
+    if payment.status == 'completed':
+        messages.info(request, 'This payment has already been completed.')
+        return redirect('core:payment_success', payment_id=payment.id)
+    
+    if payment.status == 'pending_verification':
+        messages.info(request, 'Your payment is already under verification.')
+        return redirect('core:payment_status', payment_id=payment.id)
+    
+    if payment.status != 'pending':
+        messages.warning(request, 'This payment cannot be processed.')
+        return redirect('core:payment_page', payment_id=payment.id)
+    
+    bank_name = request.POST.get('bank_name', '').strip()
+    transfer_reference = request.POST.get('transfer_reference', '').strip()
+    transfer_date = request.POST.get('transfer_date', '').strip()
+    account_number = request.POST.get('account_number', '').strip()
+    account_name = request.POST.get('account_name', '').strip()
+    notes = request.POST.get('notes', '').strip()
+    
+    if not all([bank_name, transfer_reference, transfer_date, account_number, account_name]):
+        messages.error(request, 'Please fill in all required fields.')
+        return redirect('core:bank_transfer_instructions', payment_id=payment.id)
+    
+    # Update payment to pending_verification - NOT COMPLETED
+    payment.status = 'pending_verification'
+    payment.payment_details = {
+        'type': 'bank_transfer',
+        'bank_name': bank_name,
+        'transfer_reference': transfer_reference,
+        'transfer_date': transfer_date,
+        'account_number': account_number,
+        'account_name': account_name,
+        'notes': notes,
+        'submitted_at': timezone.now().isoformat(),
+    }
+    payment.save()
+    
+    # Log activity
+    log_user_activity(request.user, 'bank_transfer_submitted', request, {
+        'payment_id': str(payment.id),
+        'amount': str(payment.amount),
+        'transfer_reference': transfer_reference,
+    })
+    
+    # Create notification for user
+    Notification.objects.create(
+        user=request.user,
+        title='Bank Transfer Submitted for Verification',
+        message=f'Your bank transfer payment of ₦{payment.amount:,.2f} has been submitted and is awaiting verification. This usually takes 1-24 hours.',
+        notification_type='payment_confirmation',
+        data={'payment_id': str(payment.id)}
+    )
+    
+    # Notify admins
+    admin_users = User.objects.filter(role='admin', is_active=True)
+    for admin in admin_users:
+        Notification.objects.create(
+            user=admin,
+            title='Bank Transfer Payment Submitted',
+            message=f'{request.user.get_full_name() or request.user.email} has submitted bank transfer payment of ₦{payment.amount:,.2f} for verification.',
+            notification_type='payment_confirmation',
+            data={'payment_id': str(payment.id), 'user_id': str(request.user.id)}
+        )
+    
+    # Send email to admins
+    send_bank_transfer_notification_email(payment, request.user)
+    
+    # Send confirmation email to customer
+    send_bank_transfer_confirmation_email(payment, request.user)
+    
+    messages.success(request, 'Your payment has been submitted for verification. We will confirm within 24 hours.')
+    return redirect('core:payment_status', payment_id=payment.id)
+
+
+def send_bank_transfer_notification_email(payment, user):
+    """Send email notification to admins about bank transfer"""
+    try:
+        admin_emails = User.objects.filter(role='admin', is_active=True).values_list('email', flat=True)
         
-        if payment.status == 'pending':
-            payment.status = 'pending_verification'
-            payment.payment_details = {
-                'payment_proof': request.POST.get('payment_proof', ''),
-                'transfer_reference': request.POST.get('transfer_reference', ''),
-                'bank_name': request.POST.get('bank_name', ''),
-                'transfer_date': request.POST.get('transfer_date', ''),
-                'notes': request.POST.get('notes', ''),
-            }
+        if not admin_emails:
+            logger.warning("No admin emails found for bank transfer notification")
+            return
+        
+        subject = f'[BANK TRANSFER] Payment Verification Needed - {payment.payment_reference}'
+        
+        context = {
+            'payment': payment,
+            'user': user,
+            'amount': payment.amount,
+            'reference': payment.payment_reference,
+            'policy_number': payment.policy.policy_number,
+            'bank_name': payment.payment_details.get('bank_name', 'N/A'),
+            'account_name': payment.payment_details.get('account_name', 'N/A'),
+            'account_number': payment.payment_details.get('account_number', 'N/A'),
+            'transfer_reference': payment.payment_details.get('transfer_reference', 'N/A'),
+            'transfer_date': payment.payment_details.get('transfer_date', 'N/A'),
+            'notes': payment.payment_details.get('notes', ''),
+            'submitted_at': payment.payment_details.get('submitted_at', 'N/A'),
+            'site_name': 'Vehicle Insurance Pro',
+            'admin_url': f"/custom_admin/payments/{payment.id}/verify-transfer/",
+        }
+        
+        html_content = render_to_string('core/emails/bank_transfer_notification.html', context)
+        text_content = strip_tags(html_content)
+        
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=django_settings.DEFAULT_FROM_EMAIL,
+            to=list(admin_emails),
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send(fail_silently=False)
+        
+        logger.info(f"Bank transfer notification email sent to {len(admin_emails)} admins")
+        
+    except Exception as e:
+        logger.error(f"Failed to send bank transfer notification email: {str(e)}")
+
+
+def send_bank_transfer_confirmation_email(payment, user):
+    """Send confirmation email to customer after bank transfer submission"""
+    try:
+        subject = f'Bank Transfer Submitted - {payment.payment_reference}'
+        
+        context = {
+            'user': user,
+            'payment': payment,
+            'policy': payment.policy,
+            'amount': payment.amount,
+            'reference': payment.payment_reference,
+            'transfer_reference': payment.payment_details.get('transfer_reference', 'N/A'),
+            'submitted_at': timezone.now(),
+            'site_name': 'Vehicle Insurance Pro',
+        }
+        
+        html_content = render_to_string('core/emails/bank_transfer_confirmation.html', context)
+        text_content = strip_tags(html_content)
+        
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=django_settings.DEFAULT_FROM_EMAIL,
+            to=[user.email],
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send(fail_silently=False)
+        
+        logger.info(f"Bank transfer confirmation email sent to {user.email}")
+        
+    except Exception as e:
+        logger.error(f"Failed to send bank transfer confirmation email: {str(e)}")
+
+
+# ============================================
+# PAYMENT CALLBACK AND VERIFICATION
+# ============================================
+
+@csrf_exempt
+def payment_callback(request):
+    """Handle Flutterwave payment callback"""
+    logger.info(f"Payment Callback Received: {request.GET}")
+    
+    if request.method == 'GET':
+        tx_ref = request.GET.get('tx_ref')
+        transaction_id = request.GET.get('transaction_id')
+        status = request.GET.get('status')
+        
+        if not tx_ref:
+            logger.error("No tx_ref in callback")
+            messages.error(request, 'Invalid payment callback.')
+            return redirect('core:dashboard')
+        
+        try:
+            parts = tx_ref.split('-')
+            if len(parts) >= 2:
+                payment_transaction_id = parts[1]
+                payment = Payment.objects.get(transaction_id=payment_transaction_id)
+            else:
+                logger.error(f"Invalid tx_ref format: {tx_ref}")
+                messages.error(request, 'Invalid transaction reference.')
+                return redirect('core:dashboard')
+        except Payment.DoesNotExist:
+            logger.error(f"Payment not found for tx_ref: {tx_ref}")
+            messages.error(request, 'Payment record not found.')
+            return redirect('core:dashboard')
+        
+        if payment.status == 'completed':
+            logger.info(f"Payment {payment.id} already completed")
+            messages.info(request, 'This payment has already been completed.')
+            return redirect('core:payment_success', payment_id=payment.id)
+        
+        if status == 'successful' and transaction_id:
+            logger.info(f"Verifying transaction: {transaction_id}")
+            
+            verification_result = verify_flutterwave_transaction(transaction_id, payment)
+            
+            if verification_result['success']:
+                logger.info(f"Payment {payment.id} verified successfully")
+                
+                # THIS IS WHERE THE MAGIC HAPPENS
+                handle_successful_payment(payment, verification_result['data'])
+                
+                # Increment promo code usage if applicable
+                if 'pending_promo' in request.session:
+                    try:
+                        promo = PromoCode.objects.get(code=request.session['pending_promo'])
+                        promo.used_count += 1
+                        promo.save()
+                    except PromoCode.DoesNotExist:
+                        pass
+                    del request.session['pending_promo']
+                
+                messages.success(request, 'Payment successful! Your policy is now active.')
+                
+                # Redirect based on payment type
+                payment_type = payment.payment_details.get('type') if payment.payment_details else None
+                if payment_type in ['installment', 'down_payment']:
+                    return redirect('core:my_installments')
+                else:
+                    return redirect('core:payment_success', payment_id=payment.id)
+            else:
+                logger.warning(f"Payment verification failed: {verification_result.get('message')}")
+                payment.status = 'failed'
+                payment.failure_reason = verification_result.get('message', 'Payment verification failed')
+                payment.save()
+                
+                messages.error(request, f'Payment verification failed: {payment.failure_reason}')
+                return redirect('core:payment_failed', payment_id=payment.id)
+        else:
+            logger.info(f"Payment not successful. Status: {status}")
+            payment.status = 'failed'
+            payment.failure_reason = 'Payment was cancelled or failed'
             payment.save()
             
-            # Notify admin
-            admin_users = User.objects.filter(role='admin', is_active=True)
-            for admin in admin_users:
-                Notification.objects.create(
-                    user=admin,
-                    title='Bank Transfer Payment Submitted',
-                    message=f'{request.user.get_full_name()} has submitted bank transfer payment of ₦{payment.amount:,.2f} for verification.',
-                    notification_type='payment_confirmation',
-                    data={'payment_id': str(payment.id)}
-                )
-            
-            messages.success(request, 'Your payment has been submitted for verification. We will confirm within 24 hours.')
-            return redirect('core:payment_status', payment_id=payment.id)
+            messages.error(request, 'Payment was not successful. Please try again.')
+            return redirect('core:payment_failed', payment_id=payment.id)
     
-    return redirect('core:bank_transfer_instructions', payment_id=payment_id)
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
 
+
+def verify_flutterwave_transaction(transaction_id, payment):
+    """Verify a transaction with Flutterwave API"""
+    settings = InsuranceSettings.get_settings()
+    
+    verify_url = f"https://api.flutterwave.com/v3/transactions/{transaction_id}/verify"
+    
+    headers = {
+        'Authorization': f'Bearer {settings.flutterwave_secret_key}',
+        'Content-Type': 'application/json'
+    }
+    
+    try:
+        response = requests.get(verify_url, headers=headers, timeout=30)
+        data = response.json()
+        
+        logger.info(f"Flutterwave Verification Response: {data}")
+        
+        if data.get('status') == 'success':
+            tx_data = data.get('data', {})
+            
+            expected_amount = float(payment.amount)
+            actual_amount = tx_data.get('amount', 0)
+            
+            if abs(actual_amount - expected_amount) > 1:
+                logger.warning(f"Amount mismatch: Expected {expected_amount}, got {actual_amount}")
+                return {
+                    'success': False,
+                    'message': f"Amount mismatch. Expected ₦{expected_amount:,.2f}, got ₦{actual_amount:,.2f}"
+                }
+            
+            if tx_data.get('currency') != 'NGN':
+                logger.warning(f"Currency mismatch: Expected NGN, got {tx_data.get('currency')}")
+                return {
+                    'success': False,
+                    'message': f"Currency mismatch. Expected NGN, got {tx_data.get('currency')}"
+                }
+            
+            if tx_data.get('status') != 'successful':
+                logger.warning(f"Transaction not successful: {tx_data.get('status')}")
+                return {
+                    'success': False,
+                    'message': f"Transaction not successful. Status: {tx_data.get('status')}"
+                }
+            
+            return {
+                'success': True,
+                'data': tx_data,
+                'message': 'Transaction verified successfully'
+            }
+        else:
+            return {
+                'success': False,
+                'message': data.get('message', 'Transaction verification failed')
+            }
+            
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Flutterwave API Error: {str(e)}")
+        return {
+            'success': False,
+            'message': 'Unable to verify payment at this time. Please contact support.'
+        }
+    except Exception as e:
+        logger.error(f"Verification Error: {str(e)}")
+        return {
+            'success': False,
+            'message': 'An error occurred during verification.'
+        }
+
+
+def handle_successful_payment(payment, transaction_data):
+    """Handle successful payment - activates policy and sends notifications"""
+    logger.info(f"Handling successful payment for payment {payment.id}")
+    
+    payment.status = 'completed'
+    payment.paid_at = timezone.now()
+    payment.payment_details = transaction_data
+    payment.save()
+    
+    if payment.payment_details.get('type') == 'installment':
+        installment_id = payment.payment_details.get('installment_id')
+        if installment_id:
+            try:
+                installment = Installment.objects.get(id=installment_id)
+                installment.status = 'paid'
+                installment.paid_date = timezone.now()
+                installment.amount_paid = payment.amount
+                installment.payment = payment
+                installment.save()
+                
+                plan = installment.installment_plan
+                
+                if not plan.installments.filter(status='pending').exists():
+                    plan.status = 'completed'
+                    plan.save()
+                    
+                    plan.policy.status = 'active'
+                    plan.policy.save()
+                    
+                    try:
+                        generate_policy_certificate(plan.policy)
+                    except Exception as e:
+                        logger.error(f"Certificate generation error: {e}")
+                
+                next_installment = plan.installments.filter(status='pending').order_by('due_date').first()
+                if next_installment:
+                    plan.next_due_date = next_installment.due_date
+                    plan.save()
+                    
+            except Installment.DoesNotExist:
+                logger.error(f"Installment not found: {installment_id}")
+    
+    elif payment.payment_details.get('type') == 'down_payment':
+        plan_id = payment.payment_details.get('installment_plan_id')
+        if plan_id:
+            try:
+                plan = InstallmentPlan.objects.get(id=plan_id)
+                
+                first_installment = plan.installments.filter(installment_number=1).first()
+                if first_installment:
+                    first_installment.status = 'paid'
+                    first_installment.paid_date = timezone.now()
+                    first_installment.amount_paid = payment.amount
+                    first_installment.payment = payment
+                    first_installment.save()
+                
+                plan.policy.status = 'active'
+                plan.policy.save()
+                
+                try:
+                    generate_policy_certificate(plan.policy)
+                except Exception as e:
+                    logger.error(f"Certificate generation error: {e}")
+                
+                next_installment = plan.installments.filter(status='pending').order_by('due_date').first()
+                if next_installment:
+                    plan.next_due_date = next_installment.due_date
+                    plan.save()
+                    
+            except InstallmentPlan.DoesNotExist:
+                logger.error(f"Installment plan not found: {plan_id}")
+    
+    else:
+        payment.policy.status = 'active'
+        payment.policy.save()
+        
+        try:
+            generate_policy_certificate(payment.policy)
+        except Exception as e:
+            logger.error(f"Certificate generation error: {e}")
+    
+    send_payment_success_notifications(payment)
+    
+    log_user_activity(
+        payment.user, 
+        'payment_completed', 
+        None,
+        {
+            'payment_id': str(payment.id),
+            'amount': str(payment.amount),
+            'transaction_id': transaction_data.get('id', '')
+        }
+    )
+    
+    logger.info(f"Payment {payment.id} successfully processed")
+
+
+def send_payment_success_notifications(payment):
+    """Send payment success notifications to user and staff"""
+    try:
+        Notification.objects.create(
+            user=payment.user,
+            title='Payment Successful',
+            message=f'Your payment of ₦{payment.amount:,.2f} for policy #{payment.policy.policy_number} was successful.',
+            notification_type='payment_confirmation',
+            data={
+                'payment_id': str(payment.id),
+                'policy_id': str(payment.policy.id),
+                'amount': str(payment.amount)
+            }
+        )
+        
+        send_customer_payment_email(payment)
+        send_staff_payment_email(payment)
+        
+        logger.info(f"Payment notifications sent for payment {payment.id}")
+        
+    except Exception as e:
+        logger.error(f"Error sending payment notifications: {str(e)}")
+
+
+def send_customer_payment_email(payment):
+    """Send payment confirmation email to customer"""
+    try:
+        subject = f'Payment Confirmation - {payment.policy.policy_number}'
+        
+        context = {
+            'user': payment.user,
+            'payment': payment,
+            'policy': payment.policy,
+            'amount': payment.amount,
+            'transaction_id': payment.payment_details.get('id', payment.transaction_id),
+            'payment_date': payment.paid_at,
+            'site_name': 'Vehicle Insurance Pro',
+        }
+        
+        html_content = render_to_string('core/emails/payment_success_customer.html', context)
+        text_content = strip_tags(html_content)
+        
+        send_mail(
+            subject=subject,
+            message=text_content,
+            from_email=django_settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[payment.user.email],
+            html_message=html_content,
+            fail_silently=False,
+        )
+        
+        logger.info(f"Customer payment email sent to {payment.user.email}")
+        
+    except Exception as e:
+        logger.error(f"Failed to send customer payment email: {str(e)}")
+
+
+def send_staff_payment_email(payment):
+    """Send payment notification email to staff"""
+    try:
+        staff_emails = User.objects.filter(
+            role__in=['admin', 'support'],
+            is_active=True
+        ).values_list('email', flat=True)
+        
+        if not staff_emails:
+            return
+        
+        subject = f'[Payment Received] {payment.user.get_full_name() or payment.user.email} - ₦{payment.amount:,.2f}'
+        
+        context = {
+            'payment': payment,
+            'policy': payment.policy,
+            'customer': payment.user,
+            'amount': payment.amount,
+            'transaction_id': payment.payment_details.get('id', payment.transaction_id),
+            'payment_date': payment.paid_at,
+            'payment_method': payment.get_payment_method_display(),
+            'site_name': 'Vehicle Insurance Pro',
+        }
+        
+        html_content = render_to_string('core/emails/payment_success_staff.html', context)
+        text_content = strip_tags(html_content)
+        
+        send_mail(
+            subject=subject,
+            message=text_content,
+            from_email=django_settings.DEFAULT_FROM_EMAIL,
+            recipient_list=list(staff_emails),
+            html_message=html_content,
+            fail_silently=False,
+        )
+        
+        logger.info(f"Staff payment email sent to {len(staff_emails)} recipients")
+        
+    except Exception as e:
+        logger.error(f"Failed to send staff payment email: {str(e)}")
+
+
+# ============================================
+# PAYMENT STATUS PAGES
+# ============================================
 
 @login_required
 def payment_status(request, payment_id):
-    """View payment status"""
+    """View payment status page"""
     payment = get_object_or_404(Payment, id=payment_id, user=request.user)
     
     context = {
@@ -929,30 +1566,795 @@ def payment_status(request, payment_id):
     return render(request, 'core/customer/payment_status.html', context)
 
 
+@login_required
+def payment_success(request, payment_id):
+    """Display payment success page"""
+    payment = get_object_or_404(Payment, id=payment_id, user=request.user)
+    
+    certificate = None
+    try:
+        certificate = PolicyCertificate.objects.filter(policy=payment.policy).first()
+    except:
+        pass
+    
+    context = {
+        'payment': payment,
+        'policy': payment.policy,
+        'certificate': certificate,
+    }
+    
+    return render(request, 'core/customer/payment_success.html', context)
+
+
+@login_required
+def payment_failed(request, payment_id):
+    """Display payment failed page"""
+    payment = get_object_or_404(Payment, id=payment_id, user=request.user)
+    
+    context = {
+        'payment': payment,
+        'policy': payment.policy,
+        'failure_reason': payment.failure_reason or 'Payment was not completed',
+    }
+    
+    return render(request, 'core/customer/payment_failed.html', context)
+
+
+@login_required
+def verify_payment(request, payment_id):
+    """Manual payment verification endpoint (for AJAX polling)"""
+    payment = get_object_or_404(Payment, id=payment_id, user=request.user)
+    
+    if payment.status == 'completed':
+        return JsonResponse({'success': True, 'status': 'completed'})
+    elif payment.status == 'failed':
+        return JsonResponse({'success': False, 'status': 'failed', 'message': payment.failure_reason})
+    elif payment.status == 'pending_verification':
+        return JsonResponse({'success': True, 'status': 'pending_verification', 'message': 'Payment under verification'})
+    else:
+        return JsonResponse({'success': True, 'status': 'pending', 'message': 'Payment pending'})
+
+
+# ============================================
+# INSTALLMENT VIEWS
+# ============================================
+
+
+def setup_installment_payment(request, policy, total_premium, payment_method='card'):
+    """
+    Setup installment payment plan for a policy
+    Supports both manual and automatic recurring payments
+    """
+    from decimal import Decimal
+    
+    try:
+        frequency = request.POST.get('installment_frequency', 'monthly')
+        num_installments = int(request.POST.get('num_installments', 3))
+        down_payment_percentage = Decimal(request.POST.get('down_payment_percentage', '30'))
+        payment_mode = request.POST.get('payment_mode', 'manual')
+        auto_debit = request.POST.get('auto_debit') == 'on'
+        
+        # Validate inputs
+        if num_installments < 2 or num_installments > 12:
+            return {'success': False, 'message': 'Number of installments must be between 2 and 12'}
+        
+        if down_payment_percentage < 20 or down_payment_percentage > 50:
+            return {'success': False, 'message': 'Down payment must be between 20% and 50%'}
+        
+        # Calculate amounts
+        down_payment = total_premium * (down_payment_percentage / Decimal('100'))
+        financed_amount = total_premium - down_payment
+        
+        # Apply interest (5% per annum)
+        interest_rate = Decimal('5')
+        months = 12 if frequency == 'monthly' else 4 if frequency == 'quarterly' else 2
+        total_interest = financed_amount * (interest_rate / Decimal('100')) * (Decimal(num_installments) / Decimal(months))
+        
+        total_payable = financed_amount + total_interest
+        installment_amount = total_payable / Decimal(num_installments)
+        
+        # Create installment plan
+        plan = InstallmentPlan.objects.create(
+            policy=policy,
+            user=request.user,
+            total_premium=total_premium,
+            down_payment=down_payment,
+            financed_amount=financed_amount,
+            interest_rate=interest_rate,
+            total_interest=total_interest,
+            total_payable=total_payable,
+            frequency=frequency,
+            number_of_installments=num_installments,
+            installment_amount=installment_amount,
+            payment_mode=payment_mode,
+            auto_debit_enabled=auto_debit,
+            start_date=timezone.now().date(),
+            next_due_date=timezone.now().date() + timezone.timedelta(days=30),
+            next_auto_debit_date=timezone.now().date() + timezone.timedelta(days=30) if auto_debit else None,
+            status='active'
+        )
+        
+        # Create Flutterwave payment plan if auto-debit is enabled
+        if auto_debit:
+            plan_result = plan.create_flutterwave_payment_plan()
+            if not plan_result['success']:
+                # Fallback to manual if plan creation fails
+                plan.payment_mode = 'manual'
+                plan.auto_debit_enabled = False
+                plan.save()
+        
+        # Create individual installments
+        for i in range(num_installments):
+            due_date = timezone.now().date() + timezone.timedelta(days=30 * (i + 1))
+            
+            principal = financed_amount / Decimal(num_installments)
+            interest = total_interest / Decimal(num_installments)
+            
+            Installment.objects.create(
+                installment_plan=plan,
+                installment_number=i + 1,
+                principal_amount=principal,
+                interest_amount=interest,
+                total_amount=installment_amount,
+                due_date=due_date,
+                status='pending'
+            )
+        
+        # Create payment for down payment
+        if down_payment > 0:
+            transaction_id = Payment.generate_unique_transaction_id('TXN-DP')
+            payment_reference = Payment.generate_unique_reference('PAY-DP')
+            
+            down_payment_record = Payment.objects.create(
+                policy=policy,
+                user=request.user,
+                amount=down_payment,
+                payment_method=payment_method,
+                transaction_id=transaction_id,
+                payment_reference=payment_reference,
+                status='pending',
+                payment_details={
+                    'type': 'down_payment', 
+                    'installment_plan_id': str(plan.id),
+                    'total_installments': num_installments,
+                    'installment_frequency': frequency,
+                    'payment_mode': payment_mode,
+                    'auto_debit': auto_debit
+                }
+            )
+            
+            # Get first installment
+            first_installment = plan.installments.filter(installment_number=1).first()
+            
+            # Link payment to first installment
+            if first_installment:
+                first_installment.payment = down_payment_record
+                first_installment.save()
+            
+            return {
+                'success': True,
+                'installment_id': first_installment.id,
+                'down_payment_id': down_payment_record.id,
+                'plan': plan,
+                'payment_mode': payment_mode,
+                'auto_debit': auto_debit
+            }
+        
+        return {'success': True, 'installment_id': plan.installments.first().id}
+        
+    except Exception as e:
+        import traceback
+        logger.error(f"Installment Setup Error: {traceback.format_exc()}")
+        return {'success': False, 'message': f'Error setting up installment plan: {str(e)}'}
+    
+    
+
+# apps/core/views.py - Auto-debit processing
+
+def process_auto_debit(installment):
+    """Process automatic debit for an installment using saved card"""
+    import requests
+    
+    plan = installment.installment_plan
+    
+    if not plan.auto_debit_enabled or not plan.card_token:
+        return {'success': False, 'message': 'Auto-debit not configured'}
+    
+    settings = InsuranceSettings.get_settings()
+    
+    # Update installment status
+    installment.status = 'processing'
+    installment.auto_debit_attempted = True
+    installment.auto_debit_attempts += 1
+    installment.last_auto_debit_attempt = timezone.now()
+    installment.save()
+    
+    # Prepare charge payload
+    url = "https://api.flutterwave.com/v3/charges?type=card"
+    
+    payload = {
+        "token": plan.card_token,
+        "currency": "NGN",
+        "amount": float(installment.total_amount),
+        "email": plan.user.email,
+        "tx_ref": f"AUTO-INST-{installment.id}-{timezone.now().timestamp()}",
+        "fullname": plan.user.get_full_name() or plan.user.email,
+        "redirect_url": django_settings.SITE_URL + "/payment/callback/",
+        "meta": {
+            "installment_id": str(installment.id),
+            "plan_id": str(plan.id),
+            "installment_number": installment.installment_number
+        }
+    }
+    
+    headers = {
+        'Authorization': f'Bearer {settings.flutterwave_secret_key}',
+        'Content-Type': 'application/json'
+    }
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        data = response.json()
+        
+        if data.get('status') == 'success' and data.get('data', {}).get('status') == 'successful':
+            # Payment successful
+            transaction_id = Payment.generate_unique_transaction_id('TXN-AUTO')
+            payment_reference = Payment.generate_unique_reference('PAY-AUTO')
+            
+            payment = Payment.objects.create(
+                policy=plan.policy,
+                user=plan.user,
+                amount=installment.total_amount,
+                payment_method='card',
+                transaction_id=transaction_id,
+                payment_reference=payment_reference,
+                status='completed',
+                paid_at=timezone.now(),
+                payment_details={
+                    'type': 'installment',
+                    'installment_id': str(installment.id),
+                    'installment_number': installment.installment_number,
+                    'installment_plan_id': str(plan.id),
+                    'auto_debit': True,
+                    'flutterwave_response': data.get('data')
+                }
+            )
+            
+            # Update installment
+            installment.status = 'paid'
+            installment.paid_date = timezone.now()
+            installment.amount_paid = installment.total_amount
+            installment.payment = payment
+            installment.save()
+            
+            # Update plan
+            plan.last_auto_debit_date = timezone.now()
+            plan.auto_debit_attempts = 0
+            plan.save()
+            
+            # Update next due date
+            next_installment = plan.installments.filter(status='pending').order_by('due_date').first()
+            if next_installment:
+                plan.next_due_date = next_installment.due_date
+                plan.next_auto_debit_date = next_installment.due_date
+                plan.save()
+            
+            # Check if all installments paid
+            if not plan.installments.filter(status='pending').exists():
+                plan.status = 'completed'
+                plan.save()
+                
+                if plan.policy.status != 'active':
+                    plan.policy.status = 'active'
+                    plan.policy.save()
+                    generate_policy_certificate(plan.policy)
+            
+            # Send notification
+            Notification.objects.create(
+                user=plan.user,
+                title='Auto-Debit Successful',
+                message=f'Your auto-debit payment of ₦{installment.total_amount:,.2f} for installment #{installment.installment_number} was successful.',
+                notification_type='payment_confirmation',
+                data={'installment_id': str(installment.id)}
+            )
+            
+            return {'success': True, 'message': 'Auto-debit successful'}
+            
+        else:
+            # Payment failed
+            installment.status = 'failed' if installment.auto_debit_attempts >= plan.max_auto_debit_attempts else 'pending'
+            installment.auto_debit_error = data.get('message', 'Payment failed')
+            installment.save()
+            
+            plan.auto_debit_attempts += 1
+            
+            # Notify user of failure
+            Notification.objects.create(
+                user=plan.user,
+                title='Auto-Debit Failed',
+                message=f'Your auto-debit payment of ₦{installment.total_amount:,.2f} for installment #{installment.installment_number} failed. Please update your payment method or pay manually.',
+                notification_type='payment_confirmation',
+                data={'installment_id': str(installment.id)}
+            )
+            
+            return {'success': False, 'message': data.get('message', 'Payment failed')}
+            
+    except Exception as e:
+        logger.error(f"Auto-debit error: {str(e)}")
+        installment.status = 'pending'
+        installment.auto_debit_error = str(e)
+        installment.save()
+        return {'success': False, 'message': str(e)}
+
+
+def run_auto_debit_job():
+    """Run auto-debit for all due installments - Call this via cron/scheduler"""
+    today = timezone.now().date()
+    
+    # Get pending installments due today or earlier
+    due_installments = Installment.objects.filter(
+        status='pending',
+        due_date__lte=today,
+        installment_plan__auto_debit_enabled=True,
+        installment_plan__status='active'
+    ).select_related('installment_plan', 'installment_plan__user')
+    
+    results = []
+    for installment in due_installments:
+        # Skip if max attempts reached
+        if installment.auto_debit_attempts >= installment.installment_plan.max_auto_debit_attempts:
+            continue
+        
+        result = process_auto_debit(installment)
+        results.append({
+            'installment_id': str(installment.id),
+            'success': result.get('success', False),
+            'message': result.get('message', '')
+        })
+    
+    return results
+
+
+
+@login_required
+def pay_installment(request, installment_id):
+    """Pay an individual installment"""
+    installment = get_object_or_404(
+        Installment.objects.select_related('installment_plan', 'installment_plan__policy'), 
+        id=installment_id, 
+        installment_plan__user=request.user
+    )
+    
+    plan = installment.installment_plan
+    policy = plan.policy
+    
+    # Check if already paid
+    if installment.status == 'paid':
+        messages.info(request, 'This installment has already been paid.')
+        return redirect('core:my_installments')
+    
+    # Check if policy is still active
+    if policy.status not in ['active', 'draft']:
+        messages.warning(request, 'This policy is no longer active.')
+        return redirect('core:my_installments')
+    
+    if request.method == 'POST':
+        payment_method = request.POST.get('payment_method', 'card')
+        
+        try:
+            # Use model method for unique references
+            transaction_id = Payment.generate_unique_transaction_id('TXN-INST')
+            payment_reference = Payment.generate_unique_reference('PAY-INST')
+            
+            payment = Payment.objects.create(
+                policy=policy,
+                user=request.user,
+                amount=installment.total_amount,
+                payment_method=payment_method,
+                transaction_id=transaction_id,
+                payment_reference=payment_reference,
+                status='pending',
+                payment_details={
+                    'type': 'installment',
+                    'installment_id': str(installment.id),
+                    'installment_number': installment.installment_number,
+                    'installment_plan_id': str(plan.id),
+                    'total_installments': plan.number_of_installments
+                }
+            )
+            
+            # Link payment to installment
+            installment.payment = payment
+            installment.save()
+            
+            # Log activity
+            log_user_activity(request.user, 'initiate_installment_payment', request, {
+                'installment_id': str(installment.id),
+                'payment_id': str(payment.id),
+                'amount': str(installment.total_amount),
+                'installment_number': installment.installment_number
+            })
+            
+            messages.info(request, f'Please complete your payment of ₦{installment.total_amount:,.2f} to continue.')
+            
+            # Redirect to payment processing
+            if payment_method == 'card':
+                return redirect('core:process_card_payment', payment_id=payment.id)
+            elif payment_method == 'bank_transfer':
+                return redirect('core:bank_transfer_instructions', payment_id=payment.id)
+            else:
+                return redirect('core:payment_page', payment_id=payment.id)
+                
+        except Exception as e:
+            logger.error(f"Error creating installment payment: {str(e)}")
+            messages.error(request, 'An error occurred. Please try again.')
+            return redirect('core:pay_installment', installment_id=installment.id)
+    
+    context = {
+        'installment': installment,
+        'plan': plan,
+        'policy': policy,
+        'next_due_date': plan.next_due_date,
+        'remaining_installments': plan.installments.filter(status='pending').count(),
+        'total_remaining': plan.get_remaining_amount(),
+    }
+    
+    return render(request, 'core/customer/pay_installment.html', context)
+
+
+
+def handle_successful_payment(payment, transaction_data):
+    """
+    Handle successful payment - activates policy and sends notifications
+    THIS IS ONLY CALLED AFTER SUCCESSFUL VERIFICATION
+    """
+    logger.info(f"Handling successful payment for payment {payment.id}")
+    
+    # Update payment record
+    payment.status = 'completed'
+    payment.paid_at = timezone.now()
+    if not payment.payment_details:
+        payment.payment_details = {}
+    payment.payment_details.update(transaction_data)
+    payment.save()
+    
+    policy = payment.policy
+    
+    # Check payment type from payment_details
+    payment_type = payment.payment_details.get('type') if payment.payment_details else None
+    
+    if payment_type == 'installment':
+        # Handle regular installment payment
+        installment_id = payment.payment_details.get('installment_id')
+        if installment_id:
+            try:
+                installment = Installment.objects.get(id=installment_id)
+                installment.status = 'paid'
+                installment.paid_date = timezone.now()
+                installment.amount_paid = payment.amount
+                installment.payment = payment
+                installment.save()
+                
+                plan = installment.installment_plan
+                
+                logger.info(f"Installment {installment.installment_number} paid for plan {plan.plan_number}")
+                
+                # Check if all installments are paid
+                pending_count = plan.installments.filter(status='pending').count()
+                if pending_count == 0:
+                    plan.status = 'completed'
+                    plan.save()
+                    
+                    # Activate policy if all installments paid
+                    if policy.status != 'active':
+                        policy.status = 'active'
+                        policy.save()
+                        logger.info(f"Policy {policy.policy_number} activated after all installments paid")
+                    
+                    # Generate certificate
+                    try:
+                        generate_policy_certificate(policy)
+                    except Exception as e:
+                        logger.error(f"Certificate generation error: {e}")
+                
+                # Update next due date
+                next_installment = plan.installments.filter(status='pending').order_by('due_date').first()
+                if next_installment:
+                    plan.next_due_date = next_installment.due_date
+                    plan.save()
+                    
+            except Installment.DoesNotExist:
+                logger.error(f"Installment not found: {installment_id}")
+    
+    elif payment_type == 'down_payment':
+        # Handle down payment for installment plan
+        plan_id = payment.payment_details.get('installment_plan_id')
+        if plan_id:
+            try:
+                plan = InstallmentPlan.objects.get(id=plan_id)
+                
+                # Mark first installment as paid
+                first_installment = plan.installments.filter(installment_number=1).first()
+                if first_installment:
+                    first_installment.status = 'paid'
+                    first_installment.paid_date = timezone.now()
+                    first_installment.amount_paid = payment.amount
+                    first_installment.payment = payment
+                    first_installment.save()
+                    logger.info(f"First installment marked as paid for down payment")
+                
+                # Activate policy after down payment
+                if policy.status != 'active':
+                    policy.status = 'active'
+                    policy.save()
+                    logger.info(f"Policy {policy.policy_number} activated after down payment")
+                
+                # Generate certificate after down payment
+                try:
+                    generate_policy_certificate(policy)
+                except Exception as e:
+                    logger.error(f"Certificate generation error: {e}")
+                
+                # Update next due date for remaining installments
+                next_installment = plan.installments.filter(status='pending').order_by('due_date').first()
+                if next_installment:
+                    plan.next_due_date = next_installment.due_date
+                    plan.save()
+                    
+            except InstallmentPlan.DoesNotExist:
+                logger.error(f"Installment plan not found: {plan_id}")
+    
+    else:
+        # Full payment - activate policy immediately
+        if policy.status != 'active':
+            policy.status = 'active'
+            policy.save()
+            logger.info(f"Policy {policy.policy_number} activated after full payment")
+        
+        # Generate certificate
+        try:
+            generate_policy_certificate(policy)
+        except Exception as e:
+            logger.error(f"Certificate generation error: {e}")
+    
+    # Send notifications
+    send_payment_success_notifications(payment)
+    
+    # Log activity
+    log_user_activity(
+        payment.user, 
+        'payment_completed', 
+        None,
+        {
+            'payment_id': str(payment.id),
+            'amount': str(payment.amount),
+            'payment_type': payment_type or 'full',
+            'transaction_id': transaction_data.get('id', '')
+        }
+    )
+    
+    logger.info(f"Payment {payment.id} successfully processed")
+    
+    
+# apps/core/views.py - Manage auto-debit settings
+
+@login_required
+def manage_auto_debit(request, plan_id):
+    """Enable/disable auto-debit for an installment plan"""
+    plan = get_object_or_404(InstallmentPlan, id=plan_id, user=request.user)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'enable':
+            # Create Flutterwave payment plan
+            result = plan.create_flutterwave_payment_plan()
+            if result['success']:
+                plan.auto_debit_enabled = True
+                plan.payment_mode = 'auto'
+                plan.save()
+                messages.success(request, 'Auto-debit enabled successfully!')
+            else:
+                messages.error(request, f'Failed to enable auto-debit: {result["message"]}')
+                
+        elif action == 'disable':
+            plan.auto_debit_enabled = False
+            plan.payment_mode = 'manual'
+            plan.save()
+            messages.success(request, 'Auto-debit disabled. You will need to pay manually.')
+            
+        elif action == 'update_card':
+            # Redirect to card update page
+            return redirect('core:update_payment_card', plan_id=plan.id)
+        
+        return redirect('core:my_installment_detail', plan_id=plan.id)
+    
+    context = {
+        'plan': plan,
+    }
+    
+    return render(request, 'core/customer/manage_auto_debit.html', context)
+
+
+@login_required
+def update_payment_card(request, plan_id):
+    """Update card for auto-debit"""
+    plan = get_object_or_404(InstallmentPlan, id=plan_id, user=request.user)
+    settings = InsuranceSettings.get_settings()
+    
+    context = {
+        'plan': plan,
+        'settings': settings,
+        'public_key': settings.flutterwave_public_key,
+    }
+    
+    return render(request, 'core/customer/update_payment_card.html', context)
+
+
+
+
+@login_required
+@require_http_methods(["POST"])
+def save_card_token(request):
+    """Save card token after successful verification"""
+    import json
+    import requests
+    
+    try:
+        data = json.loads(request.body)
+        transaction_id = data.get('transaction_id')
+        plan_id = data.get('plan_id')
+        
+        plan = get_object_or_404(InstallmentPlan, id=plan_id, user=request.user)
+        settings = InsuranceSettings.get_settings()
+        
+        # Verify transaction with Flutterwave
+        verify_url = f"https://api.flutterwave.com/v3/transactions/{transaction_id}/verify"
+        headers = {'Authorization': f'Bearer {settings.flutterwave_secret_key}'}
+        
+        response = requests.get(verify_url, headers=headers)
+        result = response.json()
+        
+        if result.get('status') == 'success':
+            tx_data = result.get('data', {})
+            card_data = tx_data.get('card', {})
+            card_token = card_data.get('token') or tx_data.get('card_token')
+            
+            if card_token:
+                plan.card_token = card_token
+                plan.save()
+                return JsonResponse({'success': True, 'message': 'Card saved successfully'})
+        
+        return JsonResponse({'success': False, 'message': 'Could not retrieve card token'})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@login_required
+def my_installments(request):
+    """View user's installment plans"""
+    from django.db.models import Sum  # Local import as backup
+    
+    plans = InstallmentPlan.objects.filter(user=request.user).prefetch_related(
+        'installments'
+    ).order_by('-created_at')
+    
+    # Get all installments for this user
+    installments = Installment.objects.filter(
+        installment_plan__user=request.user
+    ).select_related('installment_plan', 'installment_plan__policy', 'payment').order_by('due_date')
+    
+    # Upcoming/pending installments (not overdue)
+    pending_installments = installments.filter(
+        status='pending',
+        due_date__gte=timezone.now().date()
+    ).order_by('due_date')
+    
+    # Overdue installments
+    overdue_installments = installments.filter(
+        status='pending',
+        due_date__lt=timezone.now().date()
+    )
+    
+    # Paid installments
+    paid_installments = installments.filter(status='paid').order_by('-paid_date')
+    
+    # Calculate totals - using .aggregate() with Sum
+    total_pending = pending_installments.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+    total_overdue = overdue_installments.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+    total_paid = paid_installments.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0')
+    
+    context = {
+        'plans': plans,
+        'pending_installments': pending_installments,
+        'overdue_installments': overdue_installments,
+        'paid_installments': paid_installments,
+        'total_pending': total_pending,
+        'total_overdue': total_overdue,
+        'total_paid': total_paid,
+        'today': timezone.now().date(),
+    }
+    
+    return render(request, 'core/customer/my_installments.html', context)
+
+
+@login_required
+def installment_plan_detail(request, plan_id):
+    """View installment plan details"""
+    plan = get_object_or_404(InstallmentPlan, id=plan_id, user=request.user)
+    installments = plan.installments.all().select_related('payment').order_by('installment_number')
+    
+    # Calculate progress
+    paid_count = installments.filter(status='paid').count()
+    total_count = installments.count()
+    progress_percentage = (paid_count / total_count * 100) if total_count > 0 else 0
+    
+    context = {
+        'plan': plan,
+        'installments': installments,
+        'policy': plan.policy,
+        'paid_count': paid_count,
+        'total_count': total_count,
+        'progress_percentage': progress_percentage,
+        'remaining_amount': plan.get_remaining_amount(),
+        'paid_amount': plan.get_paid_amount(),
+        'today': timezone.now().date(),  # ADD THIS LINE
+    }
+    
+    return render(request, 'core/customer/installment_plan_detail.html', context)
+
+
+
+# ============================================
+# POLICY VIEWS
+# ============================================
+# apps/core/views.py - Complete updated my_policies and policy_detail views
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
+from django.db.models import Sum, Q
+from django.core.paginator import Paginator
+from decimal import Decimal
+from datetime import timedelta
+
+from .models import InsurancePolicy, Payment, Claim, DebitCreditNote, PolicyCertificate
 
 
 @login_required
 def my_policies(request):
-    """View user's policies"""
-    policies_list = request.user.policies.all().select_related('vehicle').order_by('-created_at')
+    """View user's policies - Show both draft and active"""
+    policies_list = request.user.policies.all().select_related(
+        'vehicle', 'certificate'
+    ).prefetch_related(
+        'payments',
+        'debit_credit_notes'
+    ).order_by('-created_at')
     
-    # Calculate statistics
-    active_count = policies_list.filter(status='active').count()
-    total_premium = policies_list.filter(status='active').aggregate(Sum('premium_amount'))['premium_amount__sum'] or 0
+    active_policies = policies_list.filter(status='active')
+    active_count = active_policies.count()
+    total_premium = active_policies.aggregate(Sum('premium_amount'))['premium_amount__sum'] or Decimal('0')
     
-    # Count expiring soon (within 30 days)
-    from datetime import timedelta
-    expiring_soon = policies_list.filter(
-        status='active',
+    expiring_soon = active_policies.filter(
         end_date__lte=timezone.now().date() + timedelta(days=30),
         end_date__gte=timezone.now().date()
     ).count()
     
+    draft_policies = policies_list.filter(status='draft')
+    draft_count = draft_policies.count()
+    
+    # Calculate total outstanding balance across all policies
+    total_outstanding = Decimal('0')
+    for policy in policies_list:
+        if policy.status in ['active', 'pending']:
+            total_outstanding += policy.get_outstanding_balance()
+    
     # Filter by status
-    status = request.GET.get('status')
-    status_filter = status
-    if status:
-        policies_list = policies_list.filter(status=status)
+    status_filter = request.GET.get('status')
+    if status_filter:
+        policies_list = policies_list.filter(status=status_filter)
     
     paginator = Paginator(policies_list, 10)
     page = request.GET.get('page')
@@ -961,25 +2363,500 @@ def my_policies(request):
     context = {
         'policies': policies,
         'active_count': active_count,
+        'draft_count': draft_count,
         'total_premium': total_premium,
+        'total_outstanding': total_outstanding,
         'expiring_soon': expiring_soon,
         'status_filter': status_filter,
     }
     
     return render(request, 'core/customer/my_policies.html', context)
 
+
 @login_required
 def policy_detail(request, policy_id):
-    """View policy details"""
-    policy = get_object_or_404(InsurancePolicy, id=policy_id, user=request.user)
-    payments = policy.payments.all()
-    claims = policy.claims.all()
+    """View policy details including debit/credit notes and balance"""
+    from django.db.models import Sum, Q
+    from decimal import Decimal
     
-    return render(request, 'core/customer/policy_detail.html', {
+    policy = get_object_or_404(
+        InsurancePolicy.objects.select_related('vehicle', 'certificate'), 
+        id=policy_id, 
+        user=request.user
+    )
+    
+    # Get payments (exclude credit note payments from regular payments display)
+    payments = policy.payments.all().order_by('-created_at')
+    
+    # Get claims
+    claims = policy.claims.all().order_by('-created_at')
+    
+    # Get debit/credit notes
+    debit_credit_notes = DebitCreditNote.objects.filter(
+        policy=policy
+    ).order_by('-created_at')
+    
+    # Calculate totals for financial summary
+    # Regular payments (completed, positive amounts)
+    total_paid = payments.filter(
+        status='completed', 
+        amount__gt=0,
+        payment_method__in=['card', 'bank_transfer', 'cash', 'mobile_wallet']
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    # Credit note payments (completed, negative amounts)
+    total_credits_applied = payments.filter(
+        status='completed', 
+        amount__lt=0,
+        payment_method='credit_note'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    total_credits_applied = abs(total_credits_applied)
+    
+    # Debit notes (paid/issued)
+    total_debit_notes = debit_credit_notes.filter(
+        note_type='debit',
+        status__in=['paid', 'issued']
+    ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+    
+    # Credit notes (paid/issued)
+    total_credit_notes = debit_credit_notes.filter(
+        note_type='credit',
+        status__in=['paid', 'issued']
+    ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+    
+    # Calculate outstanding balance
+    base_premium = policy.premium_amount
+    outstanding_balance = (
+        base_premium + 
+        total_debit_notes - 
+        total_credit_notes - 
+        total_paid + 
+        total_credits_applied
+    )
+    
+    # Determine payment status
+    if outstanding_balance <= 0:
+        payment_status = 'paid'
+    elif outstanding_balance >= base_premium:
+        payment_status = 'unpaid'
+    else:
+        payment_status = 'partial'
+    
+    # Pending payments
+    pending_payments = payments.filter(status__in=['pending', 'pending_verification'])
+    pending_amount = pending_payments.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    context = {
         'policy': policy,
         'payments': payments,
-        'claims': claims
+        'claims': claims,
+        'debit_credit_notes': debit_credit_notes,
+        'total_paid': total_paid,
+        'total_debit_notes': total_debit_notes,
+        'total_credit_notes': total_credit_notes,
+        'total_credits_applied': total_credits_applied,
+        'outstanding_balance': outstanding_balance,
+        'payment_status': payment_status,
+        'pending_payments': pending_payments,
+        'pending_amount': pending_amount,
+    }
+    
+    return render(request, 'core/customer/policy_detail.html', context)
+
+
+
+
+def regenerate_certificate(policy, generated_by=None):
+    """Regenerate certificate for an existing policy"""
+    from apps.core.models import PublicDocument
+    import os
+    
+    try:
+        # Delete existing certificate
+        if hasattr(policy, 'certificate'):
+            certificate = policy.certificate
+            
+            if certificate.certificate_file:
+                try:
+                    if os.path.isfile(certificate.certificate_file.path):
+                        os.remove(certificate.certificate_file.path)
+                except Exception as e:
+                    print(f"Error deleting certificate file: {e}")
+            
+            if certificate.qr_code:
+                try:
+                    if os.path.isfile(certificate.qr_code.path):
+                        os.remove(certificate.qr_code.path)
+                except Exception as e:
+                    print(f"Error deleting QR code file: {e}")
+            
+            certificate.delete()
+        
+        # Delete associated public document
+        PublicDocument.objects.filter(policy=policy, document_type='certificate').delete()
+        
+        # Generate new certificate
+        return generate_policy_certificate(policy, generated_by)
+        
+    except Exception as e:
+        import traceback
+        print(f"Error in regenerate_certificate: {traceback.format_exc()}")
+        return {
+            'success': False,
+            'error': str(e),
+            'message': f'Failed to regenerate certificate: {str(e)}'
+        }
+
+
+from .Utils.utils import generate_policy_certificate, regenerate_certificate
+from apps.core.models import PolicyCertificate, PublicDocument
+
+@login_required
+def view_certificate(request, certificate_id):
+    """View certificate details"""
+    certificate = get_object_or_404(PolicyCertificate, id=certificate_id)
+    
+    # Check permission
+    if certificate.policy.user != request.user and not request.user.is_staff:
+        messages.error(request, 'You do not have permission to view this certificate.')
+        return redirect('core:dashboard')
+    
+    return render(request, 'core/customer/certificate_detail.html', {
+        'certificate': certificate,
+        'policy': certificate.policy,
     })
+
+
+@login_required
+def download_certificate(request, certificate_id):
+    """Download certificate PDF"""
+    certificate = get_object_or_404(PolicyCertificate, id=certificate_id)
+    
+    # Check permission
+    if certificate.policy.user != request.user and not request.user.is_staff:
+        messages.error(request, 'You do not have permission to download this certificate.')
+        return redirect('core:dashboard')
+    
+    if certificate.certificate_file:
+        response = HttpResponse(certificate.certificate_file, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="certificate_{certificate.policy.policy_number}.pdf"'
+        
+        # Log download
+        DocumentAccessLog.objects.create(
+            document=PublicDocument.objects.filter(policy=certificate.policy, document_type='certificate').first(),
+            user=request.user,
+            action='download',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:255]
+        )
+        
+        return response
+    
+    messages.error(request, 'Certificate file not found.')
+    return redirect('core:my_policies')
+
+
+@login_required
+def my_certificates(request):
+    """View all user certificates"""
+    certificates = PolicyCertificate.objects.filter(
+        policy__user=request.user,
+        status='generated'
+    ).select_related('policy').order_by('-issue_date')
+    
+    # Calculate statistics
+    total_certificates = certificates.count()
+    active_certificates = certificates.filter(policy__status='active').count()
+    expired_certificates = certificates.filter(policy__end_date__lt=timezone.now().date()).count()
+    
+    # Filter by status
+    status_filter = request.GET.get('status')
+    if status_filter == 'active':
+        certificates = certificates.filter(policy__status='active')
+    elif status_filter == 'expired':
+        certificates = certificates.filter(policy__end_date__lt=timezone.now().date())
+    
+    paginator = Paginator(certificates, 10)
+    page = request.GET.get('page')
+    certificates_page = paginator.get_page(page)
+    
+    context = {
+        'certificates': certificates_page,
+        'total_certificates': total_certificates,
+        'active_certificates': active_certificates,
+        'expired_certificates': expired_certificates,
+        'status_filter': status_filter,
+    }
+    
+    return render(request, 'core/customer/my_certificates.html', context)
+
+
+# apps/core/views.py
+
+def verify_certificate_public(request, certificate_number):
+    """Public certificate verification page - no login required"""
+    from apps.core.models import PolicyCertificate
+    from django.utils import timezone
+    import hashlib
+    
+    try:
+        certificate = PolicyCertificate.objects.select_related(
+            'policy', 
+            'policy__user',
+            'policy__vehicle'
+        ).get(
+            certificate_number=certificate_number,
+            status='generated'
+        )
+        policy = certificate.policy
+        
+        # Check if certificate is valid
+        is_valid = policy.status == 'active' and policy.end_date >= timezone.now().date()
+        
+        # Get verification hash from request
+        hash_param = request.GET.get('hash', '')
+        
+        # Verify hash if provided
+        verification_data = f"{certificate_number}|{policy.policy_number}|{policy.user.email}"
+        expected_hash = hashlib.sha256(verification_data.encode()).hexdigest()[:16]
+        
+        is_authentic = (hash_param == expected_hash) if hash_param else True
+        
+        context = {
+            'certificate': certificate,
+            'policy': policy,
+            'is_valid': is_valid,
+            'is_authentic': is_authentic,
+            'verification_date': timezone.now(),
+            # Don't pass user directly - access through policy.user in template
+        }
+        
+        return render(request, 'core/public/verify_certificate.html', context)
+        
+    except PolicyCertificate.DoesNotExist:
+        messages.error(request, 'Certificate not found or has been revoked.')
+        return render(request, 'core/public/verify_certificate.html', {
+            'error': 'Certificate not found',
+            'certificate_number': certificate_number
+        })
+    
+    
+
+def verify_certificate_form(request):
+    """Form to enter certificate number for verification"""
+    if request.method == 'POST':
+        certificate_number = request.POST.get('certificate_number', '').strip()
+        if certificate_number:
+            return redirect('core:verify_certificate_public', certificate_number=certificate_number)
+        messages.error(request, 'Please enter a certificate number')
+    return render(request, 'core/public/verify_certificate_form.html')
+
+
+
+# ============================================
+# CUSTOMER RENEWAL VIEWS
+# ============================================
+
+@login_required
+def renew_policy(request, policy_id):
+    """Renew an expiring policy - Main renewal page"""
+    from decimal import Decimal
+    
+    policy = get_object_or_404(InsurancePolicy, id=policy_id, user=request.user)
+    
+    # Check if policy can be renewed (within 60 days of expiry or already expired)
+    days_to_expiry = (policy.end_date - timezone.now().date()).days
+    if days_to_expiry > 60:
+        messages.error(request, 'Policy can only be renewed within 60 days of expiry.')
+        return redirect('core:policy_detail', policy_id=policy.id)
+    
+    # Get or create renewal record
+    renewal, created = PolicyRenewal.objects.get_or_create(
+        original_policy=policy,
+        defaults={
+            'user': request.user,
+            'original_premium': policy.premium_amount,
+            'renewal_premium': policy.premium_amount,
+            'renewal_date': policy.end_date - timezone.timedelta(days=30),
+            'expiry_date': policy.end_date,
+            'new_start_date': policy.end_date + timezone.timedelta(days=1),
+            'new_end_date': policy.end_date + timezone.timedelta(days=365),
+        }
+    )
+    
+    # Calculate renewal premium with NCB
+    renewal.calculate_renewal_premium()
+    renewal.save()
+    
+    # Calculate age loading for display
+    age_loading = Decimal('0')
+    if policy.vehicle and policy.vehicle.vehicle_age > 5:
+        age_loading = policy.premium_amount * Decimal('0.1')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'accept_renewal':
+            renewal.status = 'accepted'
+            renewal.save()
+            
+            # Create new policy
+            new_policy = InsurancePolicy.objects.create(
+                user=request.user,
+                vehicle=policy.vehicle,
+                policy_type=policy.policy_type,
+                coverage_amount=policy.coverage_amount,
+                premium_amount=renewal.renewal_premium,
+                deductible=policy.deductible,
+                start_date=renewal.new_start_date,
+                end_date=renewal.new_end_date,
+                additional_benefits=policy.additional_benefits,
+                custom_coverage=policy.custom_coverage,
+                terms_accepted=True,
+                status='pending'
+            )
+            
+            # Generate policy document
+            try:
+                from .Utils.utils import generate_policy_document
+                policy_doc = generate_policy_document(new_policy)
+                new_policy.policy_document = policy_doc
+                new_policy.save()
+            except Exception as e:
+                print(f"Error generating policy document: {e}")
+            
+            # Create payment for renewal
+            payment = Payment.objects.create(
+                policy=new_policy,
+                user=request.user,
+                amount=renewal.renewal_premium,
+                payment_method='card',
+                status='pending'
+            )
+            
+            renewal.renewed_policy = new_policy
+            renewal.status = 'renewed'
+            renewal.save()
+            
+            # Update NCB
+            ncb = NoClaimBonus.objects.filter(user=request.user, vehicle=policy.vehicle).first()
+            if ncb:
+                ncb.increment_year()
+            
+            messages.success(request, f'Policy renewed successfully! New policy #{new_policy.policy_number} created.')
+            return redirect('core:payment_page', payment_id=payment.id)
+    
+    context = {
+        'policy': policy,
+        'renewal': renewal,
+        'ncb': NoClaimBonus.objects.filter(user=request.user, vehicle=policy.vehicle).first(),
+        'age_loading': age_loading,
+    }
+    
+    return render(request, 'core/customer/renew_policy.html', context)
+
+
+@login_required
+def accept_renewal(request, renewal_id):
+    """Accept renewal quote and proceed to payment"""
+    renewal = get_object_or_404(PolicyRenewal, id=renewal_id, user=request.user)
+    
+    if request.method == 'POST':
+        renewal.status = 'accepted'
+        renewal.save()
+        
+        # Create new policy
+        new_policy = InsurancePolicy.objects.create(
+            user=request.user,
+            vehicle=renewal.original_policy.vehicle,
+            policy_type=renewal.original_policy.policy_type,
+            coverage_amount=renewal.original_policy.coverage_amount,
+            premium_amount=renewal.renewal_premium,
+            start_date=renewal.new_start_date,
+            end_date=renewal.new_end_date,
+            status='pending'
+        )
+        
+        renewal.renewed_policy = new_policy
+        renewal.status = 'renewed'
+        renewal.save()
+        
+        # Create payment
+        payment = Payment.objects.create(
+            policy=new_policy,
+            user=request.user,
+            amount=renewal.renewal_premium,
+            status='pending'
+        )
+        
+        return redirect('core:payment_page', payment_id=payment.id)
+    
+    return render(request, 'core/accept_renewal.html', {'renewal': renewal})
+
+
+
+
+@login_required
+def request_reinsurance(request, policy_id):
+    """Request reinsurance for a policy"""
+    policy = get_object_or_404(InsurancePolicy, id=policy_id, user=request.user)
+    
+    # Check if policy can be reinsured (active or cancelled)
+    if not policy.can_be_reinsured():
+        messages.error(request, 'This policy cannot be reinsured.')
+        return redirect('core:policy_detail', policy_id=policy.id)
+    
+    # Get active reinsurance treaties
+    active_treaties = ReinsuranceTreaty.objects.filter(
+        status='active',
+        effective_date__lte=timezone.now().date(),
+        expiry_date__gte=timezone.now().date()
+    )
+    
+    if request.method == 'POST':
+        treaty_id = request.POST.get('treaty_id')
+        treaty = get_object_or_404(ReinsuranceTreaty, id=treaty_id, status='active')
+        
+        # Calculate reinsurance
+        placement = PolicyReinsurance.objects.create(
+            policy=policy,
+            treaty=treaty,
+            sum_insured=policy.coverage_amount,
+            placement_date=timezone.now().date()
+        )
+        placement.calculate_cession()
+        
+        # Create debit note for reinsurance premium if applicable
+        if placement.ceded_premium > 0:
+            debit_note = DebitCreditNote.objects.create(
+                policy=policy,
+                user=request.user,
+                note_type='debit',
+                base_amount=placement.ceded_premium,
+                total_amount=placement.ceded_premium,
+                reason='additional_coverage',
+                description=f'Reinsurance placement with {treaty.reinsurer_name}',
+                status='issued',
+                created_by=request.user
+            )
+            debit_note.apply_to_policy()
+        
+        # If policy was cancelled, reactivate it after reinsurance
+        if policy.status == 'cancelled':
+            policy.status = 'active'
+            policy.save()
+            messages.success(request, f'Policy reactivated and reinsured with {treaty.reinsurer_name}!')
+        else:
+            messages.success(request, f'Reinsurance placed successfully with {treaty.reinsurer_name}!')
+        
+        return redirect('core:policy_detail', policy_id=policy.id)
+    
+    context = {
+        'policy': policy,
+        'active_treaties': active_treaties,
+    }
+    
+    return render(request, 'core/customer/request_reinsurance.html', context)
 
 @login_required
 def file_claim(request, policy_id=None):
@@ -989,6 +2866,7 @@ def file_claim(request, policy_id=None):
         if form.is_valid():
             try:
                 policy = form.cleaned_data['policy']
+                vehicle = form.cleaned_data.get('vehicle')
                 
                 # Double check policy belongs to user and is active
                 if policy.user != request.user:
@@ -1003,21 +2881,27 @@ def file_claim(request, policy_id=None):
                 claim.user = request.user
                 claim.status = 'pending'
                 
+                # Use policy vehicle if not explicitly selected
+                if not claim.vehicle and policy.vehicle:
+                    claim.vehicle = policy.vehicle
+                
                 # Initialize empty lists for files
                 claim.documents = []
                 claim.photos = []
+                
+                # Save claim first to get claim_number
+                claim.save()
                 
                 # Handle file uploads
                 uploaded_files = request.FILES.getlist('documents')
                 uploaded_photos = request.FILES.getlist('photos')
                 
                 for file in uploaded_files:
-                    # Save document
                     doc = Document.objects.create(
                         user=request.user,
                         document_type='claim',
                         document_file=file,
-                        name=f"Claim Document - {claim.claim_number if hasattr(claim, 'claim_number') else 'New'}",
+                        name=f"Claim Document - {claim.claim_number}",
                         is_verified=False
                     )
                     claim.documents.append({
@@ -1032,7 +2916,7 @@ def file_claim(request, policy_id=None):
                             user=request.user,
                             document_type='claim',
                             document_file=photo,
-                            name=f"Claim Photo - {claim.claim_number if hasattr(claim, 'claim_number') else 'New'}",
+                            name=f"Claim Photo - {claim.claim_number}",
                             is_verified=False
                         )
                         claim.photos.append({
@@ -1041,23 +2925,14 @@ def file_claim(request, policy_id=None):
                             'url': doc.document_file.url
                         })
                 
-                claim.save()  # This generates claim_number
-                
-                # Update document names with claim number
-                for doc_data in claim.documents:
-                    Document.objects.filter(id=doc_data['id']).update(
-                        name=f"Claim Document - {claim.claim_number}"
-                    )
-                for photo_data in claim.photos:
-                    Document.objects.filter(id=photo_data['id']).update(
-                        name=f"Claim Photo - {claim.claim_number}"
-                    )
+                claim.save()
                 
                 # Log activity
                 log_user_activity(request.user, 'file_claim', request, {
                     'claim_id': str(claim.id),
                     'claim_number': claim.claim_number,
-                    'amount': str(claim.claimed_amount)
+                    'amount': str(claim.claimed_amount),
+                    'vehicle': str(claim.vehicle.id) if claim.vehicle else None
                 })
                 
                 # Send notification to user
@@ -1088,7 +2963,6 @@ def file_claim(request, policy_id=None):
                 print(f"Claim Error: {traceback.format_exc()}")
                 messages.error(request, f'Error filing claim: {str(e)}')
         else:
-            # Show form errors
             for field, errors in form.errors.items():
                 for error in errors:
                     if field == '__all__':
@@ -1100,7 +2974,7 @@ def file_claim(request, policy_id=None):
         if policy_id:
             try:
                 policy = InsurancePolicy.objects.get(id=policy_id, user=request.user, status='active')
-                initial_data = {'policy': policy}
+                initial_data = {'policy': policy, 'vehicle': policy.vehicle}
             except InsurancePolicy.DoesNotExist:
                 messages.warning(request, 'Invalid or inactive policy selected.')
         
@@ -1108,7 +2982,6 @@ def file_claim(request, policy_id=None):
     
     policies = request.user.policies.filter(status='active').select_related('vehicle')
     
-    # Check if user has any active policies
     if not policies.exists():
         messages.warning(request, 'You need an active policy to file a claim.')
         return redirect('core:my_policies')
@@ -1118,6 +2991,9 @@ def file_claim(request, policy_id=None):
         'policies': policies,
         'selected_policy_id': policy_id
     })
+    
+    
+    
 
 @login_required
 def my_claims(request):
@@ -1156,14 +3032,19 @@ def my_claims(request):
     return render(request, 'core/customer/my_claims.html', context)
 
 
+
+
 @login_required
 def claim_detail(request, claim_id):
     """View claim details"""
     claim = get_object_or_404(
-        Claim.objects.select_related('user', 'policy', 'policy__vehicle', 'approved_by'), 
+        Claim.objects.select_related('user', 'policy', 'policy__vehicle', 'vehicle', 'approved_by'), 
         id=claim_id, 
         user=request.user
     )
+    
+    # Get vehicle information
+    vehicle_info = claim.get_vehicle_info()
     
     # Get uploaded documents and photos
     documents = []
@@ -1179,7 +3060,6 @@ def claim_detail(request, claim_id):
             if isinstance(photo, dict):
                 photos.append(photo)
     
-    # Check if there's any admin response (surveyor notes or rejection reason)
     has_admin_response = bool(claim.surveyor_notes or claim.rejection_reason or claim.status in ['approved', 'rejected', 'settled'])
     
     context = {
@@ -1187,41 +3067,266 @@ def claim_detail(request, claim_id):
         'documents': documents,
         'photos': photos,
         'has_admin_response': has_admin_response,
+        'vehicle_info': vehicle_info,
     }
     
     return render(request, 'core/customer/claim_detail.html', context)
 
 
+
+
+
+
+# apps/core/views.py - Add these customer views at the end
+
+# ============================================
+# CUSTOMER ENDORSEMENT VIEWS
+# ============================================
+
 @login_required
-def payment_page(request, payment_id):
-    """Payment page"""
+def request_endorsement(request, policy_id):
+    """Request policy endorsement"""
+    policy = get_object_or_404(InsurancePolicy, id=policy_id, user=request.user)
+    
+    if request.method == 'POST':
+        form = PolicyEndorsementForm(request.POST, user=request.user)
+        if form.is_valid():
+            endorsement = form.save(commit=False)
+            endorsement.policy = policy
+            endorsement.requested_by = request.user
+            endorsement.save()
+            
+            messages.success(request, 'Endorsement request submitted successfully!')
+            return redirect('core:endorsement_detail', endorsement_id=endorsement.id)
+    else:
+        form = PolicyEndorsementForm(user=request.user, initial={'policy': policy})
+    
+    return render(request, 'core/request_endorsement.html', {
+        'form': form,
+        'policy': policy
+    })
+
+
+@login_required
+def endorsement_detail(request, endorsement_id):
+    """View endorsement details"""
+    endorsement = get_object_or_404(PolicyEndorsement, id=endorsement_id, requested_by=request.user)
+    
+    return render(request, 'core/endorsement_detail.html', {
+        'endorsement': endorsement
+    })
+
+
+
+# ============================================
+# CUSTOMER INSTALLMENT VIEWS
+# ============================================
+
+@login_required
+def setup_installment_plan(request, payment_id):
+    """Setup installment plan for premium payment"""
     payment = get_object_or_404(Payment, id=payment_id, user=request.user)
     
     if request.method == 'POST':
-        payment_method = request.POST.get('payment_method')
-        
-        # Process payment
-        result = process_payment(payment, payment_method)
-        
-        if result['success']:
-            payment.status = 'completed'
-            payment.payment_method = payment_method
-            payment.paid_at = timezone.now()
-            payment.payment_details = result['details']
-            payment.save()
+        form = InstallmentPlanForm(request.POST)
+        if form.is_valid():
+            plan = form.save(commit=False)
+            plan.policy = payment.policy
+            plan.user = request.user
+            plan.total_premium = payment.amount
+            plan.start_date = timezone.now().date()
             
-            # Update policy status
-            payment.policy.status = 'active'
-            payment.policy.save()
+            # Calculate next due date
+            if plan.frequency == 'monthly':
+                plan.next_due_date = plan.start_date + timezone.timedelta(days=30)
+            elif plan.frequency == 'quarterly':
+                plan.next_due_date = plan.start_date + timezone.timedelta(days=90)
+            elif plan.frequency == 'semi_annual':
+                plan.next_due_date = plan.start_date + timezone.timedelta(days=180)
             
-            messages.success(request, 'Payment completed successfully!')
-            return redirect('core:policy_detail', policy_id=payment.policy.id)
-        else:
-            messages.error(request, f'Payment failed: {result["error"]}')
+            plan.save()
+            
+            # Create installments
+            installment_amount = plan.installment_amount
+            for i in range(plan.number_of_installments):
+                due_date = plan.start_date + timezone.timedelta(days=30 * i)
+                Installment.objects.create(
+                    installment_plan=plan,
+                    installment_number=i + 1,
+                    principal_amount=plan.financed_amount / plan.number_of_installments,
+                    total_amount=installment_amount,
+                    due_date=due_date
+                )
+            
+            # Process down payment
+            if plan.down_payment > 0:
+                down_payment = Payment.objects.create(
+                    policy=payment.policy,
+                    user=request.user,
+                    amount=plan.down_payment,
+                    status='pending'
+                )
+                return redirect('core:payment_page', payment_id=down_payment.id)
+            
+            messages.success(request, 'Installment plan setup successfully!')
+            return redirect('core:my_policies')
+    else:
+        form = InstallmentPlanForm(initial={'policy': payment.policy})
     
-    return render(request, 'core/customer/payment.html', {'payment': payment})
+    return render(request, 'core/setup_installment.html', {
+        'form': form,
+        'payment': payment
+    })
+
 
 @login_required
+def pay_installment(request, installment_id):
+    """Pay an individual installment"""
+    installment = get_object_or_404(Installment, id=installment_id, 
+                                    installment_plan__user=request.user)
+    
+    # Create payment for this installment
+    payment = Payment.objects.create(
+        policy=installment.installment_plan.policy,
+        user=request.user,
+        amount=installment.total_amount,
+        status='pending'
+    )
+    
+    return redirect('core:payment_page', payment_id=payment.id)
+
+
+# ============================================
+# CUSTOMER CANCELLATION VIEWS
+# ============================================
+
+@login_required
+def request_cancellation(request, policy_id):
+    """Request policy cancellation"""
+    policy = get_object_or_404(InsurancePolicy, id=policy_id, user=request.user)
+    
+    if request.method == 'POST':
+        form = PolicyCancellationForm(request.POST, user=request.user)
+        if form.is_valid():
+            cancellation = form.save(commit=False)
+            cancellation.policy = policy
+            cancellation.user = request.user
+            cancellation.total_premium = policy.premium_amount
+            cancellation.calculate_refund()
+            cancellation.save()
+            
+            messages.success(request, 'Cancellation request submitted successfully!')
+            return redirect('core:cancellation_detail', cancellation_id=cancellation.id)
+    else:
+        form = PolicyCancellationForm(user=request.user, initial={'policy': policy})
+    
+    return render(request, 'core/request_cancellation.html', {
+        'form': form,
+        'policy': policy
+    })
+
+
+@login_required
+def cancellation_detail(request, cancellation_id):
+    """View cancellation details"""
+    cancellation = get_object_or_404(PolicyCancellation, id=cancellation_id, user=request.user)
+    
+    return render(request, 'core/cancellation_detail.html', {
+        'cancellation': cancellation
+    })
+
+
+# ============================================
+# AGENT COMMISSION VIEWS
+# ============================================
+
+@login_required
+@user_passes_test(lambda u: u.role == 'agent')
+def agent_commissions(request):
+    """View agent commissions"""
+    commissions = Commission.objects.filter(agent=request.user).order_by('-earned_date')
+    
+    # Stats
+    total_earned = commissions.aggregate(Sum('total_commission'))['total_commission__sum'] or 0
+    total_paid = commissions.filter(status='paid').aggregate(Sum('total_commission'))['total_commission__sum'] or 0
+    pending_amount = commissions.filter(status__in=['pending', 'calculated', 'approved']).aggregate(
+        Sum('total_commission')
+    )['total_commission__sum'] or 0
+    
+    paginator = Paginator(commissions, 20)
+    page = request.GET.get('page')
+    commissions_page = paginator.get_page(page)
+    
+    return render(request, 'core/agent/commissions.html', {
+        'commissions': commissions_page,
+        'total_earned': total_earned,
+        'total_paid': total_paid,
+        'pending_amount': pending_amount
+    })
+
+
+@login_required
+@user_passes_test(lambda u: u.role == 'agent')
+def agent_commission_detail(request, commission_id):
+    """View commission details"""
+    commission = get_object_or_404(Commission, id=commission_id, agent=request.user)
+    
+    return render(request, 'core/agent/commission_detail.html', {
+        'commission': commission
+    })
+
+
+# ============================================
+# NO CLAIM BONUS VIEWS
+# ============================================
+
+@login_required
+def my_ncb(request):
+    """View user's No Claim Bonus"""
+    ncb_records = NoClaimBonus.objects.filter(user=request.user).select_related('vehicle')
+    
+    return render(request, 'core/my_ncb.html', {
+        'ncb_records': ncb_records
+    })
+
+
+@login_required
+def purchase_ncb_protection(request, ncb_id):
+    """Purchase NCB protection"""
+    ncb = get_object_or_404(NoClaimBonus, id=ncb_id, user=request.user)
+    
+    if request.method == 'POST':
+        # Create payment for NCB protection
+        protection_cost = 5000  # Example cost
+        
+        payment = Payment.objects.create(
+            policy=None,  # Not tied to a specific policy
+            user=request.user,
+            amount=protection_cost,
+            status='pending',
+            payment_details={'type': 'ncb_protection', 'ncb_id': str(ncb.id)}
+        )
+        
+        return redirect('core:payment_page', payment_id=payment.id)
+    
+    return render(request, 'core/purchase_ncb_protection.html', {'ncb': ncb})
+
+
+
+
+
+
+
+
+
+
+
+from apps.core.decorators import secure_file_upload, check_ip_reputation, rate_limit
+
+@login_required
+@check_ip_reputation
+@rate_limit(limit=10, window=60)
+@secure_file_upload(file_types='image')
 def profile(request):
     """User profile view"""
     if request.method == 'POST':
@@ -1268,6 +3373,9 @@ def profile(request):
     
     
 @login_required
+@check_ip_reputation
+@rate_limit(limit=5, window=60)
+@secure_file_upload(file_types='document')
 @require_http_methods(["POST"])
 def upload_kyc(request):
     """Upload KYC documents with front/back and selfie options"""
@@ -1638,7 +3746,7 @@ def instant_quote(request):
     return render(request, 'core/instant_quote.html')
 
 
-def policies(request):
+def policies_public(request):
     return render(request, 'core/policies.html')
 
 
@@ -1646,11 +3754,7 @@ def digital_documents(request):
     return render(request, 'core/digital_documents.html')
 
 
-def renew_policy(request):
-    return render(request, 'core/renew_policy.html')
-
-
-def file_claim(request):
+def file_claim_public(request):
     return render(request, 'core/file_claim.html')
 
 
@@ -1730,6 +3834,9 @@ def careers(request):
 def press(request):
     return render(request, 'core/press.html')
 
+def renew_policy_public(request):
+    """Public renew policy page - Information about renewals"""
+    return render(request, 'core/renew_policy.html')
 
 def terms(request):
     return render(request, 'core/terms.html')

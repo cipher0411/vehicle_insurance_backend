@@ -1,0 +1,367 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}My Installments{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-calendar-alt"></i> My Installment Plans</h2>
+            <p class="text-muted">View and manage your installment payments</p>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Active Plans</h6>
+                            <h3>{{ plans|length }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Pending Payments</h6>
+                            <h3 class="text-warning">₦{{ total_pending|floatformat:2|intcomma }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Overdue</h6>
+                            <h3 class="text-danger">₦{{ total_overdue|floatformat:2|intcomma }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-circle text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Paid</h6>
+                            <h3 class="text-success">₦{{ total_paid|floatformat:2|intcomma }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overdue Alert -->
+    {% if overdue_installments %}
+    <div class="alert alert-danger mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>{{ overdue_installments|length }} installment(s) are overdue!</strong>
+                <p class="mb-0">Please make payment to avoid policy cancellation.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pending Installments -->
+    {% if pending_installments %}
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-white">
+            <h5 class="mb-0"><i class="fas fa-hourglass-half"></i> Pending Installments</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Policy #</th>
+                            <th>Vehicle</th>
+                            <th>Plan #</th>
+                            <th>Installment</th>
+                            <th>Due Date</th>
+                            <th>Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inst in pending_installments %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'core:policy_detail' inst.installment_plan.policy.id %}">
+                                    {{ inst.installment_plan.policy.policy_number }}
+                                </a>
+                            </td>
+                            <td>{{ inst.installment_plan.policy.vehicle.make }} {{ inst.installment_plan.policy.vehicle.model }}</td>
+                            <td>{{ inst.installment_plan.plan_number }}</td>
+                            <td>{{ inst.installment_number }} of {{ inst.installment_plan.number_of_installments }}</td>
+                            <td>
+                                {{ inst.due_date|date:"M d, Y" }}
+                                {% if inst.due_date < today %}
+                                    <span class="badge bg-danger">Overdue</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>₦{{ inst.total_amount|floatformat:2|intcomma }}</strong></td>
+                            <td>
+                                <a href="{% url 'core:pay_installment' inst.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-credit-card"></i> Pay Now
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- All Installment Plans -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-list"></i> All Installment Plans</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #4169E1; color: white;">
+                        <tr>
+                            <th>Plan #</th>
+                            <th>Policy #</th>
+                            <th>Payment Mode</th>
+                            <th>Total Premium</th>
+                            <th>Down Payment</th>
+                            <th>Paid</th>
+                            <th>Remaining</th>
+                            <th>Progress</th>
+                            <th>Next Due</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in plans %}
+                        <tr>
+                            <td><strong>{{ plan.plan_number }}</strong></td>
+                            <td>
+                                <a href="{% url 'core:policy_detail' plan.policy.id %}">
+                                    {{ plan.policy.policy_number }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if plan.payment_mode == 'auto' and plan.auto_debit_enabled %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-sync-alt"></i> Auto-Debit
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-hand-holding-usd"></i> Manual
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>₦{{ plan.total_premium|floatformat:2|intcomma }}</td>
+                            <td>₦{{ plan.down_payment|floatformat:2|intcomma }}</td>
+                            <td class="text-success">₦{{ plan.get_paid_amount|floatformat:2|intcomma }}</td>
+                            <td class="text-warning">₦{{ plan.get_remaining_amount|floatformat:2|intcomma }}</td>
+                            <td style="min-width: 150px;">
+                                {% with paid=plan.get_paid_amount total=plan.total_payable %}
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-success" style="width: {% widthratio paid total 100 %}%"></div>
+                                </div>
+                                <small>
+                                    {% with paid_count=plan.installments.filter|length %}
+                                        {{ paid_count }} of {{ plan.number_of_installments }} paid
+                                    {% endwith %}
+                                </small>
+                                {% endwith %}
+                            </td>
+                            <td>
+                                {{ plan.next_due_date|date:"M d, Y"|default:"N/A" }}
+                                {% if plan.auto_debit_enabled and plan.next_auto_debit_date %}
+                                    <br><small class="text-muted">
+                                        <i class="fas fa-credit-card"></i> Auto: {{ plan.next_auto_debit_date|date:"M d" }}
+                                    </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if plan.status == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                {% elif plan.status == 'completed' %}
+                                    <span class="badge bg-info">Completed</span>
+                                {% elif plan.status == 'defaulted' %}
+                                    <span class="badge bg-danger">Defaulted</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'core:installment_plan_detail' plan.id %}" class="btn btn-sm btn-outline-primary" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'core:manage_auto_debit' plan.id %}" class="btn btn-sm btn-outline-success" title="Manage Auto-Debit">
+                                        <i class="fas fa-cog"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="11" class="text-center py-4">
+                                <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No installment plans found</p>
+                                <a href="{% url 'core:get_quote' %}" class="btn btn-primary mt-2">
+                                    <i class="fas fa-plus"></i> Get a Quote
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paid Installments History -->
+    {% if paid_installments %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-history"></i> Payment History</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date Paid</th>
+                            <th>Policy #</th>
+                            <th>Installment</th>
+                            <th>Amount</th>
+                            <th>Payment Method</th>
+                            <th>Transaction Ref</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inst in paid_installments|slice:":10" %}
+                        <tr>
+                            <td>{{ inst.paid_date|date:"M d, Y H:i" }}</td>
+                            <td>{{ inst.installment_plan.policy.policy_number }}</td>
+                            <td>#{{ inst.installment_number }} of {{ inst.installment_plan.number_of_installments }}</td>
+                            <td class="text-success">₦{{ inst.amount_paid|floatformat:2|intcomma }}</td>
+                            <td>
+                                {% if inst.payment %}
+                                    {{ inst.payment.get_payment_method_display }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if inst.payment %}
+                                    {{ inst.payment.transaction_id }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if inst.payment and inst.payment.payment_details.auto_debit %}
+                                    <span class="badge bg-info">Auto-Debit</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Manual</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+.table td {
+    vertical-align: middle;
+}
+.progress {
+    background-color: #e9ecef;
+    border-radius: 10px;
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+.btn-outline-primary, .btn-outline-success {
+    border-width: 1px;
+}
+.btn-outline-success {
+    color: #10b981;
+    border-color: #10b981;
+}
+.btn-outline-success:hover {
+    background-color: #10b981;
+    color: white;
+}
+.btn-group .btn {
+    margin: 0 2px;
+    border-radius: 6px !important;
+}
+</style>
+{% endblock %}

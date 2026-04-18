@@ -1,4 +1,6 @@
 {% extends 'core/logon_base.html' %}
+{% load humanize %}
+
 {% block title %}Complete Payment{% endblock %}
 
 {% block content %}
@@ -13,7 +15,7 @@
                     <!-- Payment Summary -->
                     <div class="text-center mb-4">
                         <h5 class="text-muted">Amount to Pay</h5>
-                        <h2 class="text-primary">₦{{ payment.amount|floatformat:2 }}</h2>
+                        <h2 class="text-primary">₦{{ payment.amount|floatformat:2|intcomma }}</h2>
                         <p class="text-muted">Policy #{{ payment.policy.policy_number }}</p>
                     </div>
                     
@@ -28,33 +30,38 @@
                                 <p class="mb-0"><strong>Coverage:</strong> {{ payment.policy.get_policy_type_display }}</p>
                             </div>
                             <div class="col-md-6">
-                                <p class="mb-1"><strong>Coverage Amount:</strong> ₦{{ payment.policy.coverage_amount|floatformat:2 }}</p>
-                                <p class="mb-1"><strong>Premium:</strong> ₦{{ payment.policy.premium_amount|floatformat:2 }}</p>
-                                <p class="mb-0"><strong>Deductible:</strong> ₦{{ payment.policy.deductible|floatformat:2 }}</p>
+                                <p class="mb-1"><strong>Coverage Amount:</strong> ₦{{ payment.policy.coverage_amount|floatformat:2|intcomma }}</p>
+                                <p class="mb-1"><strong>Premium:</strong> ₦{{ payment.policy.premium_amount|floatformat:2|intcomma }}</p>
+                                <p class="mb-0"><strong>Deductible:</strong> ₦{{ payment.policy.deductible|floatformat:2|intcomma }}</p>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Payment Status -->
+                    <!-- Payment Status Display -->
                     {% if payment.status == 'completed' %}
                         <div class="alert alert-success text-center">
                             <i class="fas fa-check-circle fa-3x mb-3"></i>
                             <h5>Payment Completed!</h5>
-                            <p>Your payment has been successfully processed.</p>
+                            <p>Your payment has been successfully processed and verified.</p>
                             <a href="{% url 'core:policy_detail' payment.policy.id %}" class="btn btn-success mt-2">
                                 <i class="fas fa-eye"></i> View Policy
                             </a>
                         </div>
+                        
                     {% elif payment.status == 'pending_verification' %}
                         <div class="alert alert-warning text-center">
                             <i class="fas fa-clock fa-3x mb-3"></i>
                             <h5>Payment Under Verification</h5>
-                            <p>Your bank transfer is being verified. This usually takes 1-24 hours.</p>
-                            <p class="mb-0"><strong>Reference:</strong> {{ payment.payment_reference }}</p>
+                            <p>Your bank transfer is being verified by our team.</p>
+                            <p class="mb-0">This usually takes 1-24 hours. You will be notified once verified.</p>
+                            <div class="mt-3">
+                                <p><strong>Payment Reference:</strong> {{ payment.payment_reference }}</p>
+                            </div>
                             <a href="{% url 'core:my_policies' %}" class="btn btn-primary mt-3">
                                 <i class="fas fa-list"></i> View My Policies
                             </a>
                         </div>
+                        
                     {% elif payment.status == 'failed' %}
                         <div class="alert alert-danger text-center">
                             <i class="fas fa-times-circle fa-3x mb-3"></i>
@@ -63,10 +70,11 @@
                             {% if payment.failure_reason %}
                                 <p><strong>Reason:</strong> {{ payment.failure_reason }}</p>
                             {% endif %}
-                            <button class="btn btn-primary mt-2" onclick="location.reload()">
+                            <a href="{% url 'core:payment_page' payment.id %}" class="btn btn-primary mt-2">
                                 <i class="fas fa-redo"></i> Try Again
-                            </button>
+                            </a>
                         </div>
+                        
                     {% elif payment.status == 'refunded' %}
                         <div class="alert alert-secondary text-center">
                             <i class="fas fa-undo fa-3x mb-3"></i>
@@ -76,6 +84,7 @@
                                 <i class="fas fa-list"></i> View My Policies
                             </a>
                         </div>
+                        
                     {% else %}
                         <!-- Payment Method Selection -->
                         <form method="post" id="paymentForm">
@@ -84,6 +93,7 @@
                             <h5 class="mb-3">Select Payment Method</h5>
                             
                             <div class="payment-methods">
+                                <!-- Card Payment Option -->
                                 <div class="form-check payment-option mb-3">
                                     <input class="form-check-input" type="radio" name="payment_method" id="payment_card" value="card" checked>
                                     <label class="form-check-label w-100" for="payment_card">
@@ -91,12 +101,13 @@
                                             <i class="fas fa-credit-card fa-2x me-3" style="color: #4169E1;"></i>
                                             <div>
                                                 <strong>Credit/Debit Card</strong>
-                                                <p class="text-muted mb-0 small">Pay securely with your card via Flutterwave</p>
+                                                <p class="text-muted mb-0 small">Pay instantly with your card via Flutterwave</p>
                                             </div>
                                         </div>
                                     </label>
                                 </div>
                                 
+                                <!-- Bank Transfer Option -->
                                 <div class="form-check payment-option mb-3">
                                     <input class="form-check-input" type="radio" name="payment_method" id="payment_bank" value="bank_transfer">
                                     <label class="form-check-label w-100" for="payment_bank">
@@ -109,26 +120,13 @@
                                         </div>
                                     </label>
                                 </div>
-                                
-                                <div class="form-check payment-option mb-3">
-                                    <input class="form-check-input" type="radio" name="payment_method" id="payment_ussd" value="ussd">
-                                    <label class="form-check-label w-100" for="payment_ussd">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-mobile-alt fa-2x me-3" style="color: #4169E1;"></i>
-                                            <div>
-                                                <strong>USSD / Mobile Banking</strong>
-                                                <p class="text-muted mb-0 small">Pay using USSD code or mobile app</p>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
                             </div>
                             
                             <hr>
                             
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary btn-lg" id="payBtn">
-                                    <i class="fas fa-lock"></i> Proceed to Payment
+                                    <i class="fas fa-arrow-right"></i> Continue to Payment
                                 </button>
                                 <a href="{% url 'core:my_policies' %}" class="btn btn-outline-secondary">
                                     <i class="fas fa-arrow-left"></i> Back to Policies
@@ -143,17 +141,13 @@
             <div class="card mt-4">
                 <div class="card-body">
                     <div class="row text-center">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <i class="fas fa-lock text-success fa-2x mb-2"></i>
                             <p class="small mb-0">256-bit SSL Encryption</p>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <i class="fas fa-shield-alt text-primary fa-2x mb-2"></i>
                             <p class="small mb-0">Secure Payment Gateway</p>
-                        </div>
-                        <div class="col-md-4">
-                            <i class="fas fa-headset text-info fa-2x mb-2"></i>
-                            <p class="small mb-0">24/7 Support</p>
                         </div>
                     </div>
                 </div>
@@ -169,7 +163,7 @@
                     <ul class="list-unstyled">
                         <li><i class="fas fa-phone text-primary me-2"></i> +234 800 456 7890</li>
                         <li><i class="fab fa-whatsapp text-success me-2"></i> +234 800 456 7890 (WhatsApp)</li>
-                        <li><i class="fas fa-envelope text-primary me-2"></i> payments@vehicleinsurance.ng</li>
+                        <li><i class="fas fa-envelope text-primary me-2"></i> support@vehicleinsure.ng</li>
                     </ul>
                     <a href="{% url 'core:support_tickets' %}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-headset"></i> Create Support Ticket
@@ -180,28 +174,8 @@
     </div>
 </div>
 
-<!-- Toast Container -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
-    <div id="notificationToast" class="toast" role="alert">
-        <div class="toast-header">
-            <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
-            <strong class="me-auto">Notification</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-        </div>
-        <div class="toast-body" id="toastMessage"></div>
-    </div>
-</div>
-
 <script>
-let toastInstance = null;
-
 document.addEventListener('DOMContentLoaded', function() {
-    const toastEl = document.getElementById('notificationToast');
-    if (toastEl) {
-        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
-    }
-    
-    // Handle form submission
     const form = document.getElementById('paymentForm');
     if (form) {
         form.addEventListener('submit', function(e) {
@@ -209,34 +183,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!paymentMethod) {
                 e.preventDefault();
-                showToast('Please select a payment method', 'error');
+                alert('Please select a payment method');
                 return false;
             }
             
             const payBtn = document.getElementById('payBtn');
             payBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
             payBtn.disabled = true;
-            
-            // If card payment, we'll handle through Flutterwave
-            if (paymentMethod.value === 'card') {
-                e.preventDefault();
-                // Redirect to card payment page
-                window.location.href = "{% url 'core:process_card_payment' payment.id %}";
-            }
-            // For bank transfer and USSD, form submits normally
         });
     }
 });
-
-function showToast(message, type = 'info') {
-    const toastMessage = document.getElementById('toastMessage');
-    toastMessage.textContent = message;
-    
-    const toastIcon = document.querySelector('#notificationToast .toast-header i');
-    toastIcon.style.color = type === 'error' ? '#dc3545' : '#4169E1';
-    
-    toastInstance.show();
-}
 </script>
 
 <style>
@@ -270,10 +226,6 @@ function showToast(message, type = 'info') {
 .payment-option:hover {
     border-color: #4169E1;
     background-color: #f8f9fa;
-}
-
-.payment-option .form-check-input:checked ~ .form-check-label {
-    color: #4169E1;
 }
 
 .payment-option:has(.form-check-input:checked) {
@@ -333,11 +285,6 @@ function showToast(message, type = 'info') {
     background-color: #f8d7da;
     border-color: #f5c2c7;
     color: #721c24;
-}
-
-.toast {
-    background: white;
-    border-left: 4px solid #4169E1;
 }
 
 .form-check-input:checked {

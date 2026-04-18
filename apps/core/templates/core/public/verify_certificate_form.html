@@ -1,0 +1,352 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Verify Certificate | VehicleInsure Nigeria{% endblock %}
+
+{% block extra_css %}
+<style>
+    .verify-container {
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+        margin-top: -24px;
+    }
+    
+    .verify-card {
+        background: white;
+        border-radius: 30px;
+        padding: 45px 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+        max-width: 520px;
+        width: 100%;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .verify-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+    }
+    
+    .verify-icon i {
+        font-size: 2rem;
+        color: white;
+    }
+    
+    .verify-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--navy-dark);
+        text-align: center;
+        margin-bottom: 8px;
+    }
+    
+    .verify-subtitle {
+        color: #64748b;
+        text-align: center;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+    
+    .form-group {
+        margin-bottom: 24px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .form-control {
+        border: 2px solid var(--gray-border);
+        border-radius: 14px;
+        padding: 14px 18px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        width: 100%;
+        text-transform: uppercase;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 1px;
+    }
+    
+    .form-control:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+        outline: none;
+    }
+    
+    .form-control::placeholder {
+        text-transform: none;
+        font-family: inherit;
+        letter-spacing: normal;
+        color: #94a3b8;
+    }
+    
+    .form-hint {
+        color: #64748b;
+        font-size: 0.8rem;
+        margin-top: 6px;
+    }
+    
+    .form-hint i {
+        color: #10b981;
+        margin-right: 4px;
+    }
+    
+    .btn-verify {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 16px 25px;
+        border-radius: 14px;
+        font-weight: 600;
+        font-size: 1.05rem;
+        width: 100%;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+    
+    .btn-verify:hover {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+    }
+    
+    .btn-verify i {
+        margin-right: 8px;
+    }
+    
+    .info-section {
+        margin-top: 30px;
+        padding-top: 25px;
+        border-top: 1px solid var(--gray-border);
+    }
+    
+    .info-title {
+        font-weight: 600;
+        color: var(--navy-dark);
+        margin-bottom: 15px;
+        font-size: 1rem;
+    }
+    
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 20px 0;
+    }
+    
+    .info-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 12px;
+        color: #475569;
+        font-size: 0.9rem;
+    }
+    
+    .info-list li i {
+        color: #10b981;
+        font-size: 1rem;
+        margin-top: 2px;
+        min-width: 18px;
+    }
+    
+    .qr-note {
+        background: #f0fdf4;
+        border-radius: 12px;
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .qr-note i {
+        font-size: 2rem;
+        color: #10b981;
+    }
+    
+    .qr-note p {
+        margin: 0;
+        color: #065f46;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    .alert {
+        border-radius: 14px;
+        border: none;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+    }
+    
+    .alert-danger {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .example-certificate {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 15px;
+        margin-top: 15px;
+        text-align: center;
+    }
+    
+    .example-certificate code {
+        background: #e2e8f0;
+        padding: 8px 15px;
+        border-radius: 8px;
+        font-size: 1rem;
+        color: var(--navy-dark);
+        font-family: 'Courier New', monospace;
+    }
+    
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @media (max-width: 576px) {
+        .verify-card {
+            padding: 35px 25px;
+        }
+        
+        .verify-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="verify-container">
+    <div class="verify-card">
+        <div class="verify-icon">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        
+        <h1 class="verify-title">Verify Certificate</h1>
+        <p class="verify-subtitle">
+            Enter your certificate number to verify its authenticity and check validity status
+        </p>
+        
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %} me-2"></i>
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label class="form-label">Certificate Number</label>
+                <input type="text" 
+                       name="certificate_number" 
+                       class="form-control" 
+                       placeholder="e.g., CERT-XXXXXXXX" 
+                       required
+                       autocomplete="off"
+                       autocapitalize="characters">
+                <div class="form-hint">
+                    <i class="fas fa-info-circle"></i>
+                    Format: CERT-XXXXXXXX (8 characters after the dash)
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-verify">
+                <i class="fas fa-search"></i> Verify Certificate
+            </button>
+        </form>
+        
+        <div class="info-section">
+            <h3 class="info-title">
+                <i class="fas fa-lightbulb me-2" style="color: #10b981;"></i>
+                Where to find your certificate number?
+            </h3>
+            
+            <ul class="info-list">
+                <li>
+                    <i class="fas fa-file-pdf"></i>
+                    <span>On your insurance certificate PDF document (top right corner)</span>
+                </li>
+                <li>
+                    <i class="fas fa-envelope"></i>
+                    <span>In the email we sent when your policy was activated</span>
+                </li>
+                <li>
+                    <i class="fas fa-user-circle"></i>
+                    <span>In your dashboard under "My Certificates" section</span>
+                </li>
+            </ul>
+            
+            <div class="qr-note">
+                <i class="fas fa-qrcode"></i>
+                <p>
+                    <strong>Have a QR code?</strong><br>
+                    You can also scan the QR code on your certificate to verify it instantly without entering the number.
+                </p>
+            </div>
+            
+            {% if debug %}
+            <div class="example-certificate">
+                <i class="fas fa-flask me-2" style="color: #64748b;"></i>
+                <strong style="color: #64748b;">Test Certificate:</strong><br>
+                <code>CERT-4ABC0F5D</code>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.querySelector('input[name="certificate_number"]');
+        
+        if (input) {
+            // Auto-format: convert to uppercase and add CERT- prefix if missing
+            input.addEventListener('input', function(e) {
+                let value = e.target.value.toUpperCase().replace(/\s/g, '');
+                
+                // If user typed just the hex part, add CERT- prefix
+                if (value && !value.startsWith('CERT-') && value.length <= 8) {
+                    if (/^[A-F0-9]+$/.test(value)) {
+                        value = 'CERT-' + value;
+                    }
+                }
+                
+                e.target.value = value;
+            });
+            
+            // Remove CERT- prefix when focusing if it's just the placeholder
+            input.addEventListener('focus', function(e) {
+                if (e.target.value === 'CERT-') {
+                    e.target.value = '';
+                }
+            });
+            
+            // Add CERT- prefix when blurring if there's a value
+            input.addEventListener('blur', function(e) {
+                let value = e.target.value.toUpperCase().replace(/\s/g, '');
+                if (value && !value.startsWith('CERT-')) {
+                    value = 'CERT-' + value;
+                    e.target.value = value;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

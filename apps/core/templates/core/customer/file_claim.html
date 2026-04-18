@@ -48,6 +48,17 @@
                             {% endif %}
                             <small class="text-muted">Only active policies are shown</small>
                         </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.vehicle.id_for_label }}" class="form-label">
+                                Select Vehicle (Optional)
+                            </label>
+                            {{ form.vehicle }}
+                            {% if form.vehicle.errors %}
+                                <div class="invalid-feedback d-block">{{ form.vehicle.errors.0 }}</div>
+                            {% endif %}
+                            <small class="text-muted">{{ form.vehicle.help_text }}</small>
+                        </div>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">

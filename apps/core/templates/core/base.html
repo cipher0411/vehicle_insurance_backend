@@ -61,7 +61,7 @@
             font-size: 0.9rem;
         }
         
-        .top-bar .container {
+        .top-bar .container-fluid {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
@@ -72,7 +72,7 @@
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 20px;
+            gap: 15px 25px;
         }
         
         .contact-item {
@@ -93,7 +93,7 @@
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 16px;
+            gap: 12px 20px;
         }
         
         .top-bar-link {
@@ -123,12 +123,15 @@
             position: relative;
         }
         
-        .navbar-custom .container {
+        .navbar-custom .container-fluid {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 70px;
+            min-height: 70px;
+            padding: 8px 24px;
             position: relative;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         
         .navbar-brand-custom {
@@ -161,11 +164,13 @@
             color: var(--royal-blue);
         }
         
-        /* Desktop Navigation */
+        /* Desktop Navigation - Wraps on smaller screens */
         .nav-menu-desktop {
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
         
         .nav-links-desktop {
@@ -174,6 +179,7 @@
             gap: 5px;
             margin: 0;
             padding: 0;
+            flex-wrap: wrap;
         }
         
         .nav-links-desktop > li {
@@ -184,14 +190,15 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 14px;
+            padding: 8px 12px;
             border-radius: 40px;
             font-weight: 500;
             color: #1e293b;
             text-decoration: none;
             transition: all 0.2s;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             cursor: pointer;
+            white-space: nowrap;
         }
         
         .nav-links-desktop > li > a i {
@@ -211,6 +218,62 @@
         
         .nav-links-desktop > li > a.active i {
             color: white;
+        }
+        
+        /* Nav Auth Desktop - Wraps properly */
+        .nav-auth-desktop {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn-outline-primary-custom {
+            border: 2px solid var(--royal-blue);
+            background: transparent;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            color: var(--royal-blue);
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        
+        .btn-outline-primary-custom:hover {
+            background: var(--royal-blue);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary-custom {
+            background: var(--royal-blue);
+            border: 2px solid var(--royal-blue);
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(65, 105, 225, 0.25);
+            white-space: nowrap;
+        }
+        
+        .btn-primary-custom:hover {
+            background: var(--royal-blue-dark);
+            border-color: var(--royal-blue-dark);
+            transform: translateY(-2px);
+            color: white;
+            box-shadow: 0 6px 16px rgba(65, 105, 225, 0.35);
         }
         
         /* Mega Dropdown Container - Full Width Background */
@@ -236,9 +299,9 @@
         }
         
         .mega-dropdown-container {
-            max-width: 1320px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 40px 30px;
             width: 100%;
         }
         
@@ -338,72 +401,11 @@
             color: var(--royal-blue-dark);
         }
         
-        .mega-divider {
-            border-top: 1px solid var(--gray-border);
-            margin: 32px 0 24px;
-        }
-        
         .mega-bottom-cta {
             background: var(--gray-light);
             border-radius: 16px;
             padding: 20px 24px;
             margin-top: 20px;
-        }
-        
-        /* Nav Auth Desktop */
-        .nav-auth-desktop {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-left: 12px;
-            flex-shrink: 0;
-        }
-        
-        .btn-outline-primary-custom {
-            border: 2px solid var(--royal-blue);
-            background: transparent;
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-weight: 600;
-            color: var(--royal-blue);
-            text-decoration: none;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.95rem;
-            white-space: nowrap;
-        }
-        
-        .btn-outline-primary-custom:hover {
-            background: var(--royal-blue);
-            color: white;
-            transform: translateY(-1px);
-        }
-        
-        .btn-primary-custom {
-            background: var(--royal-blue);
-            border: 2px solid var(--royal-blue);
-            padding: 10px 22px;
-            border-radius: 50px;
-            font-weight: 600;
-            color: white;
-            text-decoration: none;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.95rem;
-            box-shadow: 0 4px 12px rgba(65, 105, 225, 0.25);
-            white-space: nowrap;
-        }
-        
-        .btn-primary-custom:hover {
-            background: var(--royal-blue-dark);
-            border-color: var(--royal-blue-dark);
-            transform: translateY(-2px);
-            color: white;
-            box-shadow: 0 6px 16px rgba(65, 105, 225, 0.35);
         }
         
         /* Mega Dropdown Backdrop */
@@ -434,6 +436,7 @@
             border: none;
             cursor: pointer;
             padding: 0;
+            flex-shrink: 0;
         }
         
         .hamburger-btn span {
@@ -663,6 +666,7 @@
             display: flex;
             gap: 12px;
             justify-content: flex-end;
+            flex-wrap: wrap;
         }
         
         .cookie-btn {
@@ -765,7 +769,18 @@
         /* Responsive Design */
         @media screen and (max-width: 1200px) {
             .mega-dropdown-container {
-                padding: 30px 16px;
+                padding: 30px 20px;
+            }
+            
+            .nav-links-desktop > li > a {
+                padding: 8px 10px;
+                font-size: 0.85rem;
+            }
+            
+            .btn-outline-primary-custom,
+            .btn-primary-custom {
+                padding: 8px 14px;
+                font-size: 0.85rem;
             }
         }
         
@@ -787,9 +802,8 @@
                 display: none !important;
             }
             
-            .cookie-buttons {
-                margin-top: 16px;
-                justify-content: flex-start;
+            .navbar-custom .container-fluid {
+                flex-wrap: nowrap;
             }
         }
         
@@ -798,7 +812,7 @@
                 padding-top: 130px;
             }
             
-            .top-bar .container {
+            .top-bar .container-fluid {
                 flex-direction: column;
                 gap: 10px;
             }
@@ -809,8 +823,9 @@
                 justify-content: center;
             }
             
-            .navbar-custom .container {
-                height: 60px;
+            .navbar-custom .container-fluid {
+                min-height: 60px;
+                padding: 8px 16px;
             }
             
             .brand-text {
@@ -826,12 +841,9 @@
                 margin-top: 16px;
             }
             
-            .mega-dropdown-container {
-                padding: 20px 12px;
-            }
-            
             .cookie-buttons {
-                flex-wrap: wrap;
+                margin-top: 16px;
+                justify-content: flex-start;
             }
             
             .cookie-btn {
@@ -847,6 +859,16 @@
             
             .top-bar-link {
                 font-size: 0.75rem;
+            }
+            
+            .navbar-brand-custom .brand-text {
+                font-size: 1.1rem;
+            }
+            
+            .brand-icon {
+                width: 35px;
+                height: 35px;
+                font-size: 1.2rem;
             }
         }
         
@@ -899,7 +921,7 @@
     <div class="sticky-header">
         <!-- Top Bar -->
         <div class="top-bar">
-            <div class="container">
+            <div class="container-fluid">
                 <div class="top-bar-left">
                     <div class="contact-item">
                         <i class="fas fa-phone-alt"></i>
@@ -928,7 +950,7 @@
         
         <!-- Main Navbar -->
         <nav class="navbar-custom">
-            <div class="container">
+            <div class="container-fluid">
                 <!-- Logo -->
                 <a href="{% url 'core:home' %}" class="navbar-brand-custom">
                     <div class="brand-icon">
@@ -981,11 +1003,11 @@
                                 <i class="fas fa-sign-out-alt"></i> Logout
                             </a>
                         {% else %}
-                            <a href="{% url 'core:login' %}" class="btn-outline-primary-custom">
-                                <i class="fas fa-sign-in-alt"></i> Sign In
+                            <a href="{% url 'core:verify_certificate_form' %}" class="btn-outline-primary-custom">
+                                <i class="fas fa-shield-alt"></i> Verify
                             </a>
-                            <a href="{% url 'core:register' %}" class="btn-primary-custom">
-                                <i class="fas fa-user-plus"></i> Register
+                            <a href="{% url 'core:get_started' %}" class="btn-primary-custom">
+                                <i class="fas fa-user-plus"></i> Get Started
                             </a>
                         {% endif %}
                     </div>
@@ -1003,80 +1025,76 @@
             <div class="mega-dropdown-wrapper" id="featuresMega">
                 <div class="mega-dropdown-container">
                     <div class="row g-4">
-                        <!-- Column 1: Insurance Services -->
                         <div class="col-lg-3 col-md-6">
                             <div class="mega-dropdown-header">Insurance Services</div>
                             <a href="{% url 'core:motor_insurance' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-car-side"></i> Motor Insurance
                                 </div>
-                                <div class="mega-link-desc">Comprehensive, third-party & theft coverage for your vehicle</div>
+                                <div class="mega-link-desc">Comprehensive, third-party & theft coverage</div>
                             </a>
                             <a href="{% url 'core:instant_quote' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-calculator"></i> Instant Quotes
                                 </div>
-                                <div class="mega-link-desc">Get accurate insurance pricing in seconds with our smart calculator</div>
+                                <div class="mega-link-desc">Get accurate insurance pricing in seconds</div>
                             </a>
-                            <a href="{% url 'core:policies' %}" class="mega-link-item">
+                            <a href="{% url 'core:policies_public' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-file-contract"></i> Policy Purchase
                                 </div>
-                                <div class="mega-link-desc">Buy your insurance quickly and securely online 24/7</div>
+                                <div class="mega-link-desc">Buy your insurance quickly and securely online</div>
                             </a>
                         </div>
                         
-                        <!-- Column 2: Policy Management -->
                         <div class="col-lg-3 col-md-6">
                             <div class="mega-dropdown-header">Policy Management</div>
-                            <a href="{% url 'core:policies' %}" class="mega-link-item">
+                            <a href="{% url 'core:policies_public' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-folder-open"></i> Policies
                                 </div>
-                                <div class="mega-link-desc">View and manage all your active and expired policies in one place</div>
+                                <div class="mega-link-desc">View and manage all your policies</div>
                             </a>
-                            <a href="{% url 'core:digital_documents' %}" class="mega-link-item">
+                            <a href="{% url 'core:verify_certificate_form' %}" class="mega-link-item">
                                 <div class="mega-link-title">
-                                    <i class="fas fa-file-pdf"></i> Digital Documents
+                                    <i class="fas fa-file-pdf"></i> Verify Certificates
                                 </div>
-                                <div class="mega-link-desc">Download certificates, receipts, and policy documents instantly</div>
+                                <div class="mega-link-desc">Download certificates and documents instantly</div>
                             </a>
-                            <a href="{% url 'core:renew_policy' %}" class="mega-link-item">
+                            <a href="{% url 'core:renew_policy_public' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-sync-alt"></i> Renew Policy
                                 </div>
-                                <div class="mega-link-desc">Renew your insurance before it expires with automated reminders</div>
+                                <div class="mega-link-desc">Renew your insurance before it expires</div>
                             </a>
                         </div>
                         
-                        <!-- Column 3: Claims & Payments -->
                         <div class="col-lg-3 col-md-6">
                             <div class="mega-dropdown-header">Claims & Payments</div>
-                            <a href="{% url 'core:file_claim' %}" class="mega-link-item">
+                            <a href="{% url 'core:file_claim_public' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-clipboard-list"></i> File a Claim
                                 </div>
-                                <div class="mega-link-desc">Submit claims easily with our step-by-step guided process</div>
+                                <div class="mega-link-desc">Submit claims easily with guided process</div>
                             </a>
                             <a href="{% url 'core:track_claims' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-chart-line"></i> Track Claims
                                 </div>
-                                <div class="mega-link-desc">Monitor your claim status in real-time with instant updates</div>
+                                <div class="mega-link-desc">Monitor your claim status in real-time</div>
                             </a>
                             <a href="{% url 'core:secure_payments' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-lock"></i> Secure Payments
                                 </div>
-                                <div class="mega-link-desc">Pay premiums using safe and encrypted payment methods</div>
+                                <div class="mega-link-desc">Pay premiums using safe payment methods</div>
                             </a>
                         </div>
                         
-                        <!-- Column 4: Feature Card -->
                         <div class="col-lg-3 col-md-6">
                             <div class="mega-feature-card">
                                 <h5>🚗 Press & Media</h5>
-                                <p>Stay updated with the latest news, announcements, and media coverage about our vehicle insurance platform. Explore press releases, company updates, and resources for journalists and partners.</p>
+                                <p>Stay updated with the latest news, announcements, and media coverage.</p>
                                 <a href="{% url 'core:press' %}" class="btn">Stay Updated →</a>
                             </div>
                         </div>
@@ -1088,88 +1106,83 @@
             <div class="mega-dropdown-wrapper" id="solutionsMega">
                 <div class="mega-dropdown-container">
                     <div class="row g-4">
-                        <!-- Column 1: For Individuals -->
                         <div class="col-lg-3 col-md-6">
                             <div class="mega-dropdown-header">For Individuals</div>
                             <a href="{% url 'core:individual_plans' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-shield-alt"></i> Vehicle Insurance Plans
                                 </div>
-                                <div class="mega-link-desc">Flexible insurance coverage tailored for private car owners</div>
+                                <div class="mega-link-desc">Flexible coverage for private car owners</div>
                             </a>
                             <a href="{% url 'core:premium_calculator' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-chart-pie"></i> Premium Calculator
                                 </div>
-                                <div class="mega-link-desc">Quickly estimate your insurance cost with real-time pricing</div>
+                                <div class="mega-link-desc">Quickly estimate your insurance cost</div>
                             </a>
                             <a href="{% url 'core:easy_renewals' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-redo-alt"></i> Easy Renewals
                                 </div>
-                                <div class="mega-link-desc">Renew your policy in minutes without stress or paperwork</div>
+                                <div class="mega-link-desc">Renew your policy in minutes</div>
                             </a>
                         </div>
                         
-                        <!-- Column 2: For Businesses -->
                         <div class="col-lg-3 col-md-6">
                             <div class="mega-dropdown-header">For Businesses</div>
                             <a href="{% url 'core:fleet_insurance' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-truck"></i> Fleet Insurance
                                 </div>
-                                <div class="mega-link-desc">Protect multiple vehicles under one comprehensive policy</div>
+                                <div class="mega-link-desc">Protect multiple vehicles under one policy</div>
                             </a>
                             <a href="{% url 'core:commercial_coverage' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-building"></i> Commercial Coverage
                                 </div>
-                                <div class="mega-link-desc">Insurance solutions for logistics, transport, and corporate fleets</div>
+                                <div class="mega-link-desc">Solutions for logistics and corporate fleets</div>
                             </a>
                             <a href="{% url 'core:claims_management' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-tasks"></i> Claims Management
                                 </div>
-                                <div class="mega-link-desc">Efficient claims processing for business vehicles and drivers</div>
+                                <div class="mega-link-desc">Efficient claims processing for businesses</div>
                             </a>
                         </div>
                         
-                        <!-- Column 3: Claims & Assistance -->
                         <div class="col-lg-3 col-md-6">
                             <div class="mega-dropdown-header">Claims & Assistance</div>
                             <a href="{% url 'core:careers' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-file-signature"></i> Careers
                                 </div>
-                                <div class="mega-link-desc">Join our team and grow your career in insurance</div>
+                                <div class="mega-link-desc">Join our team and grow your career</div>
                             </a>
                             <a href="{% url 'core:support' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-headset"></i> Customer Support
                                 </div>
-                                <div class="mega-link-desc">24/7 assistance for all your insurance needs and questions</div>
+                                <div class="mega-link-desc">24/7 assistance for all your needs</div>
                             </a>
                         </div>
                         
-                        <!-- Column 4: Payments & Benefits -->
                         <div class="col-lg-3 col-md-6">
                             <div class="mega-dropdown-header">Payments & Benefits</div>
                             <a href="{% url 'core:secure_payments' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-credit-card"></i> Secure Payments
                                 </div>
-                                <div class="mega-link-desc">Pay premiums safely using trusted and verified payment channels</div>
+                                <div class="mega-link-desc">Pay safely using trusted payment channels</div>
                             </a>
                             <a href="{% url 'core:public_promotions' %}" class="mega-link-item">
                                 <div class="mega-link-title">
                                     <i class="fas fa-tags"></i> Discounts & Offers
                                 </div>
-                                <div class="mega-link-desc">Enjoy promo codes and seasonal deals on all policies</div>
+                                <div class="mega-link-desc">Enjoy promo codes and seasonal deals</div>
                             </a>
                         </div>
                     </div>
                     
-                    <!-- Bottom CTA Section -->
                     <div class="mega-bottom-cta">
                         <div class="row align-items-center">
                             <div class="col-md-8">
@@ -1179,7 +1192,7 @@
                                     </div>
                                     <div>
                                         <h6 style="font-weight: 700; margin-bottom: 6px; color: var(--navy-dark);">Smart Insurance Solutions</h6>
-                                        <p style="color: #64748b; margin: 0; font-size: 0.95rem;">Whether you're an individual or a business, our platform delivers reliable, fast, and digital-first insurance services designed for modern mobility.</p>
+                                        <p style="color: #64748b; margin: 0; font-size: 0.95rem;">Reliable, fast, and digital-first insurance services for modern mobility.</p>
                                     </div>
                                 </div>
                             </div>
@@ -1203,28 +1216,23 @@
             <button class="mobile-close-btn" id="closeMobileMenu" aria-label="Close menu">×</button>
         </div>
         
-        <!-- Main Navigation -->
         <div class="mobile-nav-section">
             <ul class="mobile-nav-links">
-                <li><a href="{% url 'core:home' %}">
-                    <i class="fas fa-home"></i> Home
-                </a></li>
+                <li><a href="{% url 'core:home' %}"><i class="fas fa-home"></i> Home</a></li>
             </ul>
         </div>
         
-        <!-- Features Section -->
         <div class="mobile-nav-section">
             <div class="mobile-section-title">Features</div>
             <ul class="mobile-nav-links">
                 <li><a href="{% url 'core:motor_insurance' %}"><i class="fas fa-car-side"></i> Motor Insurance</a></li>
                 <li><a href="{% url 'core:instant_quote' %}"><i class="fas fa-calculator"></i> Instant Quotes</a></li>
-                <li><a href="{% url 'core:policies' %}"><i class="fas fa-folder-open"></i> Policies</a></li>
-                <li><a href="{% url 'core:file_claim' %}"><i class="fas fa-clipboard-list"></i> File a Claim</a></li>
-                <li><a href="{% url 'core:renew_policy' %}"><i class="fas fa-sync-alt"></i> Renew Policy</a></li>
+                <li><a href="{% url 'core:policies_public' %}"><i class="fas fa-folder-open"></i> Policies</a></li>
+                <li><a href="{% url 'core:file_claim_public' %}"><i class="fas fa-clipboard-list"></i> File a Claim</a></li>
+                <li><a href="{% url 'core:renew_policy_public' %}"><i class="fas fa-sync-alt"></i> Renew Policy</a></li>
             </ul>
         </div>
         
-        <!-- Solutions Section -->
         <div class="mobile-nav-section">
             <div class="mobile-section-title">Solutions</div>
             <ul class="mobile-nav-links">
@@ -1235,32 +1243,21 @@
             </ul>
         </div>
         
-        <!-- Quick Links -->
         <div class="mobile-nav-section">
             <ul class="mobile-nav-links">
-                <li><a href="{% url 'core:public_promotions' %}">
-                    <i class="fas fa-gift"></i> Promotions
-                </a></li>
-                <li><a href="{% url 'core:about' %}">
-                    <i class="fas fa-info-circle"></i> About
-                </a></li>
-                <li><a href="{% url 'core:blog' %}">
-                    <i class="fas fa-info"></i> Blog
-                </a></li>
-                <li><a href="{% url 'core:support' %}">
-                    <i class="fas fa-headset"></i> Help Center
-                </a></li>
+                <li><a href="{% url 'core:public_promotions' %}"><i class="fas fa-gift"></i> Promotions</a></li>
+                <li><a href="{% url 'core:about' %}"><i class="fas fa-info-circle"></i> About</a></li>
+                <li><a href="{% url 'core:blog' %}"><i class="fas fa-info"></i> Blog</a></li>
+                <li><a href="{% url 'core:support' %}"><i class="fas fa-headset"></i> Help Center</a></li>
             </ul>
         </div>
         
-        <!-- Designer Credit -->
         <div class="mobile-designer-credit">
             <a href="https://www.edgway.co.uk/" target="_blank" rel="noopener noreferrer">
                 <i class="fas fa-paint-brush"></i> Design by Edgway
             </a>
         </div>
         
-        <!-- Auth Section -->
         <div class="mobile-auth-section">
             {% if user.is_authenticated %}
                 <a href="{% url 'core:dashboard' %}" class="btn-outline-primary-custom">
@@ -1270,11 +1267,11 @@
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </a>
             {% else %}
-                <a href="{% url 'core:login' %}" class="btn-outline-primary-custom">
-                    <i class="fas fa-sign-in-alt"></i> Sign In
+                <a href="{% url 'core:verify_certificate_form' %}" class="btn-outline-primary-custom">
+                    <i class="fas fa-shield-alt"></i> Verify Certificate
                 </a>
-                <a href="{% url 'core:register' %}" class="btn-primary-custom">
-                    <i class="fas fa-user-plus"></i> Register
+                <a href="{% url 'core:get_started' %}" class="btn-primary-custom">
+                    <i class="fas fa-user-plus"></i> Get Started
                 </a>
             {% endif %}
         </div>
@@ -1285,7 +1282,7 @@
 
     <!-- Messages Section -->
     {% if messages %}
-        <div class="container mt-3">
+        <div class="container-fluid mt-3">
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                     {{ message }}
@@ -1302,7 +1299,7 @@
 
     <!-- Cookie Consent Banner -->
     <div class="cookie-banner" id="cookieBanner">
-        <div class="container">
+        <div class="container-fluid">
             <div class="cookie-content">
                 <div class="row align-items-center">
                     <div class="col-lg-8">
@@ -1311,10 +1308,9 @@
                             We Value Your Privacy
                         </div>
                         <p class="cookie-text">
-                            We use cookies to enhance your browsing experience, serve personalized ads or content, and analyze our traffic. 
-                            By clicking "Accept All", you consent to our use of cookies. Read our 
+                            We use cookies to enhance your browsing experience. By clicking "Accept All", you consent to our use of cookies. 
                             <a href="{% url 'core:cookie_policy' %}">Cookie Policy</a> and 
-                            <a href="{% url 'core:privacy_policy' %}">Privacy Policy</a> to learn more.
+                            <a href="{% url 'core:privacy_policy' %}">Privacy Policy</a>.
                         </p>
                     </div>
                     <div class="col-lg-4">
@@ -1337,11 +1333,11 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <div class="container">
+        <div class="container-fluid">
             <div class="row">
                 <div class="col-lg-4 mb-4">
                     <h5><i class="fas fa-car me-2"></i> Vehicle Insurance</h5>
-                    <p class="text-muted mt-3">Protecting your vehicle with comprehensive insurance solutions. Trusted by thousands of drivers nationwide.</p>
+                    <p class="text-muted mt-3">Protecting your vehicle with comprehensive insurance solutions.</p>
                     <div class="mt-4">
                         <a href="#" class="me-3"><i class="fab fa-facebook-f"></i></a>
                         <a href="#" class="me-3"><i class="fab fa-twitter"></i></a>
@@ -1416,42 +1412,33 @@
             let activeMega = null;
             let closeTimer = null;
             
-            // Function to open mega dropdown
             function openMega(megaElement) {
-                // Clear any pending close timer
                 if (closeTimer) {
                     clearTimeout(closeTimer);
                     closeTimer = null;
                 }
                 
-                // Close any currently open mega
                 if (activeMega && activeMega !== megaElement) {
                     activeMega.removeClass('show');
                 }
                 
-                // Open the requested mega
                 megaElement.addClass('show');
                 megaBackdrop.addClass('show');
                 activeMega = megaElement;
-                
-                // Prevent body scroll when mega is open
                 $('body').css('overflow', 'hidden');
             }
             
-            // Function to close all mega dropdowns
             function closeAllMega() {
                 featuresMega.removeClass('show');
                 solutionsMega.removeClass('show');
                 megaBackdrop.removeClass('show');
                 activeMega = null;
                 
-                // Restore body scroll if mobile menu is not open
                 if (!$('#mobileMenu').hasClass('open')) {
                     $('body').css('overflow', '');
                 }
             }
             
-            // Function to schedule closing
             function scheduleClose() {
                 if (closeTimer) {
                     clearTimeout(closeTimer);
@@ -1462,54 +1449,29 @@
                 }, 300);
             }
             
-            // Features trigger hover
-            featuresTrigger.on('mouseenter', function() {
-                openMega(featuresMega);
-            });
-            
+            featuresTrigger.on('mouseenter', function() { openMega(featuresMega); });
             featuresMega.on('mouseenter', function() {
-                if (closeTimer) {
-                    clearTimeout(closeTimer);
-                    closeTimer = null;
-                }
+                if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
             });
-            
             featuresTrigger.on('mouseleave', scheduleClose);
             featuresMega.on('mouseleave', scheduleClose);
             
-            // Solutions trigger hover
-            solutionsTrigger.on('mouseenter', function() {
-                openMega(solutionsMega);
-            });
-            
+            solutionsTrigger.on('mouseenter', function() { openMega(solutionsMega); });
             solutionsMega.on('mouseenter', function() {
-                if (closeTimer) {
-                    clearTimeout(closeTimer);
-                    closeTimer = null;
-                }
+                if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
             });
-            
             solutionsTrigger.on('mouseleave', scheduleClose);
             solutionsMega.on('mouseleave', scheduleClose);
             
-            // Close mega when clicking backdrop
-            megaBackdrop.on('click', function() {
-                closeAllMega();
-            });
+            megaBackdrop.on('click', function() { closeAllMega(); });
             
-            // Close mega with Escape key
             $(document).on('keydown', function(e) {
-                if (e.key === 'Escape' && activeMega) {
-                    closeAllMega();
-                }
+                if (e.key === 'Escape' && activeMega) { closeAllMega(); }
             });
             
-            // Prevent default on dropdown toggle clicks
-            $('.nav-links-desktop .dropdown-toggle').on('click', function(e) {
-                e.preventDefault();
-            });
+            $('.nav-links-desktop .dropdown-toggle').on('click', function(e) { e.preventDefault(); });
             
-            // Mobile Menu Functionality
+            // Mobile Menu
             const mobileMenu = $('#mobileMenu');
             const backdrop = $('#menuBackdrop');
             const hamburger = $('#hamburgerBtn');
@@ -1532,86 +1494,46 @@
             backdrop.on('click', closeMenu);
             
             $(document).on('keydown', function(e) {
-                if (e.key === 'Escape' && mobileMenu.hasClass('open')) {
-                    closeMenu();
-                }
+                if (e.key === 'Escape' && mobileMenu.hasClass('open')) { closeMenu(); }
             });
             
             $(window).on('resize', function() {
                 if ($(window).width() > 992) {
-                    if (mobileMenu.hasClass('open')) {
-                        closeMenu();
-                    }
+                    if (mobileMenu.hasClass('open')) { closeMenu(); }
                 } else {
-                    // Close mega dropdowns on mobile
                     closeAllMega();
                 }
             });
             
-            // Cookie Banner Functionality
+            // Cookie Banner
             const cookieBanner = $('#cookieBanner');
-            const acceptBtn = $('#acceptCookiesBtn');
-            const declineBtn = $('#declineCookiesBtn');
-            const settingsBtn = $('#cookieSettingsBtn');
-            
-            // Check if user has already made a cookie choice
             const cookieConsent = localStorage.getItem('cookieConsent');
             
             if (!cookieConsent) {
-                // Show banner after a short delay
-                setTimeout(function() {
-                    cookieBanner.addClass('show');
-                }, 500);
+                setTimeout(function() { cookieBanner.addClass('show'); }, 500);
             }
             
-            // Accept cookies
-            acceptBtn.on('click', function() {
+            $('#acceptCookiesBtn').on('click', function() {
                 localStorage.setItem('cookieConsent', 'accepted');
                 localStorage.setItem('cookiePreferences', JSON.stringify({
-                    necessary: true,
-                    analytics: true,
-                    marketing: true,
-                    functional: true
+                    necessary: true, analytics: true, marketing: true, functional: true
                 }));
                 cookieBanner.removeClass('show');
-                
-                // You can add analytics initialization here
-                console.log('Cookies accepted');
             });
             
-            // Decline cookies (only necessary cookies)
-            declineBtn.on('click', function() {
+            $('#declineCookiesBtn').on('click', function() {
                 localStorage.setItem('cookieConsent', 'declined');
                 localStorage.setItem('cookiePreferences', JSON.stringify({
-                    necessary: true,
-                    analytics: false,
-                    marketing: false,
-                    functional: false
+                    necessary: true, analytics: false, marketing: false, functional: false
                 }));
                 cookieBanner.removeClass('show');
-                
-                console.log('Cookies declined - only necessary cookies enabled');
             });
             
-            // Cookie settings
-            settingsBtn.on('click', function() {
-                // Redirect to cookie settings page
+            $('#cookieSettingsBtn').on('click', function() {
                 window.location.href = "{% url 'core:cookie_settings' %}";
             });
             
-            // Auto-hide alerts
-            setTimeout(function() {
-                $('.alert').fadeOut('slow');
-            }, 5000);
-            
-            // Form loading state
-            $('form').on('submit', function() {
-                const submitBtn = $(this).find('button[type="submit"]');
-                if (submitBtn.length) {
-                    const originalText = submitBtn.html();
-                    submitBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...').prop('disabled', true);
-                }
-            });
+            setTimeout(function() { $('.alert').fadeOut('slow'); }, 5000);
         });
     </script>
     

@@ -1,523 +1,373 @@
 {% extends 'core/logon_base.html' %}
 {% load static %}
 
-{% block title %}Digital Documents | Insurance Certificates | VehicleInsure Nigeria{% endblock %}
-{% block meta_description %}Access and download your insurance certificates, policy documents, and receipts instantly. All your vehicle insurance documents in one secure place.{% endblock %}
-
-{% block extra_css %}
-<style>
-    .page-header {
-        background: #4169E1;
-        padding: 50px 0;
-        color: white;
-        margin-top: -24px;
-        margin-bottom: 40px;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .page-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url('{% static "images/pattern.svg" %}') repeat;
-        opacity: 0.05;
-    }
-    
-    .page-header h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 10px;
-        position: relative;
-        animation: slideUp 0.6s ease-out;
-    }
-    
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 15px;
-        margin-bottom: 30px;
-    }
-    
-    .stat-card {
-        background: white;
-        border-radius: 16px;
-        padding: 20px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-        text-align: center;
-    }
-    
-    .stat-card h3 {
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--royal-blue);
-        margin-bottom: 5px;
-    }
-    
-    .stat-card p {
-        color: #64748b;
-        margin-bottom: 0;
-        font-size: 0.9rem;
-    }
-    
-    .filter-bar {
-        background: white;
-        border-radius: 16px;
-        padding: 20px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-        margin-bottom: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-    
-    .filter-group {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-    
-    .filter-select {
-        padding: 10px 20px;
-        border: 1px solid var(--gray-border);
-        border-radius: 40px;
-        background: white;
-        color: #64748b;
-        font-size: 0.9rem;
-        cursor: pointer;
-    }
-    
-    .search-box {
-        display: flex;
-        gap: 10px;
-    }
-    
-    .search-box input {
-        border: 1px solid var(--gray-border);
-        border-radius: 40px;
-        padding: 10px 20px;
-        min-width: 250px;
-    }
-    
-    .active-filters {
-        margin-bottom: 20px;
-    }
-    
-    .filter-badge {
-        display: inline-flex;
-        align-items: center;
-        background: #eef2ff;
-        color: var(--royal-blue);
-        padding: 5px 15px;
-        border-radius: 30px;
-        font-size: 0.85rem;
-        margin-right: 10px;
-        margin-bottom: 10px;
-    }
-    
-    .filter-badge a {
-        color: var(--royal-blue);
-        margin-left: 8px;
-        text-decoration: none;
-    }
-    
-    .filter-badge a:hover {
-        color: #dc2626;
-    }
-    
-    .documents-container {
-        background: white;
-        border-radius: 24px;
-        padding: 40px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-        margin-bottom: 50px;
-        opacity: 0;
-        transform: translateY(30px);
-        animation: slideUp 0.6s ease-out 0.2s forwards;
-    }
-    
-    .document-card {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px;
-        background: var(--gray-light);
-        border-radius: 16px;
-        margin-bottom: 15px;
-        transition: all 0.3s;
-        opacity: 0;
-        transform: translateY(20px);
-        animation: slideUp 0.5s ease-out forwards;
-    }
-    
-    .document-card:hover {
-        background: white;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-    }
-    
-    .document-info {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        flex: 1;
-    }
-    
-    .document-icon {
-        width: 55px;
-        height: 55px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-    
-    .document-icon i {
-        font-size: 1.8rem;
-    }
-    
-    .document-details {
-        flex: 1;
-    }
-    
-    .document-details h4 {
-        font-weight: 600;
-        color: var(--navy-dark);
-        margin-bottom: 5px;
-        font-size: 1.1rem;
-    }
-    
-    .document-details p {
-        color: #64748b;
-        font-size: 0.9rem;
-        margin-bottom: 3px;
-    }
-    
-    .document-meta {
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-        margin-top: 5px;
-    }
-    
-    .document-meta span {
-        color: #94a3b8;
-        font-size: 0.8rem;
-    }
-    
-    .document-meta i {
-        margin-right: 5px;
-    }
-    
-    .document-actions {
-        display: flex;
-        gap: 10px;
-    }
-    
-    .btn-doc {
-        padding: 10px 18px;
-        border-radius: 40px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        transition: all 0.3s;
-        text-decoration: none;
-    }
-    
-    .verified-badge {
-        display: inline-flex;
-        align-items: center;
-        background: #d1fae5;
-        color: #065f46;
-        padding: 2px 10px;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        margin-left: 10px;
-    }
-    
-    .verified-badge i {
-        margin-right: 4px;
-    }
-    
-    .expired-badge {
-        display: inline-flex;
-        align-items: center;
-        background: #fee2e2;
-        color: #dc2626;
-        padding: 2px 10px;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        margin-left: 10px;
-    }
-    
-    .empty-state-docs {
-        text-align: center;
-        padding: 60px 20px;
-    }
-    
-    .empty-state-docs i {
-        font-size: 4rem;
-        color: var(--gray-border);
-        margin-bottom: 20px;
-    }
-    
-    .pagination {
-        justify-content: center;
-        margin-top: 40px;
-    }
-    
-    .page-link {
-        border: none;
-        padding: 10px 18px;
-        margin: 0 5px;
-        border-radius: 10px;
-        color: #64748b;
-    }
-    
-    .page-link:hover {
-        background: #eef2ff;
-        color: var(--royal-blue);
-    }
-    
-    .page-item.active .page-link {
-        background: var(--royal-blue);
-        color: white;
-    }
-    
-    @keyframes slideUp {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @media (max-width: 768px) {
-        .page-header h1 {
-            font-size: 2rem;
-        }
-        
-        .documents-container {
-            padding: 25px;
-        }
-        
-        .filter-bar {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        
-        .search-box input {
-            min-width: auto;
-            width: 100%;
-        }
-        
-        .document-card {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
-        }
-        
-        .document-actions {
-            width: 100%;
-        }
-        
-        .document-actions .btn {
-            flex: 1;
-            text-align: center;
-        }
-    }
-</style>
-{% endblock %}
+{% block title %}Digital Documents | VehicleInsure Nigeria{% endblock %}
 
 {% block content %}
-<!-- Page Header -->
-<section class="page-header">
-    <div class="container">
-        <h1>Digital Documents</h1>
-        <p>Access and download all your insurance documents</p>
-        <div class="breadcrumb-custom">
-            <a href="{% url 'core:home' %}">Home</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
-            <a href="{% url 'core:dashboard' %}">Dashboard</a> <i class="fas fa-chevron-right mx-2" style="font-size: 0.8rem;"></i>
-            <span class="active">Digital Documents</span>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-folder-open"></i> Digital Documents</h2>
+            <p class="text-muted">Access and download all your insurance documents in one place</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:my_policies' %}" class="btn btn-outline-primary">
+                <i class="fas fa-file-contract"></i> My Policies
+            </a>
+            <a href="{% url 'core:my_certificates' %}" class="btn btn-outline-success ms-2">
+                <i class="fas fa-certificate"></i> My Certificates
+            </a>
         </div>
     </div>
-</section>
 
-<div class="container pb-5">
-    <!-- Stats -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>{{ stats.total }}</h3>
-            <p>Total Documents</p>
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Documents</h6>
+                            <h3>{{ stats.total }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="stat-card">
-            <h3>{{ stats.certificates }}</h3>
-            <p>Certificates</p>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Certificates</h6>
+                            <h3 class="text-primary">{{ stats.certificates }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-certificate text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="stat-card">
-            <h3>{{ stats.policies }}</h3>
-            <p>Policies</p>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Policies</h6>
+                            <h3 class="text-info">{{ stats.policies }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-file-contract text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="stat-card">
-            <h3>{{ stats.receipts }}</h3>
-            <p>Receipts</p>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Receipts</h6>
+                            <h3 class="text-success">{{ stats.receipts }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-receipt text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    
-    <!-- Filter Bar -->
-    <div class="filter-bar">
-        <div class="filter-group">
-            <select class="filter-select" onchange="window.location.href=this.value">
-                <option value="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category.id }}{% endif %}">All Types</option>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <select class="form-control" id="typeFilter" onchange="filterDocuments()">
+                <option value="">All Document Types</option>
                 {% for type_code, type_name in document_types %}
-                <option value="?type={{ type_code }}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" {% if doc_type == type_code %}selected{% endif %}>
-                    {{ type_name }}
-                </option>
+                <option value="{{ type_code }}" {% if doc_type == type_code %}selected{% endif %}>{{ type_name }}</option>
                 {% endfor %}
             </select>
-            
-            <select class="filter-select" onchange="window.location.href=this.value">
-                <option value="?{% if doc_type %}type={{ doc_type }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}">All Categories</option>
+        </div>
+        <div class="col-md-3">
+            <select class="form-control" id="categoryFilter" onchange="filterDocuments()">
+                <option value="">All Categories</option>
                 {% for category in categories %}
-                <option value="?category={{ category.id }}{% if doc_type %}&type={{ doc_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
+                <option value="{{ category.id }}" {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
                     {{ category.name }} ({{ category.doc_count }})
                 </option>
                 {% endfor %}
             </select>
         </div>
-        
-        <form method="get" class="search-box">
-            {% if doc_type %}<input type="hidden" name="type" value="{{ doc_type }}">{% endif %}
-            {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.id }}">{% endif %}
-            <input type="text" name="q" placeholder="Search documents..." value="{{ search_query }}">
-            <button type="submit" class="btn-primary-custom"><i class="fas fa-search"></i></button>
-            {% if search_query or doc_type or selected_category %}
-            <a href="{% url 'core:digital_documents' %}" class="btn-outline-primary-custom">Clear</a>
-            {% endif %}
-        </form>
-    </div>
-    
-    <!-- Active Filters -->
-    {% if doc_type or selected_category or search_query %}
-    <div class="active-filters">
-        {% if doc_type %}
-        <span class="filter-badge">
-            Type: {% for type_code, type_name in document_types %}{% if type_code == doc_type %}{{ type_name }}{% endif %}{% endfor %}
-            <a href="?{% if selected_category %}category={{ selected_category.id }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}"><i class="fas fa-times"></i></a>
-        </span>
-        {% endif %}
-        {% if selected_category %}
-        <span class="filter-badge">
-            Category: {{ selected_category.name }}
-            <a href="?{% if doc_type %}type={{ doc_type }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}"><i class="fas fa-times"></i></a>
-        </span>
-        {% endif %}
-        {% if search_query %}
-        <span class="filter-badge">
-            Search: "{{ search_query }}"
-            <a href="?{% if doc_type %}type={{ doc_type }}&{% endif %}{% if selected_category %}category={{ selected_category.id }}{% endif %}"><i class="fas fa-times"></i></a>
-        </span>
-        {% endif %}
-        <span class="filter-badge">{{ total_documents }} document{{ total_documents|pluralize }} found</span>
-    </div>
-    {% endif %}
-    
-    <div class="documents-container">
-        <!-- Document List -->
-        <div id="documentsList">
-            {% if documents %}
-                {% for document in documents %}
-                <div class="document-card" style="animation-delay: {{ forloop.counter|add:10 }}0ms;">
-                    <div class="document-info">
-                        <div class="document-icon" style="background: {{ document.file_icon_color }}20; color: {{ document.file_icon_color }};">
-                            <i class="fas {{ document.file_icon }}"></i>
-                        </div>
-                        <div class="document-details">
-                            <h4>
-                                {{ document.title }}
-                                {% if document.is_verified %}
-                                <span class="verified-badge"><i class="fas fa-check-circle"></i> Verified</span>
-                                {% endif %}
-                                {% if not document.is_valid %}
-                                <span class="expired-badge"><i class="fas fa-exclamation-circle"></i> Expired</span>
-                                {% endif %}
-                            </h4>
-                            <p>
-                                {% if document.document_number %}Ref: {{ document.document_number }} • {% endif %}
-                                {{ document.get_document_type_display }}
-                                {% if document.policy %} • Policy: {{ document.policy.policy_number }}{% endif %}
-                            </p>
-                            <div class="document-meta">
-                                <span><i class="far fa-calendar"></i> {{ document.issue_date|date:"M d, Y"|default:"—" }}</span>
-                                {% if document.valid_until %}
-                                <span><i class="far fa-clock"></i> Valid until: {{ document.valid_until|date:"M d, Y" }}</span>
-                                {% endif %}
-                                <span><i class="far fa-hdd"></i> {{ document.file_size }}</span>
-                                <span><i class="far fa-download"></i> {{ document.download_count }} downloads</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="document-actions">
-                        <a href="{% url 'core:public_document_detail' document.slug %}" class="btn-doc btn-outline-primary-custom">
-                            <i class="fas fa-eye me-1"></i> View
-                        </a>
-                        <a href="{% url 'core:public_document_download' document.slug %}" class="btn-doc btn-primary-custom">
-                            <i class="fas fa-download me-1"></i> Download
-                        </a>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="empty-state-docs">
-                    <i class="fas fa-file-alt"></i>
-                    <h3>No documents found</h3>
-                    <p class="text-muted">
-                        {% if search_query or doc_type or selected_category %}
-                            No documents match your filters.
-                            <a href="{% url 'core:digital_documents' %}">Clear filters</a>
-                        {% else %}
-                            You don't have any documents yet. Documents will appear here when you purchase a policy or make a claim.
-                        {% endif %}
-                    </p>
-                </div>
-            {% endif %}
+        <div class="col-md-6">
+            <form method="get" class="d-flex gap-2" id="searchForm">
+                <input type="hidden" name="type" id="typeInput" value="{{ doc_type }}">
+                <input type="hidden" name="category" id="categoryInput" value="{{ selected_category.id }}">
+                <input type="text" name="q" class="form-control" placeholder="Search documents..." value="{{ search_query }}">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                {% if search_query or doc_type or selected_category %}
+                <a href="{% url 'core:digital_documents' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+                {% endif %}
+            </form>
         </div>
     </div>
-    
+
+    <!-- Active Filters -->
+    {% if doc_type or selected_category or search_query %}
+    <div class="row mb-3">
+        <div class="col">
+            <div class="d-flex flex-wrap gap-2">
+                {% if doc_type %}
+                <span class="badge bg-primary p-2">
+                    Type: {% for type_code, type_name in document_types %}{% if type_code == doc_type %}{{ type_name }}{% endif %}{% endfor %}
+                    <a href="#" onclick="removeFilter('type'); return false;" class="text-white ms-2">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </span>
+                {% endif %}
+                {% if selected_category %}
+                <span class="badge bg-info p-2">
+                    Category: {{ selected_category.name }}
+                    <a href="#" onclick="removeFilter('category'); return false;" class="text-white ms-2">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </span>
+                {% endif %}
+                {% if search_query %}
+                <span class="badge bg-secondary p-2">
+                    Search: "{{ search_query }}"
+                    <a href="#" onclick="removeFilter('q'); return false;" class="text-white ms-2">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </span>
+                {% endif %}
+                <span class="badge bg-light text-dark p-2">{{ total_documents }} document{{ total_documents|pluralize }} found</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Documents List -->
+    <div class="row">
+        {% if documents %}
+            {% for document in documents %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="document-icon-small" style="color: {{ document.file_icon_color }};">
+                                <i class="fas {{ document.file_icon }} fa-2x"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0">{{ document.title|truncatechars:40 }}</h5>
+                                <small class="opacity-75">{{ document.get_document_type_display }}</small>
+                            </div>
+                        </div>
+                        <div>
+                            {% if document.is_verified %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle"></i> Verified
+                            </span>
+                            {% endif %}
+                            {% if not document.is_valid %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-exclamation-circle"></i> Expired
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                {% if document.document_number %}
+                                <p class="mb-2"><strong>Reference:</strong> {{ document.document_number }}</p>
+                                {% endif %}
+                                <p class="mb-2"><strong>Issued:</strong> {{ document.issue_date|date:"M d, Y"|default:"—" }}</p>
+                                {% if document.policy %}
+                                <p class="mb-2"><strong>Policy:</strong> {{ document.policy.policy_number }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {% if document.valid_until %}
+                                <p class="mb-2"><strong>Valid Until:</strong> 
+                                    <span class="{% if document.is_valid %}text-success{% else %}text-danger{% endif %}">
+                                        {{ document.valid_until|date:"M d, Y" }}
+                                    </span>
+                                </p>
+                                {% endif %}
+                                <p class="mb-2"><strong>File:</strong> {{ document.file_extension }} • {{ document.file_size }}</p>
+                                <p class="mb-2"><strong>Downloads:</strong> {{ document.download_count }}</p>
+                            </div>
+                        </div>
+                        {% if document.description %}
+                        <p class="text-muted mt-2 mb-0">{{ document.description|truncatewords:20 }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'core:public_document_detail' document.slug %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                            <a href="{% url 'core:public_document_download' document.slug %}" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                            {% if document.policy %}
+                            <a href="{% url 'core:policy_detail' document.policy.id %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-file-contract"></i> View Policy
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
+                        <h4>No Documents Found</h4>
+                        <p class="text-muted">
+                            {% if search_query or doc_type or selected_category %}
+                                No documents match your filters.
+                                <a href="{% url 'core:digital_documents' %}">Clear filters</a>
+                            {% else %}
+                                You don't have any documents yet. Documents will appear here when you purchase a policy or generate certificates.
+                            {% endif %}
+                        </p>
+                        {% if not search_query and not doc_type and not selected_category %}
+                        <a href="{% url 'core:get_quote' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus"></i> Get a Quote
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
     <!-- Pagination -->
     {% if documents.has_other_pages %}
     <nav>
-        <ul class="pagination">
+        <ul class="pagination justify-content-center">
             {% if documents.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ documents.previous_page_number }}{% if doc_type %}&type={{ doc_type }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
-                    <i class="fas fa-chevron-left"></i>
-                </a>
-            </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ documents.previous_page_number }}{% if doc_type %}&type={{ doc_type }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
             {% endif %}
             
             {% for num in documents.paginator.page_range %}
                 {% if documents.number == num %}
-                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
                 {% elif num > documents.number|add:'-3' and num < documents.number|add:'3' %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ num }}{% if doc_type %}&type={{ doc_type }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
-                </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if doc_type %}&type={{ doc_type }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
+                    </li>
                 {% endif %}
             {% endfor %}
             
             {% if documents.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ documents.next_page_number }}{% if doc_type %}&type={{ doc_type }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-            </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ documents.next_page_number }}{% if doc_type %}&type={{ doc_type }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
             {% endif %}
         </ul>
     </nav>
     {% endif %}
 </div>
+
+<script>
+function filterDocuments() {
+    const type = document.getElementById('typeFilter').value;
+    const category = document.getElementById('categoryFilter').value;
+    
+    let url = window.location.pathname;
+    let params = [];
+    
+    if (type) params.push(`type=${type}`);
+    if (category) params.push(`category=${category}`);
+    
+    const searchQuery = document.querySelector('input[name="q"]').value;
+    if (searchQuery) params.push(`q=${encodeURIComponent(searchQuery)}`);
+    
+    if (params.length) {
+        url += '?' + params.join('&');
+    }
+    
+    window.location.href = url;
+}
+
+function removeFilter(filterName) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete(filterName);
+    
+    const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+    window.location.href = newUrl;
+}
+
+// Sync hidden inputs with select filters
+document.getElementById('typeFilter').addEventListener('change', function() {
+    document.getElementById('typeInput').value = this.value;
+});
+
+document.getElementById('categoryFilter').addEventListener('change', function() {
+    document.getElementById('categoryInput').value = this.value;
+});
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
+.card-footer {
+    border-top: 1px solid #e9ecef;
+    border-radius: 0 0 12px 12px !important;
+    padding: 15px 20px;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.btn-outline-success { color: #28a745; border-color: #28a745; }
+.btn-outline-success:hover { background-color: #28a745; color: white; }
+.btn-outline-primary { color: #4169E1; border-color: #4169E1; }
+.btn-outline-primary:hover { background-color: #4169E1; color: white; }
+.pagination .page-link { color: #4169E1; }
+.pagination .page-item.active .page-link { background-color: #4169E1; border-color: #4169E1; color: white; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.document-icon-small { width: 40px; text-align: center; }
+</style>
 {% endblock %}

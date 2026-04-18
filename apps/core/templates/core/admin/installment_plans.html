@@ -1,0 +1,326 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Manage Installment Plans{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-calendar-alt"></i> Manage Installment Plans</h2>
+            <p class="text-muted">View and manage all customer installment plans</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_export_data' %}?model=installment_plans&format=csv" class="btn btn-success">
+                <i class="fas fa-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Plans</h6>
+                            <h3>{{ total_plans }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Active Plans</h6>
+                            <h3 class="text-success">{{ active_plans }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-play-circle text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Completed</h6>
+                            <h3 class="text-info">{{ completed_plans }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Defaulted</h6>
+                            <h3 class="text-danger">{{ defaulted_plans }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-circle text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Summary -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="fas fa-money-bill fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted">Total Premium Value</h6>
+                            <h4>₦{{ total_premium|floatformat:2|intcomma }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted">Total Amount Paid</h6>
+                            <h4>₦{{ total_paid|floatformat:2|intcomma }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by plan #, policy #, or customer..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-3">
+            <select class="form-control" id="statusFilter">
+                <option value="">All Status</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="defaulted" {% if status_filter == 'defaulted' %}selected{% endif %}>Defaulted</option>
+                <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary me-2" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Plans Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #4169E1; color: white;">
+                        <tr>
+                            <th>Plan #</th>
+                            <th>Customer</th>
+                            <th>Policy #</th>
+                            <th>Vehicle</th>
+                            <th>Total Premium</th>
+                            <th>Paid</th>
+                            <th>Remaining</th>
+                            <th>Progress</th>
+                            <th>Next Due</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in plans %}
+                        <tr>
+                            <td><strong>{{ plan.plan_number }}</strong></td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user-circle me-2" style="color: #4169E1;"></i>
+                                    <div>
+                                        {{ plan.user.get_full_name|default:plan.user.email }}
+                                        <br><small class="text-muted">{{ plan.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="{% url 'core:admin_policy_detail' plan.policy.id %}">
+                                    {{ plan.policy.policy_number }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ plan.policy.vehicle.make }} {{ plan.policy.vehicle.model }}
+                                <br><small class="text-muted">{{ plan.policy.vehicle.registration_number }}</small>
+                            </td>
+                            <td>₦{{ plan.total_premium|floatformat:2|intcomma }}</td>
+                            <td class="text-success">₦{{ plan.get_paid_amount|floatformat:2|intcomma }}</td>
+                            <td class="text-warning">₦{{ plan.get_remaining_amount|floatformat:2|intcomma }}</td>
+                            <td style="min-width: 120px;">
+                                {% with paid=plan.get_paid_amount total=plan.total_payable %}
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-success" style="width: {% widthratio paid total 100 %}%"></div>
+                                </div>
+                                <small>{% widthratio paid total 100 %}%</small>
+                                {% endwith %}
+                            </td>
+                            <td>
+                                {{ plan.next_due_date|date:"M d, Y"|default:"N/A" }}
+                                {% if plan.next_due_date and plan.next_due_date < today %}
+                                    <br><span class="badge bg-danger">Overdue</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if plan.status == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                {% elif plan.status == 'completed' %}
+                                    <span class="badge bg-info">Completed</span>
+                                {% elif plan.status == 'defaulted' %}
+                                    <span class="badge bg-danger">Defaulted</span>
+                                {% elif plan.status == 'cancelled' %}
+                                    <span class="badge bg-secondary">Cancelled</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'core:admin_installment_plan_detail' plan.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    {% if plan.status == 'active' %}
+                                        <button class="btn btn-sm btn-warning" onclick="markDefaulted('{{ plan.id }}')" title="Mark as Defaulted">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="11" class="text-center py-4">
+                                <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No installment plans found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% include 'core/includes/pagination.html' with page_obj=plans %}
+</div>
+
+<script>
+function applyFilters() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    let url = '?';
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    if (status) url += `status=${status}&`;
+    
+    window.location.href = url.slice(0, -1);
+}
+
+function clearFilters() {
+    window.location.href = window.location.pathname;
+}
+
+function markDefaulted(planId) {
+    if (!confirm('Mark this plan as defaulted? This may affect the policy status.')) return;
+    
+    fetch(`/custom_admin/installment-plan/${planId}/action/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ action: 'mark_defaulted' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed: ' + data.message);
+        }
+    });
+}
+
+document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') applyFilters();
+});
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+.table td {
+    vertical-align: middle;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.progress {
+    background-color: #e9ecef;
+    border-radius: 10px;
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+</style>
+{% endblock %}

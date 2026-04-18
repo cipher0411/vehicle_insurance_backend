@@ -1,0 +1,134 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Payment Successful{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-check-circle"></i> Payment Successful!</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="mb-3">
+                            <i class="fas fa-check-circle text-success" style="font-size: 64px;"></i>
+                        </div>
+                        <h3>Thank You for Your Payment!</h3>
+                        <p class="text-muted">Your policy is now active and coverage has begun.</p>
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        <h5 class="mb-3"><i class="fas fa-receipt"></i> Payment Confirmation</h5>
+                        <table class="table table-borderless mb-0">
+                            <tr>
+                                <td width="40%"><strong>Policy Number:</strong></td>
+                                <td>{{ policy.policy_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Amount Paid:</strong></td>
+                                <td class="fw-bold text-success">₦{{ payment.amount|floatformat:2|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Transaction Reference:</strong></td>
+                                <td>{{ payment.payment_details.id|default:payment.transaction_id }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Payment Date:</strong></td>
+                                <td>{{ payment.paid_at|date:"F d, Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Payment Method:</strong></td>
+                                <td>{{ payment.get_payment_method_display }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Policy Status:</strong></td>
+                                <td><span class="badge bg-success">Active</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-envelope"></i> 
+                        A confirmation email has been sent to <strong>{{ user.email }}</strong>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'core:policy_detail' policy.id %}" class="btn btn-primary">
+                            <i class="fas fa-file-contract"></i> View Policy Details
+                        </a>
+                        {% if certificate %}
+                        <a href="{% url 'core:view_certificate' certificate.id %}" class="btn btn-outline-success">
+                            <i class="fas fa-certificate"></i> Download Certificate
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-home"></i> Go to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> What's Next?</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                            <i class="fas fa-file-pdf fa-2x text-danger mb-2"></i>
+                            <h6>Download Documents</h6>
+                            <p class="small text-muted">Access your policy documents</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <i class="fas fa-mobile-alt fa-2x text-primary mb-2"></i>
+                            <h6>Save Digital Copy</h6>
+                            <p class="small text-muted">Keep a copy on your phone</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <i class="fas fa-headset fa-2x text-success mb-2"></i>
+                            <h6>Need Help?</h6>
+                            <p class="small text-muted">24/7 support available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+.btn-outline-success {
+    border-color: #10b981;
+    color: #10b981;
+}
+.btn-outline-success:hover {
+    background-color: #10b981;
+    color: white;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+</style>
+{% endblock %}

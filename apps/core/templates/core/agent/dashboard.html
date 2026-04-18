@@ -1,0 +1,322 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Agent Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-tachometer-alt"></i> Agent Dashboard</h2>
+            <p class="text-muted">Welcome back, {{ user.get_full_name|default:user.email }}</p>
+        </div>
+        <div class="col-auto">
+            <span class="badge bg-success p-2">
+                <i class="fas fa-user-check"></i> Agent Code: {{ profile.agent_code }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Customers</h6>
+                            <h3>{{ customer_count }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Policies</h6>
+                            <h3>{{ total_policies }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Active Policies</h6>
+                            <h3 class="text-success">{{ active_policies }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-shield-alt text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Monthly Sales</h6>
+                            <h3 class="text-primary">{{ monthly_sales }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-alt text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commission Summary -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card border-success">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Earned</h6>
+                    <h3 class="text-success">₦{{ total_earned|floatformat:2|intcomma }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-primary">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Paid</h6>
+                    <h3 class="text-primary">₦{{ total_paid|floatformat:2|intcomma }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-warning">
+                <div class="card-body">
+                    <h6 class="text-muted">Pending Commission</h6>
+                    <h3 class="text-warning">₦{{ pending_commission|floatformat:2|intcomma }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-info">
+                <div class="card-body">
+                    <h6 class="text-muted">Monthly Commission</h6>
+                    <h3 class="text-info">₦{{ monthly_commission|floatformat:2|intcomma }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Policies -->
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-file-contract"></i> Recent Policies</h5>
+                    <a href="{% url 'core:agent_policies' %}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for policy in recent_policies %}
+                        <a href="{% url 'core:agent_policy_detail' policy.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ policy.policy_number }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ policy.user.get_full_name|default:policy.user.email }} | 
+                                        {{ policy.get_policy_type_display }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge {% if policy.status == 'active' %}bg-success{% elif policy.status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                        {{ policy.get_status_display }}
+                                    </span>
+                                    <br>
+                                    <small class="text-muted">₦{{ policy.premium_amount|floatformat:2|intcomma }}</small>
+                                </div>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="list-group-item text-center py-3 text-muted">
+                            No policies yet
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Commissions -->
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-hand-holding-usd"></i> Recent Commissions</h5>
+                    <a href="{% url 'core:agent_commissions' %}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for commission in recent_commissions %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ commission.commission_number }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {% if commission.policy %}
+                                            {{ commission.policy.policy_number }} - {{ commission.policy.user.get_full_name|default:commission.policy.user.email }}
+                                        {% else %}
+                                            Bonus
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge {% if commission.status == 'paid' %}bg-success{% elif commission.status == 'approved' %}bg-info{% elif commission.status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                        {{ commission.get_status_display }}
+                                    </span>
+                                    <br>
+                                    <strong class="text-success">₦{{ commission.total_commission|floatformat:2|intcomma }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-center py-3 text-muted">
+                            No commissions yet
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Referral Link Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-link"></i> Your Referral Link</h5>
+        </div>
+        <div class="card-body">
+            <div class="input-group">
+                <input type="text" class="form-control" id="referralLink" value="{{ referral_link }}" readonly>
+                <button class="btn btn-primary" onclick="copyReferralLink()">
+                    <i class="fas fa-copy"></i> Copy Link
+                </button>
+            </div>
+            <small class="text-muted">Share this link with potential customers. You'll earn commission on every policy they purchase!</small>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <a href="{% url 'core:agent_customers' %}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-user-plus"></i> Add Customer
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{% url 'core:get_quote' %}" class="btn btn-outline-success w-100 mb-2">
+                        <i class="fas fa-calculator"></i> Get Quote for Customer
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{% url 'core:agent_profile' %}" class="btn btn-outline-info w-100 mb-2">
+                        <i class="fas fa-user-cog"></i> Update Profile
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{% url 'core:agent_referral_link' %}" class="btn btn-outline-warning w-100 mb-2">
+                        <i class="fas fa-share-alt"></i> Share Referral Link
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Copy Success Modal -->
+<div class="modal fade" id="copySuccessModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Success</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                <h5 class="mt-3">Referral link copied!</h5>
+                <p class="text-muted">Share this link with your customers to earn commissions.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let copySuccessModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    copySuccessModal = new bootstrap.Modal(document.getElementById('copySuccessModal'));
+});
+
+function copyReferralLink() {
+    const linkInput = document.getElementById('referralLink');
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(linkInput.value).then(function() {
+        copySuccessModal.show();
+    }).catch(function() {
+        document.execCommand('copy');
+        copySuccessModal.show();
+    });
+}
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
+.border-success { border-left: 4px solid #10b981 !important; }
+.border-primary { border-left: 4px solid #4169E1 !important; }
+.border-warning { border-left: 4px solid #f59e0b !important; }
+.border-info { border-left: 4px solid #0dcaf0 !important; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.btn-outline-light { color: white; border-color: rgba(255,255,255,0.5); }
+.btn-outline-light:hover { background-color: rgba(255,255,255,0.1); color: white; }
+</style>
+{% endblock %}

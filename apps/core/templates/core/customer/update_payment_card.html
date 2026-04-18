@@ -1,0 +1,276 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Update Payment Card{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-credit-card"></i> Update Payment Card</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Plan Info -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-calendar-alt"></i> Plan Information</h6>
+                        <p class="mb-1"><strong>Plan:</strong> {{ plan.plan_number }}</p>
+                        <p class="mb-1"><strong>Policy:</strong> {{ plan.policy.policy_number }}</p>
+                        <p class="mb-0"><strong>Next Auto-Debit:</strong> {{ plan.next_auto_debit_date|date:"M d, Y"|default:"N/A" }}</p>
+                    </div>
+
+                    <!-- Current Card (if any) -->
+                    {% if plan.card_token %}
+                    <div class="current-card mb-4">
+                        <h6>Current Card</h6>
+                        <div class="card-details">
+                            <i class="fas fa-credit-card me-2"></i>
+                            •••• •••• •••• {{ plan.card_token|slice:"-4:" }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Important Notice -->
+                    <div class="alert alert-warning">
+                        <i class="fas fa-shield-alt"></i>
+                        <strong>Secure Payment</strong>
+                        <p class="mb-0 small">Your card details are processed securely by Flutterwave. We do not store your full card information.</p>
+                    </div>
+
+                    <!-- Payment Form -->
+                    <form id="cardUpdateForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="public_key" value="{{ public_key }}">
+                        <input type="hidden" id="plan_id" value="{{ plan.id }}">
+                        <input type="hidden" id="email" value="{{ user.email }}">
+                        <input type="hidden" id="name" value="{{ user.get_full_name|default:user.email }}">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Amount to Authorize</label>
+                            <div class="form-control bg-light">
+                                <strong>₦100.00</strong> 
+                                <span class="text-muted">(Verification charge - will be refunded)</span>
+                            </div>
+                            <small class="text-muted">A small verification charge is required to validate your card. This will be refunded immediately.</small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-primary btn-lg" id="updateCardBtn" onclick="initializeCardUpdate()">
+                                <i class="fas fa-credit-card"></i> Update Card
+                            </button>
+                            <a href="{% url 'core:manage_auto_debit' plan.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </a>
+                        </div>
+                    </form>
+
+                    <div id="paymentStatus" class="mt-3 text-center" style="display: none;">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2">Processing your card...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supported Cards -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Supported Cards</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-around">
+                        <i class="fab fa-cc-visa fa-3x text-primary"></i>
+                        <i class="fab fa-cc-mastercard fa-3x text-danger"></i>
+                        <i class="fab fa-cc-amex fa-3x text-info"></i>
+                        <i class="fas fa-credit-card fa-3x text-success"></i>
+                    </div>
+                    <p class="text-center text-muted small mt-3 mb-0">
+                        Visa, Mastercard, American Express, and Verve cards are accepted
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Success</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                <h5 class="mt-3">Card Updated Successfully!</h5>
+                <p class="text-muted">Your card has been saved for future auto-debits.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" onclick="redirectToManage()">Continue</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-times-circle"></i> Error</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-times-circle text-danger" style="font-size: 48px;"></i>
+                <h5 class="mt-3" id="errorMessage">Failed to update card</h5>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://checkout.flutterwave.com/v3.js"></script>
+<script>
+let successModal, errorModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    successModal = new bootstrap.Modal(document.getElementById('successModal'));
+    errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+});
+
+function redirectToManage() {
+    window.location.href = "{% url 'core:manage_auto_debit' plan.id %}";
+}
+
+function initializeCardUpdate() {
+    const publicKey = document.getElementById('public_key').value;
+    const email = document.getElementById('email').value;
+    const name = document.getElementById('name').value;
+    const planId = document.getElementById('plan_id').value;
+    
+    const updateBtn = document.getElementById('updateCardBtn');
+    const statusDiv = document.getElementById('paymentStatus');
+    
+    updateBtn.disabled = true;
+    updateBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Loading...';
+    statusDiv.style.display = 'block';
+    
+    FlutterwaveCheckout({
+        public_key: publicKey,
+        tx_ref: `CARD-UPDATE-${planId}-${Date.now()}`,
+        amount: 100, // Verification charge
+        currency: 'NGN',
+        payment_options: 'card',
+        redirect_url: window.location.origin + '/payment/callback/',
+        customer: {
+            email: email,
+            name: name,
+        },
+        customizations: {
+            title: 'Vehicle Insurance Pro',
+            description: 'Card verification for auto-debit',
+            logo: '/static/images/logo.png',
+        },
+        callback: function(data) {
+            console.log('Payment callback:', data);
+            
+            if (data.status === 'successful') {
+                // Save card token
+                saveCardToken(data.transaction_id, planId);
+            } else {
+                updateBtn.disabled = false;
+                updateBtn.innerHTML = '<i class="fas fa-credit-card"></i> Update Card';
+                statusDiv.style.display = 'none';
+                document.getElementById('errorMessage').textContent = 'Card verification failed. Please try again.';
+                errorModal.show();
+            }
+        },
+        onclose: function() {
+            updateBtn.disabled = false;
+            updateBtn.innerHTML = '<i class="fas fa-credit-card"></i> Update Card';
+            statusDiv.style.display = 'none';
+        }
+    });
+}
+
+function saveCardToken(transactionId, planId) {
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch('/api/save-card-token/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            transaction_id: transactionId,
+            plan_id: planId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            successModal.show();
+        } else {
+            document.getElementById('errorMessage').textContent = data.message || 'Failed to save card';
+            errorModal.show();
+        }
+    })
+    .catch(error => {
+        document.getElementById('errorMessage').textContent = 'An error occurred. Please try again.';
+        errorModal.show();
+    })
+    .finally(() => {
+        const updateBtn = document.getElementById('updateCardBtn');
+        const statusDiv = document.getElementById('paymentStatus');
+        updateBtn.disabled = false;
+        updateBtn.innerHTML = '<i class="fas fa-credit-card"></i> Update Card';
+        statusDiv.style.display = 'none';
+    });
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-details {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #4169E1;
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+.alert-info {
+    background-color: #eef2ff;
+    border-color: #4169E1;
+    color: #1e293b;
+}
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffecb5;
+    color: #856404;
+}
+</style>
+{% endblock %}

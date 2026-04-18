@@ -1,0 +1,391 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Installment Plan Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:admin_installment_plans' %}">Installment Plans</a></li>
+                    <li class="breadcrumb-item active">{{ plan.plan_number }}</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-calendar-alt"></i> Installment Plan Details</h2>
+            <p class="text-muted">Plan #{{ plan.plan_number }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_policy_detail' plan.policy.id %}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-file-contract"></i> View Policy
+            </a>
+            {% if plan.status == 'active' %}
+                <button class="btn btn-warning" onclick="markDefaulted()">
+                    <i class="fas fa-exclamation-triangle"></i> Mark Defaulted
+                </button>
+            {% elif plan.status == 'defaulted' %}
+                <button class="btn btn-success" onclick="reactivatePlan()">
+                    <i class="fas fa-play"></i> Reactivate
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Plan Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Plan Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr><th width="40%">Plan Number:</th><td>{{ plan.plan_number }}</td></tr>
+                                <tr><th>Customer:</th><td>{{ plan.user.get_full_name|default:plan.user.email }}</td></tr>
+                                <tr><th>Email:</th><td>{{ plan.user.email }}</td></tr>
+                                <tr><th>Phone:</th><td>{{ plan.user.phone_number|default:'N/A' }}</td></tr>
+                                <tr><th>Frequency:</th><td>{{ plan.get_frequency_display }}</td></tr>
+                                <tr><th>Status:</th>
+                                    <td>
+                                        {% if plan.status == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif plan.status == 'completed' %}
+                                            <span class="badge bg-info">Completed</span>
+                                        {% elif plan.status == 'defaulted' %}
+                                            <span class="badge bg-danger">Defaulted</span>
+                                        {% elif plan.status == 'cancelled' %}
+                                            <span class="badge bg-secondary">Cancelled</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr><th width="40%">Total Premium:</th><td>₦{{ plan.total_premium|floatformat:2|intcomma }}</td></tr>
+                                <tr><th>Down Payment:</th><td>₦{{ plan.down_payment|floatformat:2|intcomma }}</td></tr>
+                                <tr><th>Financed Amount:</th><td>₦{{ plan.financed_amount|floatformat:2|intcomma }}</td></tr>
+                                <tr><th>Interest ({{ plan.interest_rate }}%):</th><td>₦{{ plan.total_interest|floatformat:2|intcomma }}</td></tr>
+                                <tr><th>Total Payable:</th><td><strong>₦{{ plan.total_payable|floatformat:2|intcomma }}</strong></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Progress -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Payment Progress</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h3>₦{{ plan.get_paid_amount|floatformat:2|intcomma }} / ₦{{ plan.total_payable|floatformat:2|intcomma }}</h3>
+                        <div class="progress mb-2" style="height: 25px;">
+                            <div class="progress-bar bg-success" style="width: {{ progress_percentage }}%">
+                                {{ progress_percentage|floatformat:1 }}%
+                            </div>
+                        </div>
+                        <p class="text-muted">
+                            Remaining: <strong>₦{{ plan.get_remaining_amount|floatformat:2|intcomma }}</strong>
+                        </p>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <h6 class="text-muted">Total</h6>
+                                <h4>{{ total_count }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <h6 class="text-muted">Paid</h6>
+                                <h4 class="text-success">{{ paid_count }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <h6 class="text-muted">Pending</h6>
+                                <h4 class="text-warning">{{ total_count|add:paid_count }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <h6 class="text-muted">Next Due</h6>
+                                <h6>{{ plan.next_due_date|date:"M d, Y"|default:"N/A" }}</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Installments Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Installment Schedule</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead style="background-color: #4169E1; color: white;">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Due Date</th>
+                                    <th>Principal</th>
+                                    <th>Interest</th>
+                                    <th>Total</th>
+                                    <th>Paid</th>
+                                    <th>Status</th>
+                                    <th>Payment Ref</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inst in installments %}
+                                <tr>
+                                    <td>{{ inst.installment_number }}</td>
+                                    <td>
+                                        {{ inst.due_date|date:"M d, Y" }}
+                                        {% if inst.is_overdue %}
+                                            <br><span class="badge bg-danger">Overdue</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>₦{{ inst.principal_amount|floatformat:2|intcomma }}</td>
+                                    <td>₦{{ inst.interest_amount|floatformat:2|intcomma }}</td>
+                                    <td>₦{{ inst.total_amount|floatformat:2|intcomma }}</td>
+                                    <td>₦{{ inst.amount_paid|floatformat:2|intcomma }}</td>
+                                    <td>
+                                        {% if inst.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif inst.status == 'paid' %}
+                                            <span class="badge bg-success">Paid</span>
+                                            {% if inst.paid_date %}
+                                                <br><small>{{ inst.paid_date|date:"M d" }}</small>
+                                            {% endif %}
+                                        {% elif inst.status == 'overdue' %}
+                                            <span class="badge bg-danger">Overdue</span>
+                                        {% elif inst.status == 'waived' %}
+                                            <span class="badge bg-secondary">Waived</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if inst.payment %}
+                                            <small>{{ inst.payment.transaction_id|truncatechars:12 }}</small>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            {% if inst.status == 'pending' %}
+                                                <button class="btn btn-sm btn-success" onclick="markPaid('{{ inst.id }}')" title="Mark as Paid">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-warning" onclick="waiveInstallment('{{ inst.id }}')" title="Waive">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            {% elif inst.status == 'paid' %}
+                                                <button class="btn btn-sm btn-outline-secondary" onclick="resetPending('{{ inst.id }}')" title="Reset to Pending">
+                                                    <i class="fas fa-undo"></i>
+                                                </button>
+                                            {% elif inst.status == 'waived' %}
+                                                <button class="btn btn-sm btn-outline-warning" onclick="resetPending('{{ inst.id }}')" title="Reset">
+                                                    <i class="fas fa-undo"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-cog"></i> Actions</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            {% if plan.status == 'active' %}
+                                <button type="submit" name="action" value="mark_defaulted" class="btn btn-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Mark as Defaulted
+                                </button>
+                                <button type="submit" name="action" value="mark_completed" class="btn btn-success">
+                                    <i class="fas fa-check-circle"></i> Mark as Completed
+                                </button>
+                                <button type="submit" name="action" value="cancel_plan" class="btn btn-danger">
+                                    <i class="fas fa-times"></i> Cancel Plan
+                                </button>
+                            {% elif plan.status == 'defaulted' %}
+                                <button type="submit" name="action" value="reactivate" class="btn btn-success">
+                                    <i class="fas fa-play"></i> Reactivate Plan
+                                </button>
+                            {% elif plan.status == 'completed' %}
+                                <button type="submit" name="action" value="reactivate" class="btn btn-warning">
+                                    <i class="fas fa-undo"></i> Reopen Plan
+                                </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Policy Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-contract"></i> Policy Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Policy #:</strong> {{ plan.policy.policy_number }}</p>
+                    <p><strong>Vehicle:</strong> {{ plan.policy.vehicle.make }} {{ plan.policy.vehicle.model }}</p>
+                    <p><strong>Registration:</strong> {{ plan.policy.vehicle.registration_number }}</p>
+                    <p><strong>Coverage Type:</strong> {{ plan.policy.get_policy_type_display }}</p>
+                    <p><strong>Coverage Amount:</strong> ₦{{ plan.policy.coverage_amount|floatformat:2|intcomma }}</p>
+                    <p><strong>Policy Status:</strong> 
+                        {% if plan.policy.status == 'active' %}
+                            <span class="badge bg-success">Active</span>
+                        {% elif plan.policy.status == 'draft' %}
+                            <span class="badge bg-warning">Draft</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ plan.policy.get_status_display }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Dates -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calendar"></i> Dates</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Start Date:</strong> {{ plan.start_date|date:"F d, Y" }}</p>
+                    <p><strong>Next Due:</strong> {{ plan.next_due_date|date:"F d, Y"|default:"N/A" }}</p>
+                    <p><strong>Created:</strong> {{ plan.created_at|date:"F d, Y H:i" }}</p>
+                    <p><strong>Last Updated:</strong> {{ plan.updated_at|date:"F d, Y H:i" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function installmentAction(installmentId, action) {
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/custom_admin/installment/${installmentId}/action/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ action: action })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed: ' + data.message);
+        }
+    });
+}
+
+function markPaid(installmentId) {
+    if (confirm('Mark this installment as paid?')) {
+        installmentAction(installmentId, 'mark_paid');
+    }
+}
+
+function waiveInstallment(installmentId) {
+    if (confirm('Waive this installment? The customer will not need to pay it.')) {
+        installmentAction(installmentId, 'waive');
+    }
+}
+
+function resetPending(installmentId) {
+    if (confirm('Reset this installment to pending status?')) {
+        installmentAction(installmentId, 'reset_pending');
+    }
+}
+
+function markDefaulted() {
+    if (confirm('Mark this plan as defaulted? This may affect the policy status.')) {
+        document.querySelector('button[name="action"][value="mark_defaulted"]')?.click();
+    }
+}
+
+function reactivatePlan() {
+    if (confirm('Reactivate this installment plan?')) {
+        document.querySelector('button[name="action"][value="reactivate"]')?.click();
+    }
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+}
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+}
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+.table td {
+    vertical-align: middle;
+}
+.progress {
+    background-color: #e9ecef;
+    border-radius: 10px;
+}
+.btn-group .btn {
+    margin: 0 2px;
+}
+</style>
+{% endblock %}

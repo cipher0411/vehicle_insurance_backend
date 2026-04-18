@@ -1,18 +1,22 @@
 import os
 from pathlib import Path
-from decouple import config
+import environ
 from datetime import timedelta
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Initialize environment variables
+env = environ.Env()
+environ.Env.read_env()
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-your-secret-key-here')
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-!741p6q#=7esiys92e#ioy*js$*eb^%)ga2t(f-=)!&fafi48l')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
-# DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2', '192.168.1.*', '*']
+# DEBUG = env.bool('DEBUG', default=False)
+DEBUG = True
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', 'api.vehicleinsurance.com'])
 
 # Application definition
 INSTALLED_APPS = [
@@ -39,6 +43,9 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'django_celery_results',
     'storages',
+    'phonenumber_field',
+    'django_countries',
+    'django.contrib.humanize',
     
     # Local apps
     'apps.core',
@@ -52,8 +59,11 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', 
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'apps.core.middleware.security.WebApplicationFirewallMiddleware',  # WAF
+    'apps.core.middleware.security.ThreatIntelligenceMiddleware',      # Threat Intel
+    'apps.core.middleware.security.BotDetectionMiddleware',            # Bot Detection
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -61,11 +71,11 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
-    'apps.core.middleware.CustomErrorMiddleware',
+    'apps.core.middleware.error.CustomErrorMiddleware',      # Error handling
+    'apps.core.middleware.audit.AuditLogMiddleware',         # Audit logging
 ]
 
 ROOT_URLCONF = 'vehicle_insurance_backend.urls'
-
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
@@ -79,7 +89,6 @@ LOGOUT_REDIRECT_URL = 'core:login'
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True
 
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -92,6 +101,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'apps.core.context_processors.notification_count', 
+                'apps.core.context_processors.agent_pending_claims_count',
             ],
         },
     },
@@ -103,15 +113,16 @@ WSGI_APPLICATION = 'vehicle_insurance_backend.wsgi.application'
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': config('DB_NAME', default='vehicle_insurance_backend'),
-#         'USER': config('DB_USER', default='postgres'),
-#         'PASSWORD': config('DB_PASSWORD', default='password'),
-#         'HOST': config('DB_HOST', default='localhost'),
-#         'PORT': config('DB_PORT', default='5432'),
+#         'NAME': env('DB_NAME', default='vehicle_insurance'),
+#         'USER': env('DB_USER', default='postgres'),
+#         'PASSWORD': env('DB_PASSWORD', default='your_password'),
+#         'HOST': env('DB_HOST', default='localhost'),
+#         'PORT': env('DB_PORT', default='5432'),
 #     }
 # }
 
 
+# Database - Use SQLite for development
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -123,7 +134,7 @@ DATABASES = {
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': config('REDIS_URL', default='redis://localhost:6379/1'),
+        'LOCATION': env('REDIS_URL', default='redis://localhost:6379/1'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
@@ -132,11 +143,29 @@ CACHES = {
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
+
+
+# Phone number field settings
+PHONENUMBER_DEFAULT_REGION = 'NG'  # Nigeria as default
+PHONENUMBER_DB_FORMAT = 'NATIONAL'
+PHONENUMBER_DEFAULT_FORMAT = 'NATIONAL'
+
 
 # Custom User Model
 AUTH_USER_MODEL = 'core.User'
@@ -194,7 +223,7 @@ SIMPLE_JWT = {
 }
 
 # CORS Settings
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://localhost:8000').split(',')
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=['http://localhost:3000', 'http://localhost:8000', 'https://vehicleinsurance.com'])
 CORS_ALLOW_CREDENTIALS = True
 
 # Static and Media Files
@@ -208,31 +237,43 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # WhiteNoise configuration
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Email Configuration
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = config('EMAIL_HOST', default='smtp-relay.brevo.com')  # Changed default to Brevo
-EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = f'Vehicle Insurance <{EMAIL_HOST_USER}>'
+# Bank Transfer Settings
+BANK_TRANSFER_SETTINGS = {
+    'bank_name': 'Access Bank',
+    'account_name': 'VehicleInsure Ltd',
+    'account_number': '0592787269',
+    'sort_code': '044152567',  # Optional
+    'swift_code': 'ABNGNGLA',  # Optional
+}
 
-# Comment this out to actually send emails
-# if DEBUG:
-#     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email Configuration
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = env('EMAIL_HOST', default='smtp-relay.brevo.com')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = f'Vehicle Insurance <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 'Vehicle Insurance <noreply@vehicleinsurance.com>'
 
 # Staff notification emails for contact form
 STAFF_NOTIFICATION_EMAILS = [
     'support@vehicleinsure.ng',
     'hello@vehicleinsure.ng',
 ]
-SERVER_EMAIL = 'server@vehicleinsure.ng'
+SERVER_EMAIL = env('SERVER_EMAIL', default='server@vehicleinsure.ng')
 
 # Password Reset Settings
 PASSWORD_RESET_TIMEOUT = 3600
 
+# Site URL for absolute URLs in certificates
+SITE_URL = 'https://vehicleinsure.ng'  # Change to your actual domain
+
+# For development
+if DEBUG:
+    SITE_URL = 'http://127.0.0.1:8000'
+
 # Celery Configuration
-CELERY_BROKER_URL = config('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_BROKER_URL = env('REDIS_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
@@ -241,20 +282,20 @@ CELERY_TIMEZONE = 'Africa/Lagos'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 # Flutterwave Payment Configuration
-FLUTTERWAVE_PUBLIC_KEY = config('FLUTTERWAVE_PUBLIC_KEY', default='FLWPUBK_TEST-aa2f8a3732b5c9a5a6deead05e8adb2d-X')
-FLUTTERWAVE_SECRET_KEY = config('FLUTTERWAVE_SECRET_KEY', default='FLWSECK_TEST-feff543f125048d47ff25b1b16c342f7-X')
-FLUTTERWAVE_ENCRYPTION_KEY = config('FLUTTERWAVE_ENCRYPTION_KEY', default='FLWSECK_TESTa5a6deead05e8adb2d')
+FLUTTERWAVE_PUBLIC_KEY = env('FLUTTERWAVE_PUBLIC_KEY', default='FLWPUBK_TEST-aa2f8a3732b5c9a5a6deead05e8adb2d-X')
+FLUTTERWAVE_SECRET_KEY = env('FLUTTERWAVE_SECRET_KEY', default='FLWSECK_TEST-feff543f125048d47ff25b1b16c342f7-X')
+FLUTTERWAVE_ENCRYPTION_KEY = env('FLUTTERWAVE_ENCRYPTION_KEY', default='FLWSECK_TESTa5a6deead05e8adb2d')
 FLUTTERWAVE_BASE_URL = 'https://api.flutterwave.com/v3'
-FLUTTERWAVE_WEBHOOK_SECRET = config('FLUTTERWAVE_WEBHOOK_SECRET', default='')
+FLUTTERWAVE_WEBHOOK_SECRET = env('FLUTTERWAVE_WEBHOOK_SECRET', default='')
 
 # SMS Configuration
-TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
-TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
-TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='')
+TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID', default='')
+TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN', default='')
+TWILIO_PHONE_NUMBER = env('TWILIO_PHONE_NUMBER', default='')
 
 # FCM Configuration
 FCM_DJANGO_SETTINGS = {
-    'FCM_SERVER_KEY': config('FCM_SERVER_KEY', default=''),
+    'FCM_SERVER_KEY': env('FCM_SERVER_KEY', default=''),
     'ONE_DEVICE_PER_USER': True,
     'DELETE_INACTIVE_DEVICES': True,
 }
@@ -316,7 +357,47 @@ if not DEBUG:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Security Settings
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
+# CSP Headers
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://checkout.flutterwave.com")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com")
+CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com")
+CSP_IMG_SRC = ("'self'", "data:", "https:")
+CSP_FRAME_SRC = ("'self'", "https://checkout.flutterwave.com")
+CSP_CONNECT_SRC = ("'self'", "https://api.flutterwave.com")
+
+# API Keys for Security Services
+VIRUSTOTAL_API_KEY = env('VIRUSTOTAL_API_KEY', default='ba5f4f4f5f3025ef1e7efbef64e40093707779826698fe6afa26d77a1c15dfea')
+ABUSEIPDB_API_KEY = env('ABUSEIPDB_API_KEY', default='56a69e1361f63c7bc8f73f33f0810c5f9f3b9ad62912054be0d067ed5a6356100ea4c66f047a67c1')
+SHODAN_API_KEY = env('SHODAN_API_KEY', default='iKW1BuLImLlPNT5Kfe9fblYnYcO2e9UP')
+ALIENVAULT_API_KEY = env('ALIENVAULT_OTX_KEY', default='')
+METADEFENDER_API_KEY = env('METADEFENDER_API_KEY', default='')
+
+# Session Security
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_AGE = 28800  # 8 hours
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+
+# Failed login attempt tracking
+AXES_ENABLED = True
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1  # hours
+AXES_LOCKOUT_TEMPLATE = 'core/lockout.html'
+AXES_RESET_ON_SUCCESS = True
+
+# Two-Factor Authentication
+TWO_FACTOR_ENABLED = True
+TWO_FACTOR_ISSUER = 'Vehicle Insurance'
 
 # Custom error handlers
 handler404 = 'apps.core.views.handler404'
@@ -328,8 +409,6 @@ handler400 = 'apps.core.views.handler400'
 ADMINS = [
     ('Admin', 'admin@vehicleinsure.ng'),
 ]
-
-
 
 # Add at the bottom of settings.py
 # Django-Python 3.14 compatibility fix

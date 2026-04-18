@@ -1,0 +1,416 @@
+<!-- templates/core/admin/agent_create.html -->
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Create New Agent{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:admin_agents' %}">Agents</a></li>
+                    <li class="breadcrumb-item active">Create Agent</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-user-tie"></i> Create New Agent</h2>
+            <p class="text-muted">Add a new insurance agent to the system</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_agents' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Agents
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user-plus"></i> Agent Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="agentForm">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> Please correct the errors below.
+                            <ul class="mb-0 mt-2">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li><strong>{{ field }}:</strong> {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        
+                        <h6 class="mb-3 text-primary">Account Information</h6>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">
+                                    Email Address <span class="text-danger">*</span>
+                                </label>
+                                {{ form.email }}
+                                <small class="text-muted">This will be used for login</small>
+                                {% if form.email.errors %}
+                                <div class="text-danger">{{ form.email.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                                    Phone Number
+                                </label>
+                                {{ form.phone_number }}
+                                {% if form.phone_number.errors %}
+                                <div class="text-danger">{{ form.phone_number.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                    First Name <span class="text-danger">*</span>
+                                </label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                <div class="text-danger">{{ form.first_name.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                    Last Name <span class="text-danger">*</span>
+                                </label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                <div class="text-danger">{{ form.last_name.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.password.id_for_label }}" class="form-label">
+                                    Password <span class="text-danger">*</span>
+                                </label>
+                                {{ form.password }}
+                                <small class="text-muted">{{ form.password.help_text }}</small>
+                                {% if form.password.errors %}
+                                <div class="text-danger">{{ form.password.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.confirm_password.id_for_label }}" class="form-label">
+                                    Confirm Password <span class="text-danger">*</span>
+                                </label>
+                                {{ form.confirm_password }}
+                                {% if form.confirm_password.errors %}
+                                <div class="text-danger">{{ form.confirm_password.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <h6 class="mb-3 text-primary">Agent Settings</h6>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.agent_type.id_for_label }}" class="form-label">
+                                    Agent Type <span class="text-danger">*</span>
+                                </label>
+                                {{ form.agent_type }}
+                                {% if form.agent_type.errors %}
+                                <div class="text-danger">{{ form.agent_type.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Commission Settings -->
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6 class="mb-3"><i class="fas fa-percentage"></i> Commission Settings</h6>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.use_custom_rate }}
+                                        <label class="form-check-label" for="{{ form.use_custom_rate.id_for_label }}">
+                                            <strong>Use custom commission rate</strong>
+                                            <br>
+                                            <small class="text-muted">Override the default commission structure for this agent</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div id="customRateSection" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="{{ form.commission_rate.id_for_label }}" class="form-label">
+                                                Custom Commission Rate (%)
+                                            </label>
+                                            {{ form.commission_rate }}
+                                            <small class="text-muted">{{ form.commission_rate.help_text }}</small>
+                                            {% if form.commission_rate.errors %}
+                                            <div class="text-danger">{{ form.commission_rate.errors|join:", " }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-warning mt-2">
+                                        <i class="fas fa-info-circle"></i>
+                                        Custom rate will override the commission structure for all policy types.
+                                    </div>
+                                </div>
+                                
+                                <div id="structureRateSection">
+                                    <p class="mb-2"><strong>Default Commission Rate:</strong></p>
+                                    <p class="text-muted">
+                                        The agent will use the active commission structure based on policy type.
+                                        Current default rates:
+                                    </p>
+                                    <ul class="small text-muted">
+                                        <li>Comprehensive: <span id="comprehensiveRate">10.00%</span></li>
+                                        <li>Third Party: <span id="thirdPartyRate">10.00%</span></li>
+                                        <li>Standalone: <span id="standaloneRate">10.00%</span></li>
+                                        <li>Personal Accident: <span id="personalAccidentRate">10.00%</span></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> The agent will be able to log in immediately with the provided credentials. 
+                            An agent code will be automatically generated upon creation.
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-save"></i> Create Agent
+                            </button>
+                            <a href="{% url 'core:admin_agents' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Active Commission Structures -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-percentage"></i> Active Commission Structures</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if active_structures %}
+                    <div class="list-group list-group-flush">
+                        {% for structure in active_structures %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ structure.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ structure.get_policy_type_display }} | 
+                                        {{ structure.get_agent_type_display }}
+                                    </small>
+                                </div>
+                                <span class="badge bg-primary">{{ structure.base_commission_rate }}%</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3 text-muted">
+                        <p class="mb-0">No active structures</p>
+                        <small>Default 10% will be used</small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'core:admin_commission_structures' %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-cog"></i> Manage Structures
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Help Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-question-circle"></i> Help</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Agent Types</h6>
+                    <ul class="small text-muted">
+                        <li><strong>Individual Agent:</strong> Self-employed agent working independently</li>
+                        <li><strong>Corporate Agent:</strong> Agent representing a registered company</li>
+                        <li><strong>Broker:</strong> Licensed insurance broker</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Commission Settings</h6>
+                    <p class="small text-muted">
+                        <strong>Structure-based:</strong> Agent earns commission based on active commission structures.
+                        Different rates may apply for different policy types.
+                    </p>
+                    <p class="small text-muted">
+                        <strong>Custom Rate:</strong> Override the structure with a fixed rate for all policy types.
+                    </p>
+                    
+                    <h6 class="mt-3">After Creation</h6>
+                    <ul class="small text-muted">
+                        <li>Agent can log in with email and password</li>
+                        <li>Agent profile will be created automatically</li>
+                        <li>Referral link will be generated</li>
+                        <li>Commission tracking will be enabled</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Requirements Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-check-circle"></i> Requirements</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="small text-muted mb-0">
+                        <li>Password must be at least 8 characters</li>
+                        <li>Must contain uppercase and lowercase letters</li>
+                        <li>Must contain at least one number</li>
+                        <li>Email must be unique in the system</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('agentForm');
+    const useCustomRate = document.getElementById('{{ form.use_custom_rate.id_for_label }}');
+    const customRateSection = document.getElementById('customRateSection');
+    const structureRateSection = document.getElementById('structureRateSection');
+    const commissionRateInput = document.getElementById('{{ form.commission_rate.id_for_label }}');
+    const agentTypeSelect = document.getElementById('{{ form.agent_type.id_for_label }}');
+    
+    // Toggle custom rate section
+    function toggleCustomRate() {
+        if (useCustomRate.checked) {
+            customRateSection.style.display = 'block';
+            structureRateSection.style.display = 'none';
+            commissionRateInput.required = true;
+        } else {
+            customRateSection.style.display = 'none';
+            structureRateSection.style.display = 'block';
+            commissionRateInput.required = false;
+        }
+    }
+    
+    useCustomRate.addEventListener('change', toggleCustomRate);
+    toggleCustomRate();
+    
+    // Update displayed rates based on agent type
+    function updateDisplayedRates() {
+        const agentType = agentTypeSelect.value;
+        // You can fetch rates via AJAX or use data attributes
+        // For simplicity, we'll keep the default display
+    }
+    
+    agentTypeSelect.addEventListener('change', updateDisplayedRates);
+    
+    // Form validation
+    form.addEventListener('submit', function(e) {
+        const password = document.getElementById('{{ form.password.id_for_label }}').value;
+        const confirmPassword = document.getElementById('{{ form.confirm_password.id_for_label }}').value;
+        
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            alert('Passwords do not match!');
+            return false;
+        }
+        
+        if (password.length < 8) {
+            e.preventDefault();
+            alert('Password must be at least 8 characters long!');
+            return false;
+        }
+        
+        if (useCustomRate.checked) {
+            const rate = parseFloat(commissionRateInput.value);
+            if (!rate || rate < 0 || rate > 100) {
+                e.preventDefault();
+                alert('Please enter a valid commission rate between 0 and 100.');
+                return false;
+            }
+        }
+        
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creating...';
+        submitBtn.disabled = true;
+    });
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { 
+    margin: 0; 
+    font-weight: 600; 
+}
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    padding: 10px 12px;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #4169E1;
+    box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+}
+.btn-primary {
+    background-color: #4169E1;
+    border-color: #4169E1;
+    padding: 10px 20px;
+}
+.btn-primary:hover {
+    background-color: #3155b0;
+    border-color: #3155b0;
+}
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+}
+.alert-danger ul {
+    padding-left: 20px;
+}
+.text-primary {
+    color: #4169E1 !important;
+}
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+.list-group-item:first-child {
+    border-top: none;
+}
+.form-check-input:checked {
+    background-color: #4169E1;
+    border-color: #4169E1;
+}
+</style>
+{% endblock %}

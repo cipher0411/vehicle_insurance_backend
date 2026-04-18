@@ -1,0 +1,117 @@
+{% extends 'core/logon_base.html' %}
+{% block title %}Certificate Details - {{ certificate.certificate_number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-certificate"></i> Insurance Certificate</h2>
+            <p class="text-muted">Certificate #{{ certificate.certificate_number }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:my_certificates' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <a href="{% url 'core:download_certificate' certificate.id %}" class="btn btn-primary">
+                <i class="fas fa-download"></i> Download PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%); color: white;">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Certificate Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Certificate Number:</th>
+                                    <td><strong>{{ certificate.certificate_number }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Issue Date:</th>
+                                    <td>{{ certificate.issue_date|date:"F d, Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        {% if certificate.status == 'generated' %}
+                                            <span class="badge bg-success">Generated</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">{{ certificate.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Verification Hash:</th>
+                                    <td><code>{{ certificate.verification_hash|default:"N/A" }}</code></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            {% if certificate.qr_code %}
+                                <img src="{{ certificate.qr_code.url }}" alt="QR Code" style="width: 150px; height: 150px;">
+                                <p class="text-muted small mt-2">Scan to verify authenticity</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-contract"></i> Policy Summary</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Policy #:</strong> {{ policy.policy_number }}</p>
+                    <p><strong>Type:</strong> {{ policy.get_policy_type_display }}</p>
+                    <p><strong>Coverage:</strong> ₦{{ policy.coverage_amount|floatformat:2 }}</p>
+                    <p><strong>Premium:</strong> ₦{{ policy.premium_amount|floatformat:2 }}</p>
+                    <p><strong>Valid:</strong> {{ policy.start_date|date:"M d, Y" }} - {{ policy.end_date|date:"M d, Y" }}</p>
+                    <a href="{% url 'core:policy_detail' policy.id %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-eye"></i> View Policy
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Coverage Details</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>What's Covered:</h6>
+                    <ul>
+                        <li>Third Party Liability - Up to policy limit</li>
+                        <li>Own Damage - Comprehensive coverage</li>
+                        <li>Personal Accident - Driver covered</li>
+                        <li>Passenger Liability - All passengers</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Additional Benefits:</h6>
+                    <ul>
+                        {% for benefit in policy.additional_benefits %}
+                            <li>{{ benefit }}</li>
+                        {% empty %}
+                            <li>24/7 Roadside Assistance</li>
+                            <li>Cashless Claim Settlement</li>
+                            <li>Free Towing Service</li>
+                            <li>Emergency Medical Cover</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

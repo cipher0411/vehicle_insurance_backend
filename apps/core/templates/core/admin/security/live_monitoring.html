@@ -1,0 +1,305 @@
+{% extends 'core/admin/security/security_base.html' %}
+{% block title %}Live Monitoring - Edgway Security{% endblock %}
+
+{% block extra_css %}
+<style>
+    .live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--edgway-success);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    
+    .live-badge .pulse-dot {
+        width: 10px;
+        height: 10px;
+        background: var(--edgway-success);
+        border-radius: 50%;
+        animation: pulse 1.5s infinite;
+    }
+    
+    .activity-stream {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    .activity-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--edgway-border);
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(-10px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    .metric-card {
+        background: var(--edgway-secondary);
+        border: 1px solid var(--edgway-border);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: white;
+    }
+    
+    .metric-label {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .world-map {
+        background: var(--edgway-dark);
+        border-radius: 12px;
+        padding: 20px;
+        min-height: 300px;
+        position: relative;
+    }
+    
+    .attack-marker {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: var(--edgway-danger);
+        border-radius: 50%;
+        box-shadow: 0 0 20px var(--edgway-danger);
+        animation: pulse 2s infinite;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edgway-topbar">
+    <h1 class="page-title">
+        <i class="fas fa-eye"></i> Live Monitoring
+    </h1>
+    <div class="topbar-actions">
+        <span class="live-badge">
+            <span class="pulse-dot"></span>
+            LIVE
+        </span>
+        <button class="edgway-btn edgway-btn-outline" onclick="toggleAutoRefresh()" id="autoRefreshBtn">
+            <i class="fas fa-play"></i> Auto Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Real-time Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-value" id="requestsCount">{{ stats.requests_last_minute }}</div>
+            <div class="metric-label">Requests (Last Minute)</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-value text-danger" id="blockedCount">{{ stats.blocked_last_minute }}</div>
+            <div class="metric-label">Blocked (Last Minute)</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-value text-info" id="sessionsCount">{{ stats.active_sessions }}</div>
+            <div class="metric-label">Active Sessions</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-value text-warning" id="threatsCount">{{ stats.threats_detected }}</div>
+            <div class="metric-label">Threats (Last 5min)</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Activity Stream -->
+    <div class="col-lg-7">
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-stream"></i> Live Activity Stream</h5>
+                <button class="edgway-btn edgway-btn-outline btn-sm" onclick="clearActivity()">
+                    <i class="fas fa-trash"></i> Clear
+                </button>
+            </div>
+            <div class="activity-stream" id="activityStream">
+                {% for activity in recent_activity %}
+                <div class="activity-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="badge badge-{{ activity.severity|lower }} me-2">{{ activity.severity }}</span>
+                            <span>{{ activity.get_event_type_display }}</span>
+                        </div>
+                        <small class="text-muted">{{ activity.created_at|time:"H:i:s" }}</small>
+                    </div>
+                    <div class="mt-1">
+                        <code class="small">{{ activity.ip_address }}</code>
+                        <span class="text-muted mx-2">→</span>
+                        <code class="small">{{ activity.path|truncatechars:40 }}</code>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="activity-item text-center text-muted">
+                    <i class="fas fa-shield fa-2x mb-2"></i>
+                    <p>Waiting for activity...</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attack Map & Stats -->
+    <div class="col-lg-5">
+        <div class="edgway-card">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-globe"></i> Attack Origin Map</h5>
+            </div>
+            <div class="world-map">
+                <div style="position: relative; height: 250px;">
+                    <!-- SVG World Map (simplified) -->
+                    <svg viewBox="0 0 800 400" style="width: 100%; height: 100%;">
+                        <rect width="800" height="400" fill="transparent"/>
+                        <!-- Continents outline (simplified) -->
+                        <path d="M150,100 Q200,80 250,100 Q300,120 280,160 Q250,180 200,170 Q150,160 150,100Z" fill="#334155" opacity="0.5"/>
+                        <path d="M400,80 Q450,60 500,80 Q550,100 520,140 Q480,160 420,150 Q380,130 400,80Z" fill="#334155" opacity="0.5"/>
+                        <path d="M550,120 Q600,100 650,120 Q680,150 650,180 Q600,190 560,170 Q540,150 550,120Z" fill="#334155" opacity="0.5"/>
+                        <path d="M300,200 Q350,180 400,200 Q420,240 380,260 Q330,270 300,250 Q280,230 300,200Z" fill="#334155" opacity="0.5"/>
+                        
+                        <!-- Attack markers -->
+                        <circle cx="200" cy="120" r="6" fill="#ef4444" opacity="0.8">
+                            <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+                        </circle>
+                        <circle cx="450" cy="100" r="5" fill="#ef4444" opacity="0.8">
+                            <animate attributeName="r" values="3;7;3" dur="1.5s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1.5s" repeatCount="indefinite"/>
+                        </circle>
+                        <circle cx="600" cy="140" r="4" fill="#f59e0b" opacity="0.8">
+                            <animate attributeName="r" values="3;6;3" dur="2.5s" repeatCount="indefinite"/>
+                        </circle>
+                        <circle cx="320" cy="220" r="5" fill="#ef4444" opacity="0.8">
+                            <animate attributeName="r" values="4;8;4" dur="1.8s" repeatCount="indefinite"/>
+                        </circle>
+                    </svg>
+                </div>
+                <div class="text-center mt-3">
+                    <span class="badge bg-danger me-2"><i class="fas fa-circle"></i> High Threat</span>
+                    <span class="badge bg-warning me-2"><i class="fas fa-circle"></i> Medium Threat</span>
+                    <span class="badge bg-success"><i class="fas fa-circle"></i> Low Threat</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Threats -->
+        <div class="edgway-card mt-3">
+            <div class="edgway-card-header">
+                <h5><i class="fas fa-chart-bar"></i> Top Threats (Real-time)</h5>
+            </div>
+            <div class="edgway-card-body">
+                <div id="topThreatsList">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>SQL Injection Attempts</span>
+                        <span class="fw-bold text-danger">12</span>
+                    </div>
+                    <div class="edgway-progress mb-3">
+                        <div class="edgway-progress-bar bg-danger" style="width: 60%"></div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>XSS Attempts</span>
+                        <span class="fw-bold text-warning">8</span>
+                    </div>
+                    <div class="edgway-progress mb-3">
+                        <div class="edgway-progress-bar bg-warning" style="width: 40%"></div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Path Traversal</span>
+                        <span class="fw-bold text-info">5</span>
+                    </div>
+                    <div class="edgway-progress mb-3">
+                        <div class="edgway-progress-bar bg-info" style="width: 25%"></div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Brute Force Login</span>
+                        <span class="fw-bold text-warning">7</span>
+                    </div>
+                    <div class="edgway-progress">
+                        <div class="edgway-progress-bar bg-warning" style="width: 35%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let autoRefresh = true;
+let refreshInterval;
+
+function fetchLiveStats() {
+    fetch("{% url 'core:get_security_stats' %}")
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('requestsCount').textContent = data.total_events_24h || 0;
+            document.getElementById('blockedCount').textContent = data.blocked_attacks_24h || 0;
+            document.getElementById('threatsCount').textContent = data.active_threats || 0;
+        })
+        .catch(error => console.error('Error fetching stats:', error));
+}
+
+function toggleAutoRefresh() {
+    const btn = document.getElementById('autoRefreshBtn');
+    if (autoRefresh) {
+        clearInterval(refreshInterval);
+        btn.innerHTML = '<i class="fas fa-play"></i> Auto Refresh';
+        btn.classList.remove('edgway-btn-primary');
+        btn.classList.add('edgway-btn-outline');
+    } else {
+        refreshInterval = setInterval(() => {
+            fetchLiveStats();
+            location.reload();
+        }, 10000);
+        btn.innerHTML = '<i class="fas fa-pause"></i> Auto Refresh';
+        btn.classList.remove('edgway-btn-outline');
+        btn.classList.add('edgway-btn-primary');
+    }
+    autoRefresh = !autoRefresh;
+}
+
+function clearActivity() {
+    document.getElementById('activityStream').innerHTML = `
+        <div class="activity-item text-center text-muted">
+            <i class="fas fa-shield fa-2x mb-2"></i>
+            <p>Activity cleared</p>
+        </div>
+    `;
+}
+
+// Start auto-refresh
+document.addEventListener('DOMContentLoaded', function() {
+    refreshInterval = setInterval(() => {
+        fetchLiveStats();
+        location.reload();
+    }, 10000);
+    
+    const btn = document.getElementById('autoRefreshBtn');
+    btn.innerHTML = '<i class="fas fa-pause"></i> Auto Refresh';
+    btn.classList.remove('edgway-btn-outline');
+    btn.classList.add('edgway-btn-primary');
+});
+</script>
+{% endblock %}

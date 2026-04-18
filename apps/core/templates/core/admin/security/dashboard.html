@@ -1,0 +1,380 @@
+{% extends 'core/admin/security/security_base.html' %}
+{% block title %}Security Dashboard - Edgway Security{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-shield-alt"></i> Security Operations Center</h2>
+            <p class="text-muted">Real-time security monitoring and threat intelligence</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-secondary" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <a href="{% url 'core:live_monitoring' %}" class="btn btn-primary">
+                <i class="fas fa-eye"></i> Live Monitor
+            </a>
+        </div>
+    </div>
+
+    <!-- Threat Level Indicator -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-4">
+                            <h5 class="mb-1">Current Threat Level</h5>
+                            <h2 class="mb-0 text-{{ threat_color }}">
+                                {% if threat_level == 'HIGH' %}
+                                    <i class="fas fa-exclamation-triangle"></i> HIGH
+                                {% elif threat_level == 'MEDIUM' %}
+                                    <i class="fas fa-exclamation-circle"></i> MEDIUM
+                                {% else %}
+                                    <i class="fas fa-check-circle"></i> LOW
+                                {% endif %}
+                            </h2>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="progress" style="height: 30px;">
+                                <div class="progress-bar bg-{{ threat_color }}" style="width: {{ threat_percentage }}%">
+                                    {{ threat_percentage }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Stats -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Blocked Attacks</h6>
+                    <h3 class="text-danger">{{ blocked_attacks }}</h3>
+                    <small>Last 24 hours</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Malware Detected</h6>
+                    <h3 class="text-warning">{{ malware_detected }}</h3>
+                    <small>Last 24 hours</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Rate Limited</h6>
+                    <h3 class="text-info">{{ rate_limited }}</h3>
+                    <small>Last 24 hours</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Blocked IPs</h6>
+                    <h3>{{ blocked_ips }}</h3>
+                    <small>Active blocks</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Failed Logins</h6>
+                    <h3 class="text-warning">{{ failed_logins }}</h3>
+                    <small>Last 24 hours</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Active Threats</h6>
+                    <h3>{{ threat_intel_count }}</h3>
+                    <small>{{ high_severity_threats }} high severity</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Attack Timeline (Last 7 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="attackTimelineChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Top Attacking IPs (24h)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="topIPsChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Event Distribution (24h)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="eventTypeChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-plug"></i> API Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for key, api in api_status.items %}
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    {% if api.status == 'online' %}
+                                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                                    {% elif api.status == 'error' %}
+                                        <i class="fas fa-times-circle fa-2x text-danger"></i>
+                                    {% elif api.status == 'not_configured' %}
+                                        <i class="fas fa-minus-circle fa-2x text-secondary"></i>
+                                    {% else %}
+                                        <i class="fas fa-question-circle fa-2x text-warning"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <strong>{{ api.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ api.message }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Security Events & Threat Intelligence -->
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Recent Security Events</h5>
+                    <a href="{% url 'core:security_events' %}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Type</th>
+                                    <th>IP Address</th>
+                                    <th>Severity</th>
+                                    <th>Path</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for event in recent_events %}
+                                <tr>
+                                    <td>{{ event.created_at|time:"H:i:s" }}</td>
+                                    <td>{{ event.get_event_type_display }}</td>
+                                    <td>
+                                        <span class="font-monospace">{{ event.ip_address }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ event.severity|lower }}">
+                                            {{ event.severity }}
+                                        </span>
+                                    </td>
+                                    <td>{{ event.path|truncatechars:30 }}</td>
+                                    <td>
+                                        <a href="{% url 'core:security_event_detail' event.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="6" class="text-center py-3">No recent security events</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-bug"></i> Active Threat Intelligence</h5>
+                    <a href="{% url 'core:threat_intelligence' %}" class="btn btn-sm btn-outline-light">Manage</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for threat in threat_intel %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-secondary me-2">{{ threat.get_intel_type_display }}</span>
+                                        <code>{{ threat.value }}</code>
+                                    </div>
+                                    <div class="mt-2">
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-{% if threat.threat_score >= 70 %}danger{% elif threat.threat_score >= 40 %}warning{% else %}success{% endif %}" 
+                                                 style="width: {{ threat.threat_score }}%"></div>
+                                        </div>
+                                        <small class="text-muted">Score: {{ threat.threat_score }} | {{ threat.get_source_display }}</small>
+                                    </div>
+                                    {% if threat.description %}
+                                    <small class="text-muted d-block mt-1">{{ threat.description|truncatechars:60 }}</small>
+                                    {% endif %}
+                                </div>
+                                <span class="badge bg-{% if threat.is_active %}success{% else %}secondary{% endif %}">
+                                    {{ threat.is_active|yesno:"Active,Inactive" }}
+                                </span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-center py-3 text-muted">No active threats</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'core:block_ip' %}" class="mb-3">
+                        {% csrf_token %}
+                        <label class="form-label">Block IP Address</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="ip_address" placeholder="192.168.1.1" required>
+                            <input type="text" class="form-control" name="reason" placeholder="Reason (optional)">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-ban"></i> Block
+                            </button>
+                        </div>
+                    </form>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'core:threat_intelligence' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus"></i> Add Threat Intel
+                        </a>
+                        <a href="{% url 'core:security_settings' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-cog"></i> Security Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Attack Timeline Chart
+    const timelineCtx = document.getElementById('attackTimelineChart').getContext('2d');
+    new Chart(timelineCtx, {
+        type: 'line',
+        data: {
+            labels: {{ attack_labels|safe }},
+            datasets: [{
+                label: 'Attacks',
+                data: {{ attack_data|safe }},
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+    
+    // Top IPs Chart
+    const ipsCtx = document.getElementById('topIPsChart').getContext('2d');
+    new Chart(ipsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ ip_labels|safe }},
+            datasets: [{
+                label: 'Number of Attacks',
+                data: {{ ip_data|safe }},
+                backgroundColor: '#4169E1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } }
+        }
+    });
+    
+    // Event Type Chart
+    const eventTypeCtx = document.getElementById('eventTypeChart').getContext('2d');
+    new Chart(eventTypeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ event_type_labels|safe }},
+            datasets: [{
+                data: {{ event_type_data|safe }},
+                backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#17a2b8', '#28a745', '#6c757d']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+});
+
+// Auto-refresh every 30 seconds
+setTimeout(function() {
+    location.reload();
+}, 30000);
+</script>
+
+<style>
+.stat-card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+.card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 20px; }
+.card-header { background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%); color: white; border-radius: 12px 12px 0 0 !important; padding: 15px 20px; }
+.card-header h5 { margin: 0; font-weight: 600; }
+.badge { padding: 5px 8px; border-radius: 20px; }
+.progress { background-color: #e9ecef; border-radius: 10px; }
+.font-monospace { font-family: monospace; font-size: 0.9rem; }
+</style>
+{% endblock %}

@@ -1,6 +1,72 @@
 {% extends 'core/logon_base.html' %}
 {% block title %}My Vehicles{% endblock %}
 
+{% block extra_css %}
+<style>
+    .make-select-container, .model-select-container {
+        position: relative;
+    }
+    
+    .select-search {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+    
+    .select-search:focus {
+        border-color: #4169E1;
+        box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+        outline: none;
+    }
+    
+    .select-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: 250px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        margin-top: 4px;
+        display: none;
+    }
+    
+    .select-dropdown.show {
+        display: block;
+    }
+    
+    .select-option {
+        padding: 10px 14px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    
+    .select-option:hover {
+        background: rgba(65, 105, 225, 0.1);
+    }
+    
+    .select-option.selected {
+        background: #4169E1;
+        color: white;
+    }
+    
+    .select-option.no-results {
+        color: #6c757d;
+        cursor: default;
+    }
+    
+    .select-option.no-results:hover {
+        background: transparent;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="row mb-4">
@@ -271,14 +337,24 @@
                                 <option value="rickshaw">Rickshaw</option>
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="make" class="form-label">Make <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="make" name="make" placeholder="e.g., Toyota" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3 make-select-container">
+                            <label for="make_search" class="form-label">Make (Brand) <span class="text-danger">*</span></label>
+                            <input type="text" class="select-search" id="make_search" placeholder="Search or select make..." autocomplete="off">
+                            <input type="hidden" name="make" id="id_make" required>
+                            <div class="select-dropdown" id="make_dropdown"></div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="model" class="form-label">Model <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="model" name="model" placeholder="e.g., Camry" required>
+                        <div class="col-md-6 mb-3 model-select-container">
+                            <label for="model_search" class="form-label">Model <span class="text-danger">*</span></label>
+                            <input type="text" class="select-search" id="model_search" placeholder="Select make first..." autocomplete="off" disabled>
+                            <input type="hidden" name="model" id="id_model" required>
+                            <div class="select-dropdown" id="model_dropdown"></div>
                         </div>
+                    </div>
+                    
+                    <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="year" class="form-label">Year <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" id="year" name="year" min="1900" max="2026" placeholder="e.g., 2020" required>
@@ -298,6 +374,9 @@
                                 <option value="hybrid">Hybrid</option>
                             </select>
                         </div>
+                    </div>
+                    
+                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="engine_number" class="form-label">Engine Number <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="engine_number" name="engine_number" placeholder="Enter engine number" required>
@@ -306,6 +385,9 @@
                             <label for="chassis_number" class="form-label">Chassis Number <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="chassis_number" name="chassis_number" placeholder="Enter chassis number" required>
                         </div>
+                    </div>
+                    
+                    <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="engine_capacity" class="form-label">Engine Capacity (CC) <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" id="engine_capacity" name="engine_capacity" placeholder="e.g., 2000" required>
@@ -323,11 +405,12 @@
                                 <option value="corporate">Corporate</option>
                             </select>
                         </div>
-                        <div class="col-12 mb-3">
-                            <label for="registration_certificate" class="form-label">Registration Certificate</label>
-                            <input type="file" class="form-control" id="registration_certificate" name="registration_certificate" accept=".pdf,.jpg,.jpeg,.png">
-                            <small class="text-muted">Upload vehicle registration document (PDF, JPG, PNG)</small>
-                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="registration_certificate" class="form-label">Registration Certificate</label>
+                        <input type="file" class="form-control" id="registration_certificate" name="registration_certificate" accept=".pdf,.jpg,.jpeg,.png">
+                        <small class="text-muted">Upload vehicle registration document (PDF, JPG, PNG)</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -365,9 +448,15 @@
 
 {% csrf_token %}
 
+<!-- Include Vehicle Data -->
+<script src="/static/vehicle-data.js"></script>
+
 <script>
 let toastInstance = null;
 let vehicleToDelete = null;
+let selectedMake = null;
+let selectedMakeName = null;
+let selectedModel = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     const toastEl = document.getElementById('notificationToast');
@@ -375,16 +464,159 @@ document.addEventListener('DOMContentLoaded', function() {
         toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
     }
     
-    // Form submission loading state
+    // Initialize make dropdown
+    initMakeDropdown();
+    
+    // Form submission
     const form = document.getElementById('addVehicleForm');
     if (form) {
-        form.addEventListener('submit', function() {
+        form.addEventListener('submit', function(e) {
+            const makeInput = document.getElementById('id_make');
+            const modelInput = document.getElementById('id_model');
+            
+            if (!makeInput.value) {
+                e.preventDefault();
+                showToast('Error', 'Please select a vehicle make', 'error');
+                return false;
+            }
+            
+            if (!modelInput.value) {
+                e.preventDefault();
+                showToast('Error', 'Please select a vehicle model', 'error');
+                return false;
+            }
+            
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Adding...';
             submitBtn.disabled = true;
         });
     }
 });
+
+function initMakeDropdown() {
+    const makeSearch = document.getElementById('make_search');
+    const makeDropdown = document.getElementById('make_dropdown');
+    const makeHidden = document.getElementById('id_make');
+    const modelSearch = document.getElementById('model_search');
+    const modelHidden = document.getElementById('id_model');
+    
+    // Populate makes
+    function renderMakes(searchTerm = '') {
+        const makes = searchMakes(searchTerm);
+        makeDropdown.innerHTML = '';
+        
+        if (makes.length === 0) {
+            makeDropdown.innerHTML = '<div class="select-option no-results">No makes found</div>';
+        } else {
+            makes.forEach(make => {
+                const option = document.createElement('div');
+                option.className = 'select-option';
+                if (selectedMake === make.id) {
+                    option.classList.add('selected');
+                }
+                option.textContent = make.name;
+                option.dataset.id = make.id;
+                option.dataset.name = make.name;
+                option.addEventListener('click', function() {
+                    selectedMake = this.dataset.id;
+                    selectedMakeName = this.dataset.name;
+                    makeSearch.value = this.dataset.name;
+                    makeHidden.value = this.dataset.name; // Store the name, not ID
+                    
+                    // Enable model search
+                    modelSearch.disabled = false;
+                    modelSearch.placeholder = 'Search or select model...';
+                    modelSearch.value = '';
+                    modelHidden.value = '';
+                    selectedModel = null;
+                    
+                    // Render models for selected make
+                    renderModels();
+                    
+                    makeDropdown.classList.remove('show');
+                });
+                makeDropdown.appendChild(option);
+            });
+        }
+    }
+    
+    function renderModels(searchTerm = '') {
+        if (!selectedMake) return;
+        
+        const models = getModelsForMake(selectedMake);
+        const modelDropdown = document.getElementById('model_dropdown');
+        modelDropdown.innerHTML = '';
+        
+        let filteredModels = models;
+        if (searchTerm) {
+            filteredModels = models.filter(model => 
+                model.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+        
+        if (filteredModels.length === 0) {
+            modelDropdown.innerHTML = '<div class="select-option no-results">No models found</div>';
+        } else {
+            filteredModels.forEach(model => {
+                const option = document.createElement('div');
+                option.className = 'select-option';
+                if (selectedModel === model) {
+                    option.classList.add('selected');
+                }
+                option.textContent = model;
+                option.dataset.value = model;
+                option.addEventListener('click', function() {
+                    selectedModel = this.dataset.value;
+                    modelSearch.value = this.dataset.value;
+                    modelHidden.value = this.dataset.value;
+                    modelDropdown.classList.remove('show');
+                });
+                modelDropdown.appendChild(option);
+            });
+        }
+    }
+    
+    // Make search input
+    makeSearch.addEventListener('focus', function() {
+        renderMakes(this.value);
+        makeDropdown.classList.add('show');
+        document.getElementById('model_dropdown').classList.remove('show');
+    });
+    
+    makeSearch.addEventListener('input', function() {
+        renderMakes(this.value);
+        makeDropdown.classList.add('show');
+    });
+    
+    // Model search input
+    modelSearch.addEventListener('focus', function() {
+        if (!selectedMake) {
+            showToast('Info', 'Please select a make first', 'info');
+            return;
+        }
+        renderModels(this.value);
+        document.getElementById('model_dropdown').classList.add('show');
+        makeDropdown.classList.remove('show');
+    });
+    
+    modelSearch.addEventListener('input', function() {
+        renderModels(this.value);
+        document.getElementById('model_dropdown').classList.add('show');
+    });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.make-select-container')) {
+            makeDropdown.classList.remove('show');
+        }
+        if (!e.target.closest('.model-select-container')) {
+            document.getElementById('model_dropdown').classList.remove('show');
+        }
+    });
+    
+    // Initial render
+    renderMakes();
+}
 
 function showToast(title, message, type = 'info') {
     const toastTitle = document.getElementById('toastTitle');
@@ -526,7 +758,7 @@ function deleteVehicle(vehicleId) {
 .btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
 .btn-success { background-color: #28a745; border-color: #28a745; }
 .btn-success:hover { background-color: #218838; border-color: #1e7e34; }
-.form-control:focus, .form-select:focus {
+.form-control:focus, .form-select:focus, .select-search:focus {
     border-color: #4169E1;
     box-shadow: 0 0 0 0.2rem rgba(65,105,225,0.25);
 }

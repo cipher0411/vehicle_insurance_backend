@@ -1,0 +1,622 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Agent Details - {{ agent.get_full_name|default:agent.email }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:admin_agents' %}">Agents</a></li>
+                    <li class="breadcrumb-item active">{{ agent.get_full_name|default:agent.email }}</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-user-tie"></i> Agent Details</h2>
+            <p class="text-muted">View and manage agent information</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_agents' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Agents
+            </a>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2" style="color: #4169E1;"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Agent Status Card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">
+                                {{ agent.get_full_name|default:agent.email }}
+                                {% if profile.is_verified %}
+                                    <span class="badge bg-success ms-2"><i class="fas fa-check-circle"></i> Verified</span>
+                                {% else %}
+                                    <span class="badge bg-warning ms-2"><i class="fas fa-clock"></i> Pending Verification</span>
+                                {% endif %}
+                            </h5>
+                            <p class="text-muted mb-0">
+                                Agent Code: <strong>{{ profile.agent_code }}</strong> | 
+                                Type: {{ profile.get_agent_type_display }} |
+                                Joined: {{ profile.joined_date|date:"F d, Y" }}
+                            </p>
+                        </div>
+                        <div>
+                            {% if not profile.is_verified %}
+                            <form method="POST" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="verify_agent">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check-circle"></i> Verify Agent
+                                </button>
+                            </form>
+                            {% endif %}
+                            <form method="POST" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="toggle_active">
+                                <button type="submit" class="btn btn-{% if agent.is_active %}danger{% else %}success{% endif %}">
+                                    <i class="fas fa-{% if agent.is_active %}ban{% else %}check{% endif %}"></i>
+                                    {% if agent.is_active %}Deactivate{% else %}Activate{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Summary -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <h6 class="text-muted">Total Customers</h6>
+                            <h3>{{ customers.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <h6 class="text-muted">Total Sales</h6>
+                            <h3>{{ profile.total_sales }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <h6 class="text-muted">Commission Earned</h6>
+                            <h3 class="text-success">₦{{ commission_summary.total_earned|floatformat:2|intcomma }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <h6 class="text-muted">Commission Paid</h6>
+                            <h3 class="text-primary">₦{{ commission_summary.total_paid|floatformat:2|intcomma }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent Profile Form -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user-cog"></i> Profile Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_profile">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Agent Type</label>
+                                <select name="agent_type" class="form-control">
+                                    <option value="individual" {% if profile.agent_type == 'individual' %}selected{% endif %}>Individual Agent</option>
+                                    <option value="corporate" {% if profile.agent_type == 'corporate' %}selected{% endif %}>Corporate Agent</option>
+                                    <option value="broker" {% if profile.agent_type == 'broker' %}selected{% endif %}>Broker</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Commission Rate (%)</label>
+                                <input type="number" step="0.01" min="0" max="100" class="form-control" name="commission_rate" value="{{ profile.commission_rate }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Supervisor</label>
+                                <select name="supervisor" class="form-control">
+                                    <option value="">None</option>
+                                    {% for supervisor in supervisors %}
+                                    <option value="{{ supervisor.id }}" {% if profile.supervisor_id == supervisor.id %}selected{% endif %}>
+                                        {{ supervisor.get_full_name|default:supervisor.email }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check mt-4">
+                                    <input type="checkbox" class="form-check-input" name="bonus_eligible" id="bonus_eligible" {% if profile.bonus_eligible %}checked{% endif %}>
+                                    <label class="form-check-label" for="bonus_eligible">Eligible for Performance Bonuses</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h6 class="mt-3 mb-3">Business Information</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Business Name</label>
+                                <input type="text" class="form-control" name="business_name" value="{{ profile.business_name }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Business Phone</label>
+                                <input type="text" class="form-control" name="business_phone" value="{{ profile.business_phone }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Business Address</label>
+                            <textarea class="form-control" name="business_address" rows="2">{{ profile.business_address }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tax ID / VAT Number</label>
+                            <input type="text" class="form-control" name="tax_id" value="{{ profile.tax_id }}">
+                        </div>
+                        
+                        <h6 class="mt-3 mb-3">Banking Information</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Bank Name</label>
+                                <input type="text" class="form-control" name="bank_name" value="{{ profile.bank_name }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Account Name</label>
+                                <input type="text" class="form-control" name="bank_account_name" value="{{ profile.bank_account_name }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Account Number</label>
+                                <input type="text" class="form-control" name="bank_account_number" value="{{ profile.bank_account_number }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sort Code</label>
+                                <input type="text" class="form-control" name="bank_sort_code" value="{{ profile.bank_sort_code }}">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Customers Table -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-users"></i> Referred Customers</h5>
+                    <span class="badge bg-primary">{{ customers.count }} Customers</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Policies</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for referral in customers %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-user-circle me-2" style="color: #4169E1;"></i>
+                                            {{ referral.customer.get_full_name|default:'N/A' }}
+                                        </div>
+                                    </td>
+                                    <td>{{ referral.customer.email }}</td>
+                                    <td>{{ referral.customer.phone_number|default:'N/A' }}</td>
+                                    <td>
+                                        {% with policy_count=referral.customer.policies.count %}
+                                            {{ policy_count }}
+                                        {% endwith %}
+                                    </td>
+                                    <td>{{ referral.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'core:admin_user_detail' referral.customer.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-3 text-muted">
+                                        No customers referred yet
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policies Table -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-contract"></i> Policies from Referred Customers</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Policy #</th>
+                                    <th>Customer</th>
+                                    <th>Type</th>
+                                    <th>Premium</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for policy in policies|slice:":10" %}
+                                <tr>
+                                    <td><strong>{{ policy.policy_number }}</strong></td>
+                                    <td>{{ policy.user.get_full_name|default:policy.user.email }}</td>
+                                    <td>{{ policy.get_policy_type_display }}</td>
+                                    <td>₦{{ policy.premium_amount|floatformat:2|intcomma }}</td>
+                                    <td>
+                                        {% if policy.status == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif policy.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif policy.status == 'expired' %}
+                                            <span class="badge bg-danger">Expired</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ policy.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ policy.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'core:admin_policy_detail' policy.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-3 text-muted">
+                                        No policies found
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Commissions Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-hand-holding-usd"></i> Commission History</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Commission #</th>
+                                    <th>Type</th>
+                                    <th>Policy</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Earned</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for commission in commissions|slice:":10" %}
+                                <tr>
+                                    <td><strong>{{ commission.commission_number }}</strong></td>
+                                    <td>
+                                        {% if commission.commission_type == 'new_policy' %}
+                                            <span class="badge bg-primary">New Policy</span>
+                                        {% elif commission.commission_type == 'bonus' %}
+                                            <span class="badge bg-warning">Bonus</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ commission.get_commission_type_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if commission.policy %}
+                                            {{ commission.policy.policy_number }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td><strong class="text-success">₦{{ commission.total_commission|floatformat:2|intcomma }}</strong></td>
+                                    <td>
+                                        {% if commission.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif commission.status == 'approved' %}
+                                            <span class="badge bg-info">Approved</span>
+                                        {% elif commission.status == 'paid' %}
+                                            <span class="badge bg-success">Paid</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ commission.earned_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'core:admin_agent_commissions' %}?search={{ commission.commission_number }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-3 text-muted">
+                                        No commissions earned yet
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Agent Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Account Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr><th>Email:</th><td>{{ agent.email }}</td></tr>
+                        <tr><th>Phone:</th><td>{{ agent.phone_number|default:'N/A' }}</td></tr>
+                        <tr><th>Status:</th>
+                            <td>
+                                {% if agent.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr><th>Agent Code:</th><td><code>{{ profile.agent_code }}</code></td></tr>
+                        <tr><th>Referral Link:</th>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" value="{{ request.build_absolute_uri }}/register/?ref={{ profile.agent_code }}" readonly>
+                                    <button class="btn btn-outline-primary" onclick="copyReferralLink(this)">Copy</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Commission Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Commission Summary</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td>Total Earned:</td>
+                            <td class="text-end text-success">₦{{ commission_summary.total_earned|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <td>Total Paid:</td>
+                            <td class="text-end text-primary">₦{{ commission_summary.total_paid|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <td>Pending:</td>
+                            <td class="text-end text-warning">₦{{ commission_summary.pending|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <td>Approved:</td>
+                            <td class="text-end text-info">₦{{ commission_summary.approved|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <td>This Month:</td>
+                            <td class="text-end">₦{{ commission_summary.current_month|floatformat:2|intcomma }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Add Bonus Modal Trigger -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-gift"></i> Actions</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-warning w-100 mb-2" data-bs-toggle="modal" data-bs-target="#bonusModal">
+                        <i class="fas fa-star"></i> Add Bonus
+                    </button>
+                    <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">
+                        <i class="fas fa-key"></i> Reset Password
+                    </button>
+                </div>
+            </div>
+
+            <!-- Performance Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="text-muted">Current Month Sales</label>
+                        <h4>{{ profile.current_month_sales }}</h4>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted">Current Month Commission</label>
+                        <h4 class="text-success">₦{{ profile.current_month_commission|floatformat:2|intcomma }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bonus Modal -->
+<div class="modal fade" id="bonusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_bonus">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-star"></i> Add Performance Bonus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Bonus Amount (₦)</label>
+                        <input type="number" step="0.01" min="0" class="form-control" name="bonus_amount" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <textarea class="form-control" name="bonus_reason" rows="3" placeholder="e.g., Performance bonus for exceeding target"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Add Bonus</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reset_password">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-key"></i> Reset Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-control" name="new_password" minlength="8" required>
+                        <small class="text-muted">Minimum 8 characters</small>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        This will immediately change the agent's password.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let toastInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('notificationToast');
+    if (toastEl) {
+        toastInstance = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+    }
+});
+
+function copyReferralLink(btn) {
+    const input = btn.previousElementSibling;
+    input.select();
+    input.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(input.value).then(function() {
+        showToast('Success', 'Referral link copied to clipboard!', 'success');
+    }).catch(function() {
+        document.execCommand('copy');
+        showToast('Success', 'Referral link copied to clipboard!', 'success');
+    });
+}
+
+function showToast(title, message, type = 'info') {
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.querySelector('#notificationToast .toast-header i');
+    
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    toastIcon.className = 'fas me-2';
+    toastIcon.style.color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#4169E1';
+    toastIcon.classList.add(type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+    
+    toastInstance.show();
+}
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    height: 100%;
+}
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+.card-header {
+    background: linear-gradient(135deg, #4169E1 0%, #3155b0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 15px 20px;
+}
+.card-header h5 { margin: 0; font-weight: 600; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.breadcrumb { background-color: transparent; padding: 0; }
+.table th { font-weight: 600; }
+.table td { vertical-align: middle; }
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+.form-control:focus { border-color: #4169E1; box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25); }
+</style>
+{% endblock %}

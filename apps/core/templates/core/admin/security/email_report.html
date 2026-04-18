@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid #334155;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #334155;
+        }
+        .header h1 {
+            color: #3b82f6;
+            margin: 0 0 10px 0;
+        }
+        .header .date {
+            color: #64748b;
+            font-size: 14px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #94a3b8;
+        }
+        .severity-badges {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .badge-critical { background: #7f1d1d; color: #fca5a5; }
+        .badge-high { background: #991b1b; color: #f87171; }
+        .badge-medium { background: #854d0e; color: #fcd34d; }
+        .badge-low { background: #14532d; color: #86efac; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+        th {
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+        td {
+            color: #e2e8f0;
+        }
+        code {
+            background: #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #a5b4fc;
+        }
+        .recommendation {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+            text-align: center;
+            color: #64748b;
+            font-size: 12px;
+        }
+        .footer a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        .text-danger { color: #ef4444; }
+        .text-warning { color: #f59e0b; }
+        .text-success { color: #10b981; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Edgway Security Report</h1>
+            <h2 style="color: #e2e8f0; margin: 5px 0;">{{ report.name }}</h2>
+            <div class="date">
+                Period: {{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }}
+                <br>Generated: {{ generated_at|date:"M d, Y H:i" }}
+            </div>
+        </div>
+        
+        <!-- Summary Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ total_events }}</div>
+                <div class="stat-label">Total Events</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value text-danger">{{ blocked_attacks }}</div>
+                <div class="stat-label">Blocked Attacks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value text-warning">{{ unique_attackers }}</div>
+                <div class="stat-label">Unique Attackers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value text-success">{{ block_rate }}%</div>
+                <div class="stat-label">Block Rate</div>
+            </div>
+        </div>
+        
+        <!-- Severity Breakdown -->
+        <div class="section">
+            <div class="section-title">📊 Severity Breakdown</div>
+            <div class="severity-badges">
+                <span class="badge badge-critical">Critical: {{ severity_breakdown.CRITICAL|default:0 }}</span>
+                <span class="badge badge-high">High: {{ severity_breakdown.HIGH|default:0 }}</span>
+                <span class="badge badge-medium">Medium: {{ severity_breakdown.MEDIUM|default:0 }}</span>
+                <span class="badge badge-low">Low: {{ severity_breakdown.LOW|default:0 }}</span>
+            </div>
+        </div>
+        
+        {% if include_tables %}
+        <!-- Top Attackers -->
+        <div class="section">
+            <div class="section-title">🎯 Top Attackers</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>IP Address</th>
+                        <th>Attack Count</th>
+                        <th>Last Seen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attacker in top_attackers %}
+                    <tr>
+                        <td><code>{{ attacker.ip_address }}</code></td>
+                        <td><strong>{{ attacker.count }}</strong></td>
+                        <td>{{ attacker.last_seen|timesince }} ago</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="text-align: center;">No attack data</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Event Types -->
+        <div class="section">
+            <div class="section-title">📋 Event Type Distribution</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Event Type</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event_type in event_types|slice:":5" %}
+                    <tr>
+                        <td>{{ event_type.event_type }}</td>
+                        <td><strong>{{ event_type.count }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        
+        {% if include_recommendations %}
+        <!-- Recommendations -->
+        <div class="section">
+            <div class="section-title">💡 Security Recommendations</div>
+            {% if blocked_attacks > 0 %}
+            <div class="recommendation">
+                <strong>⚠️ Attack Activity Detected</strong><br>
+                {{ blocked_attacks }} attacks were blocked in this period. Review the top attackers list and consider permanent blocks.
+            </div>
+            {% endif %}
+            
+            {% if severity_breakdown.CRITICAL|default:0 > 0 %}
+            <div class="recommendation">
+                <strong>🚨 Critical Events Detected</strong><br>
+                {{ severity_breakdown.CRITICAL }} critical events occurred. Immediate review recommended.
+            </div>
+            {% endif %}
+            
+            <div class="recommendation">
+                <strong>✅ Regular Monitoring</strong><br>
+                Continue monitoring security events daily. Consider setting up real-time alerts for critical events.
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="footer">
+            <p>
+                This is an automated security report from 
+                <a href="https://edgway.security">Edgway Security</a>.
+                <br>
+                To manage your report subscriptions, visit the 
+                <a href="{{ settings.SITE_URL }}/custom_admin/security/reports/">Security Dashboard</a>.
+            </p>
+            <p>© {% now "Y" %} Edgway Security. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

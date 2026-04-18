@@ -1,0 +1,213 @@
+{% extends 'core/admin/security/security_base.html' %}
+{% block title %}Security Events - Edgway Security{% endblock %}
+
+{% block content %}
+<div class="edgway-topbar">
+    <h1 class="page-title">
+        <i class="fas fa-list"></i> Security Events
+    </h1>
+    <div class="topbar-actions">
+        <button class="edgway-btn edgway-btn-outline" onclick="exportEvents()">
+            <i class="fas fa-download"></i> Export
+        </button>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value">{{ total_events }}</div>
+                    <div class="stat-label">Total Events</div>
+                </div>
+                <div class="stat-icon" style="color: var(--edgway-accent);">
+                    <i class="fas fa-database"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value text-danger">{{ critical_events }}</div>
+                    <div class="stat-label">Critical Events</div>
+                </div>
+                <div class="stat-icon" style="color: var(--edgway-danger);">
+                    <i class="fas fa-skull"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value text-warning">{{ high_events }}</div>
+                    <div class="stat-label">High Severity</div>
+                </div>
+                <div class="stat-icon" style="color: var(--edgway-warning);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value">{{ events.paginator.count }}</div>
+                    <div class="stat-label">Filtered Events</div>
+                </div>
+                <div class="stat-icon" style="color: var(--edgway-info);">
+                    <i class="fas fa-filter"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="edgway-card">
+    <div class="edgway-card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <input type="text" class="edgway-form-control" name="search" placeholder="Search by IP, path, or user..." value="{{ search_query }}">
+            </div>
+            <div class="col-md-3">
+                <select class="edgway-form-control" name="event_type">
+                    <option value="">All Event Types</option>
+                    {% for value, label in event_types %}
+                        <option value="{{ value }}" {% if event_type_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="edgway-form-control" name="severity">
+                    <option value="">All Severities</option>
+                    <option value="LOW" {% if severity_filter == 'LOW' %}selected{% endif %}>Low</option>
+                    <option value="MEDIUM" {% if severity_filter == 'MEDIUM' %}selected{% endif %}>Medium</option>
+                    <option value="HIGH" {% if severity_filter == 'HIGH' %}selected{% endif %}>High</option>
+                    <option value="CRITICAL" {% if severity_filter == 'CRITICAL' %}selected{% endif %}>Critical</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="edgway-form-control" name="ip" placeholder="Filter by IP" value="{{ ip_filter }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="edgway-btn edgway-btn-primary w-100">
+                    <i class="fas fa-search"></i> Apply
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Events Table -->
+<div class="edgway-card">
+    <div class="table-responsive">
+        <table class="edgway-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Event Type</th>
+                    <th>Severity</th>
+                    <th>IP Address</th>
+                    <th>User</th>
+                    <th>Path</th>
+                    <th>Method</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                <tr>
+                    <td style="white-space: nowrap;">
+                        <div>{{ event.created_at|date:"M d, Y" }}</div>
+                        <small class="text-muted">{{ event.created_at|time:"H:i:s" }}</small>
+                    </td>
+                    <td>{{ event.get_event_type_display }}</td>
+                    <td>
+                        <span class="badge badge-{{ event.severity|lower }}">
+                            {{ event.severity }}
+                        </span>
+                    </td>
+                    <td>
+                        <code>{{ event.ip_address }}</code>
+                        <button class="btn btn-sm btn-outline-secondary ms-1" onclick="copyToClipboard('{{ event.ip_address }}')" title="Copy IP">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </td>
+                    <td>{{ event.user.email|default:"-"|truncatechars:20 }}</td>
+                    <td>
+                        <code>{{ event.path|truncatechars:30 }}</code>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary">{{ event.method }}</span>
+                    </td>
+                    <td>
+                        <a href="{% url 'core:security_event_detail' event.id %}" class="edgway-btn edgway-btn-outline btn-sm">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        <i class="fas fa-shield-alt fa-3x mb-3"></i>
+                        <p>No security events found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if events.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if events.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ events.previous_page_number }}{% if event_type_filter %}&event_type={{ event_type_filter }}{% endif %}{% if severity_filter %}&severity={{ severity_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+        {% endif %}
+        
+        {% for num in events.paginator.page_range %}
+            {% if events.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > events.number|add:'-3' and num < events.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if event_type_filter %}&event_type={{ event_type_filter }}{% endif %}{% if severity_filter %}&severity={{ severity_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if events.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ events.next_page_number }}{% if event_type_filter %}&event_type={{ event_type_filter }}{% endif %}{% if severity_filter %}&severity={{ severity_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied', 'IP address copied to clipboard', 'success');
+    });
+}
+
+function exportEvents() {
+    window.location.href = "{% url 'core:admin_export_data' %}?model=security_events&format=csv";
+}
+</script>
+{% endblock %}

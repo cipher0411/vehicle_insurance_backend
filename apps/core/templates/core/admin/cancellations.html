@@ -1,0 +1,224 @@
+{% extends 'core/logon_base.html' %}
+{% load humanize %}
+
+{% block title %}Policy Cancellations{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-ban"></i> Policy Cancellations</h2>
+            <p class="text-muted">Manage policy cancellation requests and refunds</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'core:admin_export_data' %}?model=cancellations&format=csv" class="btn btn-success">
+                <i class="fas fa-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Cancellations</h6>
+                            <h3>{{ total_cancellations|default:cancellations.paginator.count }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Pending</h6>
+                            <h3 class="text-warning">{{ pending_count|default:'0' }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Refunds</h6>
+                            <h3 class="text-success">₦{{ total_refunds|floatformat:2|default:'0.00' }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill-wave text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Processed</h6>
+                            <h3 class="text-info">{{ processed_count|default:'0' }}</h3>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-double text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <input type="text" class="form-control" id="searchInput" name="search" placeholder="Search by cancellation #, policy # or email..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-2">
+            <select class="form-control" id="statusFilter" name="status">
+                <option value="">All Status</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                <option value="processed" {% if status_filter == 'processed' %}selected{% endif %}>Processed</option>
+                <option value="refunded" {% if status_filter == 'refunded' %}selected{% endif %}>Refunded</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary me-2" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Cancellations Table -->
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead style="background-color: #4169E1; color: white;">
+                <tr>
+                    <th>Cancellation #</th>
+                    <th>Policy #</th>
+                    <th>Customer</th>
+                    <th>Reason</th>
+                    <th>Premium Paid</th>
+                    <th>Earned Premium</th>
+                    <th>Refund Amount</th>
+                    <th>Effective Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cancellation in cancellations %}
+                <tr>
+                    <td><strong>{{ cancellation.cancellation_number }}</strong></td>
+                    <td>
+                        <a href="{% url 'core:admin_policy_detail' cancellation.policy.id %}">
+                            {{ cancellation.policy.policy_number }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-circle me-2" style="color: #4169E1;"></i>
+                            {{ cancellation.user.get_full_name|default:cancellation.user.email }}
+                        </div>
+                    </td>
+                    <td>
+                        {{ cancellation.get_reason_display }}
+                        {% if cancellation.other_reason %}
+                            <br><small class="text-muted">{{ cancellation.other_reason|truncatechars:30 }}</small>
+                        {% endif %}
+                    </td>
+                    <td>₦{{ cancellation.total_premium|floatformat:2 }}</td>
+                    <td>₦{{ cancellation.earned_premium|floatformat:2 }}</td>
+                    <td>
+                        <strong class="text-success">₦{{ cancellation.refund_amount|floatformat:2 }}</strong>
+                        {% if cancellation.cancellation_fee > 0 %}
+                            <br><small class="text-muted">Fee: ₦{{ cancellation.cancellation_fee }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ cancellation.effective_date|date:"M d, Y" }}</td>
+                    <td>
+                        {% if cancellation.status == 'pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% elif cancellation.status == 'approved' %}
+                            <span class="badge bg-success">Approved</span>
+                        {% elif cancellation.status == 'rejected' %}
+                            <span class="badge bg-danger">Rejected</span>
+                        {% elif cancellation.status == 'processed' %}
+                            <span class="badge bg-info">Processed</span>
+                        {% elif cancellation.status == 'refunded' %}
+                            <span class="badge bg-primary">Refunded</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'core:admin_cancellation_detail' cancellation.id %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="text-center py-4">
+                        <i class="fas fa-ban fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No cancellations found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% include 'core/includes/pagination.html' with page_obj=cancellations %}
+</div>
+
+<script>
+function applyFilters() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    let url = '?';
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    if (status) url += `status=${status}&`;
+    
+    window.location.href = url.slice(0, -1);
+}
+
+function clearFilters() {
+    window.location.href = window.location.pathname;
+}
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+    height: 100%;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; color: #4169E1; opacity: 0.7; }
+.table th { font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
+.table td { vertical-align: middle; }
+.badge { padding: 5px 10px; border-radius: 20px; font-weight: 500; }
+.btn-primary { background-color: #4169E1; border-color: #4169E1; }
+.btn-primary:hover { background-color: #3155b0; border-color: #3155b0; }
+</style>
+{% endblock %}
