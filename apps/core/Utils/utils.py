@@ -11,6 +11,7 @@ from django.core.files.base import ContentFile
 from django.utils import timezone
 from apps.core.models import UserActivityLog  # Correct import
 from decimal import Decimal, InvalidOperation
+from django.db.models import Q
 
 def log_user_activity(user, action, request, details=None):
     """Log user activity"""
