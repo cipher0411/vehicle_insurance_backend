@@ -15,8 +15,8 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-!741p6q#=7esiys92e#ioy*j
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = env.bool('DEBUG', default=False)
-DEBUG = True
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', 'api.vehicleinsurance.com'])
+DEBUG = False
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -131,15 +131,19 @@ DATABASES = {
 }
 
 # Cache
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': env('REDIS_URL', default='redis://localhost:6379/1'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+if os.environ.get('REDIS_URL'):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': os.environ.get('REDIS_URL'),
         }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -301,10 +305,13 @@ FCM_DJANGO_SETTINGS = {
 }
 
 # Django AllAuth
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = [
+    'email*',
+    'password1*',
+    'password2*',
+]
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_LOGOUT_ON_GET = True
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
@@ -384,7 +391,6 @@ METADEFENDER_API_KEY = env('METADEFENDER_API_KEY', default='')
 # Session Security
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_AGE = 28800  # 8 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 
